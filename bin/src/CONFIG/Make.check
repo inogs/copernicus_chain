@@ -1,0 +1,10 @@
+check:
+		@if [[ $${OPA_HOME:-UNDEFINED} = UNDEFINED ]] ; then		\
+			echo "ERR: OPA_HOME is not defined!" 1>&2;		\
+			exit 1;							\
+		fi
+		@if [[ $${OPA_HOSTNAME:-UNDEFINED} = UNDEFINED ]] ; then	\
+			echo "ERR: OPA_HOSTNAME is not defined!" 1>&2;		\
+			exit 1;							\
+		fi
+

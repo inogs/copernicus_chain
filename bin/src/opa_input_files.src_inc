@@ -1,0 +1,576 @@
+if [[ $__OPA_INPUT_FILES_IS_DEFINED__ == '' ]] ; then
+  __OPA_INPUT_FILES_IS_DEFINED__='__defined__'
+
+# !!!WARNING!!! The following 4 variables are set only for test purposes, their value is NOT correct
+
+OPA_OPAOPER_A_DAY_OFFSET_START=''	# offset for OPAOPER_A files - first day is $OPA_RUNDATE + $OPA_OPAOPER_A_DAY_OFFSET_START
+OPA_OPAOPER_A_DAY_OFFSET_END=''		# offset for OPAOPER_A files - last  day is $OPA_RUNDATE + $OPA_OPAOPER_A_DAY_OFFSET_END
+OPA_OPAOPER_S_DAY_OFFSET_START=''	# offset for OPAOPER_A files - first day is $OPA_RUNDATE + $OPA_OPAOPER_A_DAY_OFFSET_START
+OPA_OPAOPER_S_DAY_OFFSET_END=''		# offset for OPAOPER_A files - last  day is $OPA_RUNDATE + $OPA_OPAOPER_A_DAY_OFFSET_END
+OPA_OPAOPER_F_DAY_OFFSET_START=''	# offset for OPAOPER_F files - first day is $OPA_RUNDATE + $OPA_OPAOPER_F_DAY_OFFSET_START
+OPA_OPAOPER_F_DAY_OFFSET_END=''		# offset for OPAOPER_F files - last day is $OPA_RUNDATE + $OPA_OPAOPER_F_DAY_OFFSET_END
+
+OPA_OPAOPER_A_PREFIX=''			# prefix for analyses input files
+OPA_OPAOPER_S_PREFIX=''			# prefix for simulations input files
+OPA_OPAOPER_F_PREFIX=''			# prefix for forecasts input files
+OPA_OPAOPER_A_DATE_FORMAT=''		# format for analyses date
+OPA_OPAOPER_S_DATE_FORMAT=''		# format for simulations date
+OPA_OPAOPER_F_DATE_FORMAT=''		# format for forecasts date
+
+
+set -A OPA_INPUT_FILE__ACTUAL --	# Array of actual input file names
+set -A OPA_INPUT_TYPE__ACTUAL --	# Array of actual input file types ('a' or 'f')
+set -A OPA_INPUT_VAR__ACTUAL --		# Array of actual input file vars (one of $OPA_VARIABLES)
+OPA_INPUT_FILE_INDICES__ACTUAL=' '	# indices for the previous arrays
+
+set -A OPA_VAR_INPUT_FILE_INDICES__ACTUAL --	# Array containing input file indices (i.e. indices
+						# for arrays OPA_INPUT_FILE__ACTUAL, OPA_INPUT_TYPE__ACTUAL,
+						# OPA_INPUT_TYPE__ACTUAL") organized per var index
+
+# The following variables are all set by 'opa_set_input_files__opaoper_a':
+set -A OPA_OPAOPER_A_INPUT_VARS --		# variable
+set -A OPA_OPAOPER_A_INPUT_LFILES --		# names of all the OPAOPER_A files as downloaded
+set -A OPA_OPAOPER_A_INPUT_RFILES --		# remote names of all the OPAOPER_A files as downloaded
+set -A OPA_OPAOPER_A_INPUT_COMPRESS_MODES --	# compress mode for the OPAOPER_A files as downloaded
+set -A OPA_OPAOPER_A_INPUT_DOWNLOAD_MODES --	# download mode for the OPAOPER_A files as downloaded (protocol:config)
+set -A OPA_OPAOPER_A_INPUT_DOWNLOAD_MODES_EMERG --	# emergency download mode for the OPAOPER_A files as downloaded (protocol:config)
+set -A OPA_OPAOPER_A_INPUT_RDIRS --		# remote directories of all the OPAOPER_A files as downloaded
+OPA_OPAOPER_A_INPUT_FILES_INDICES=' '		# indices of the OPAOPER_A files
+typeset -i OPA_OPAOPER_A_INPUT_FILES_NUM=0	# num of the OPAOPER_A files
+
+# The following variable is set by 'opa_set_input_files__opaoper':
+set -A OPA_OPAOPER_F_INPUT_VARS --		# variable
+set -A OPA_OPAOPER_F_INPUT_LFILES --		# names of all the OPAOPER_F input files
+set -A OPA_OPAOPER_F_INPUT_RFILES --		# remote names of all the OPAOPER_F files as downloaded
+set -A OPA_OPAOPER_F_INPUT_COMPRESS_MODES --	# compress mode for the OPAOPER_F files as downloaded
+set -A OPA_OPAOPER_F_INPUT_DOWNLOAD_MODES --	# compress mode for the OPAOPER_F files as downloaded (protocol:config)
+set -A OPA_OPAOPER_F_INPUT_DOWNLOAD_MODES_EMERG --	# emergency download mode for the OPAOPER_F files as downloaded (protocol:config)
+set -A OPA_OPAOPER_F_INPUT_RDIRS --		# remote directories of all the OPAOPER_F files as downloaded
+OPA_OPAOPER_F_INPUT_FILES_INDICES=' '		# indices of the OPAOPER_F files
+typeset -i OPA_OPAOPER_F_INPUT_FILES_NUM=0	# num of the OPAOPER_F files
+
+OPA_OPAOPER_F_LAST_FILES=""			# list of file to be replicated
+
+OPA_OPAOPER_A_RDIR=''				# remote directory for analyses
+OPA_OPAOPER_S_RDIR=''				# remote directory for simulations
+OPA_OPAOPER_F_RDIR=''				# remote directory for forecasts
+OPA_DATEDIR=''					# remote main directory 
+# DA parameters
+set -A OPA_DA_SAT_INPUT_VARS --
+set -A OPA_DA_SAT_INPUT_LFILES --
+set -A OPA_DA_SAT_INPUT_RFILES --
+set -A OPA_DA_SAT_INPUT_COMPRESS_MODES --
+set -A OPA_DA_SAT_INPUT_DOWNLOAD_MODES --
+set -A OPA_DA_SAT_INPUT_RDIRS --
+OPA_DA_SAT_INPUT_FILES_INDICES=' '
+typeset -i OPA_DA_SAT_INPUT_FILES_NUM=0
+OPA_DA_SAT_RDIR=''				# remote directory for SAT file
+
+
+_FTPCONFIG_INGV="$I_OPA_HOME/etc/http-config/.ingv.ftpconfig"
+_HTTPCONFIG_INGV="$I_OPA_HOME/etc/http-config/.ingv.httpconfig"
+_HTTPCONFIG_INGV_EMERG="$I_OPA_HOME/etc/http-config/.ingv.httpconfig.emerg"
+_NCCONFIG_SAT="$I_OPA_HOME/etc/nc-config/.sat.ncconfig"
+
+function opa_set_da_start_date {
+  typeset    _opa_da_start_date=${1:-$OPA_DA_START_DATE}
+  typeset -i _opa_da_start_date_j=$( $OPA_BINDIR/date --date="$_opa_da_start_date" +"%j" | sed -e 's/^0//' )
+  OPA_DA_START_DATE="$_opa_da_start_date"
+  OPA_DA_SAT_START_DATE=$( $OPA_BINDIR/date --date="$OPA_DA_START_DATE $(( ( $_opa_da_start_date_j - 1 ) % $OPA_DA_SAT_DAYS )) days ago" +"%Y%m%d" )
+  OPA_DA_SAT_END_DATE=$( $OPA_BINDIR/date --date="$OPA_DA_SAT_START_DATE $(( $OPA_DA_SAT_DAYS - 1 )) days" +"%Y%m%d" )
+  #echo "---> $_opa_da_start_date"
+  #echo "$OPA_DA_START_DATE ; $OPA_DA_SAT_START_DATE ; $OPA_DA_SAT_END_DATE"
+  #read a
+}
+  
+function opa_input_files__setup  {
+  typeset _opa_version_number="$I_OPA_VERSION_NUMBER"
+  case "$_opa_version_number" in
+    0)
+      OPA_OPAOPER_A_PREFIX=''
+      OPA_OPAOPER_S_PREFIX=''
+      OPA_OPAOPER_F_PREFIX=''
+      OPA_OPAOPER_A_DATE_FORMAT='%y%m%d'
+      OPA_OPAOPER_S_DATE_FORMAT='%y%m%d'
+      OPA_OPAOPER_F_DATE_FORMAT='%y%m%d'
+      OPA_OPAOPER_A_DAY_OFFSET_START=$(( 0 - $OPA_ANALYSES_DAYS ))
+      OPA_OPAOPER_A_DAY_OFFSET_END=-1
+      OPA_OPAOPER_S_DAY_OFFSET_START=0
+      OPA_OPAOPER_S_DAY_OFFSET_END=-1
+      OPA_OPAOPER_F_DAY_OFFSET_START=0
+      OPA_OPAOPER_F_DAY_OFFSET_END=0
+      OPA_OPAOPER_A_RDIR="analyses"
+      OPA_OPAOPER_S_RDIR="undefined"
+      OPA_OPAOPER_F_RDIR="forecast"
+      ;;
+    1|2)
+      OPA_OPAOPER_A_PREFIX='AN_'
+      OPA_OPAOPER_S_PREFIX='SM_'
+      OPA_OPAOPER_F_PREFIX='FC_'
+      OPA_OPAOPER_A_DATE_FORMAT='%Y%m%d'
+      OPA_OPAOPER_S_DATE_FORMAT='%Y%m%d'
+      OPA_OPAOPER_F_DATE_FORMAT='%Y%m%d'
+      case "$OPA_WEEKDAY" in
+        2)
+          # TUESDAY (wednesday's run)
+          OPA_OPAOPER_A_DAY_OFFSET_START=$(( 0 - $OPA_ANALYSES_DAYS ))
+          OPA_OPAOPER_A_DAY_OFFSET_END=-1
+          OPA_OPAOPER_S_DAY_OFFSET_START=0
+          OPA_OPAOPER_S_DAY_OFFSET_END=-1
+          ;;
+        5)
+          # TUESDAY (saturday's run)
+          OPA_OPAOPER_A_DAY_OFFSET_START=$(( 0 - $OPA_ANALYSES_DAYS ))
+          OPA_OPAOPER_A_DAY_OFFSET_END=-4 #monday
+          OPA_OPAOPER_S_DAY_OFFSET_START=-3 #tuesday
+          OPA_OPAOPER_S_DAY_OFFSET_END=-1
+          ;;
+        *)
+          opa_die 10 "Unsupported weekday '${OPA_WEEKDAY}'" 
+          ;;
+      esac
+      OPA_OPAOPER_F_DAY_OFFSET_START=0
+#     OPA_OPAOPER_F_DAY_OFFSET_END=$(( $OPA_FORECAST_DAYS - 1 ))
+#     Changes with V3C
+      OPA_OPAOPER_F_DAY_OFFSET_END=$(( $OPA_FORECAST_DAYS ))
+      OPA_OPAOPER_A_RDIR="mfs_sys4b2/output"
+      OPA_OPAOPER_S_RDIR="mfs_sys4b2/output"
+      OPA_OPAOPER_F_RDIR="mfs_sys4b2/output"
+      if [[ "$_opa_version_number" == "2" ]] ; then
+         OPA_DA_SAT_RDIR='.'
+      fi
+      ;;
+    3|3.1|4)
+      OPA_OPAOPER_F_PREFIX="mfs_sys4e"
+      OPA_OPAOPER_A_DATE_FORMAT='%Y%m%d'
+      OPA_OPAOPER_S_DATE_FORMAT='%Y%m%d'
+      OPA_OPAOPER_F_DATE_FORMAT='%Y%m%d'
+      case "$OPA_WEEKDAY" in
+        2)
+          # TUESDAY (wednesday's run)
+          OPA_OPAOPER_A_DAY_OFFSET_START=$(( 0 - $OPA_ANALYSES_DAYS ))
+          OPA_OPAOPER_A_DAY_OFFSET_END=-1
+          OPA_OPAOPER_S_DAY_OFFSET_START=0
+          OPA_OPAOPER_S_DAY_OFFSET_END=0
+          OPA_OPAOPER_A_RDIR="mfs_sys4e_output"
+          OPA_OPAOPER_A_PREFIX="mfs_sys4e"
+          OPA_OPAOPER_S_PREFIX="mfs_sys4e"
+          OPA_DATEDIR="${OPA_RUNDATE}"
+          ;;
+        5)
+          # FRIDAY (saturday's run)
+          OPA_OPAOPER_A_DAY_OFFSET_START=$(( 0 - $OPA_ANALYSES_DAYS ))
+          OPA_OPAOPER_A_DAY_OFFSET_END=-4 #monday
+          OPA_OPAOPER_S_DAY_OFFSET_START=-3 #tuesday
+          OPA_OPAOPER_S_DAY_OFFSET_END=0
+          set_spec_data -date ${OPA_RUNDATE} -days "${OPA_OPAOPER_S_DAY_OFFSET_START}"
+          OPA_OPAOPER_A_RDIR="mfs_sys4e_output"
+          OPA_OPAOPER_A_PREFIX="mfs_sys4e"
+          OPA_OPAOPER_S_PREFIX="mfs_sys4e"
+          OPA_DATEDIR="${LAST_RUNDATE}"
+          ;;
+        *)
+          opa_die 10 "Unsupported weekday '${OPA_WEEKDAY}'" 
+          ;;
+      esac
+      OPA_OPAOPER_F_DAY_OFFSET_START=1
+      OPA_OPAOPER_F_DAY_OFFSET_END=$(( $OPA_FORECAST_DAYS - 1 ))
+      OPA_OPAOPER_S_RDIR="mfs_sys4e_output"
+      OPA_OPAOPER_F_RDIR="mfs_sys4e_output"
+      OPA_DA_SAT_RDIR="Intermediate/OCEANCOLOUR_MED_CHL_L4_NRT_OBSERVATIONS_009_060/dataset-oc-med-chl-modis_a-l4-chl_7km_daily-rt-v02"
+      ;;
+    2C)
+      OPA_OPAOPER_F_PREFIX="mfs_efs1"
+      OPA_OPAOPER_A_DATE_FORMAT='%Y%m%d'
+      OPA_OPAOPER_S_DATE_FORMAT='%Y%m%d'
+      OPA_OPAOPER_F_DATE_FORMAT='%Y%m%d'
+      case "$OPA_WEEKDAY" in
+        2)
+          # TUESDAY (wednesday's run)
+          OPA_OPAOPER_A_DAY_OFFSET_START=$(( 0 - $OPA_ANALYSES_DAYS ))
+          OPA_OPAOPER_A_DAY_OFFSET_END=-1
+          OPA_OPAOPER_S_DAY_OFFSET_START=0
+          OPA_OPAOPER_S_DAY_OFFSET_END=0
+          OPA_OPAOPER_A_RDIR="mfs_eas1_output"
+          OPA_OPAOPER_A_PREFIX="mfs_eas1"
+          OPA_OPAOPER_S_PREFIX="mfs_efs1"
+          OPA_DATEDIR="${OPA_RUNDATE}"
+          ;;
+        5)
+          # FRIDAY (saturday's run)
+          OPA_OPAOPER_A_DAY_OFFSET_START=$(( 0 - $OPA_ANALYSES_DAYS ))
+          OPA_OPAOPER_A_DAY_OFFSET_END=-4 #monday
+          OPA_OPAOPER_S_DAY_OFFSET_START=-3 #tuesday
+          OPA_OPAOPER_S_DAY_OFFSET_END=0
+          set_spec_data -date ${OPA_RUNDATE} -days "${OPA_OPAOPER_S_DAY_OFFSET_START}"
+          OPA_OPAOPER_A_RDIR="mfs_eas1_output"
+          OPA_OPAOPER_A_PREFIX="mfs_eas1"
+          OPA_OPAOPER_S_PREFIX="mfs_efs1"
+          OPA_DATEDIR="${LAST_RUNDATE}"
+          ;;
+        *)
+          opa_die 10 "Unsupported weekday '${OPA_WEEKDAY}'"
+      esac
+      OPA_OPAOPER_F_DAY_OFFSET_START=1
+      OPA_OPAOPER_F_DAY_OFFSET_END=$(( $OPA_FORECAST_DAYS - 1 ))
+      OPA_OPAOPER_S_RDIR="mfs_eas1_output"
+      OPA_OPAOPER_F_RDIR="mfs_eas1_output"
+      OPA_DA_SAT_RDIR="Intermediate/OCEANCOLOUR_MED_CHL_L4_NRT_OBSERVATIONS_009_060/dataset-oc-med-chl-modis_a-l4-chl_7km_daily-rt-v02"
+      ;; 
+    3C)
+      OPA_OPAOPER_F_PREFIX="mfs_efs2"
+      OPA_OPAOPER_A_DATE_FORMAT='%Y%m%d'
+      OPA_OPAOPER_S_DATE_FORMAT='%Y%m%d'
+      OPA_OPAOPER_F_DATE_FORMAT='%Y%m%d'
+      case "$OPA_WEEKDAY" in
+        2)
+          # TUESDAY (wednesday's run)
+          OPA_OPAOPER_A_DAY_OFFSET_START=$(( 0 - $OPA_ANALYSES_DAYS ))
+          OPA_OPAOPER_A_DAY_OFFSET_END=-1
+          OPA_OPAOPER_S_DAY_OFFSET_START=0
+          OPA_OPAOPER_S_DAY_OFFSET_END=0
+          OPA_OPAOPER_A_RDIR="mfs_eas2_output"
+          OPA_OPAOPER_A_PREFIX="mfs_eas2"
+          OPA_OPAOPER_S_PREFIX="mfs_efs2"
+          OPA_DATEDIR="${OPA_RUNDATE}"
+          ;;
+        5)
+          # FRIDAY (saturday's run)
+          OPA_OPAOPER_A_DAY_OFFSET_START=$(( 0 - $OPA_ANALYSES_DAYS ))
+          OPA_OPAOPER_A_DAY_OFFSET_END=-4 #monday
+          OPA_OPAOPER_S_DAY_OFFSET_START=-3 #tuesday
+          OPA_OPAOPER_S_DAY_OFFSET_END=0
+          set_spec_data -date ${OPA_RUNDATE} -days "${OPA_OPAOPER_S_DAY_OFFSET_START}"
+          OPA_OPAOPER_A_RDIR="mfs_eas2_output"
+          OPA_OPAOPER_A_PREFIX="mfs_eas2"
+          OPA_OPAOPER_S_PREFIX="mfs_efs2"
+          OPA_DATEDIR="${LAST_RUNDATE}"
+          ;;
+      esac
+      OPA_OPAOPER_F_DAY_OFFSET_START=1
+      OPA_OPAOPER_F_DAY_OFFSET_END=$(( $OPA_FORECAST_DAYS ))
+      OPA_OPAOPER_S_RDIR="mfs_eas3_output"
+      OPA_OPAOPER_F_RDIR="mfs_eas3_output"
+      OPA_DA_SAT_RDIR="Intermediate/OCEANCOLOUR_MED_CHL_L4_NRT_OBSERVATIONS_009_060/dataset-oc-med-chl-modis_a-l4-chl_7km_daily-rt-v02"
+      ;;
+    4C)
+      OPA_OPAOPER_F_PREFIX="mfs_eas3"
+      OPA_OPAOPER_A_DATE_FORMAT='%Y%m%d'
+      OPA_OPAOPER_S_DATE_FORMAT='%Y%m%d'
+      OPA_OPAOPER_F_DATE_FORMAT='%Y%m%d'
+      case "$OPA_WEEKDAY" in
+        2)
+          # TUESDAY (wednesday's run)
+          OPA_OPAOPER_A_DAY_OFFSET_START=$(( 0 - $OPA_ANALYSES_DAYS ))
+          OPA_OPAOPER_A_DAY_OFFSET_END=-1
+          OPA_OPAOPER_S_DAY_OFFSET_START=0
+          OPA_OPAOPER_S_DAY_OFFSET_END=0
+          OPA_OPAOPER_A_RDIR="mfs_eas3_output"
+          OPA_OPAOPER_A_PREFIX="mfs_eas3"
+          OPA_OPAOPER_S_PREFIX="mfs_eas3"
+          OPA_DATEDIR="${OPA_RUNDATE}"
+          ;;
+        5)
+          # FRIDAY (saturday's run)
+          OPA_OPAOPER_A_DAY_OFFSET_START=$(( 0 - $OPA_ANALYSES_DAYS ))
+          OPA_OPAOPER_A_DAY_OFFSET_END=-4 #monday
+          OPA_OPAOPER_S_DAY_OFFSET_START=-3 #tuesday
+          OPA_OPAOPER_S_DAY_OFFSET_END=0
+          set_spec_data -date ${OPA_RUNDATE} -days "${OPA_OPAOPER_S_DAY_OFFSET_START}"
+          OPA_OPAOPER_A_RDIR="mfs_eas3_output"
+          OPA_OPAOPER_A_PREFIX="mfs_eas3"
+          OPA_OPAOPER_S_PREFIX="mfs_eas3"
+          OPA_DATEDIR="${LAST_RUNDATE}"
+          ;;
+        *)
+          opa_die 10 "Unsupported weekday '${OPA_WEEKDAY}'" 
+          ;;
+      esac
+      OPA_OPAOPER_F_DAY_OFFSET_START=1
+      OPA_OPAOPER_F_DAY_OFFSET_END=$(( $OPA_FORECAST_DAYS ))
+      OPA_OPAOPER_S_RDIR="mfs_eas3_output"
+      OPA_OPAOPER_F_RDIR="mfs_eas3_output"
+      OPA_DA_SAT_RDIR="Intermediate/OCEANCOLOUR_MED_CHL_L4_NRT_OBSERVATIONS_009_060/dataset-oc-med-chl-modis_a-l4-chl_7km_daily-rt-v02"
+      ;;
+    *)
+      opa_die 10 "Unsupported version number '$_opa_version_number'"
+      ;;
+  esac
+  
+
+  # Actual values (==read from input) for previous variables
+  #echo "OPA_OPAOPER_A_DAY_OFFSET_START='$OPA_OPAOPER_A_DAY_OFFSET_START'"
+  OPA_OPAOPER_A_DAY_OFFSET_START__ACTUAL="$OPA_OPAOPER_A_DAY_OFFSET_START"
+  OPA_OPAOPER_A_DAY_OFFSET_END__ACTUAL="$OPA_OPAOPER_A_DAY_OFFSET_END"
+  OPA_OPAOPER_S_DAY_OFFSET_START__ACTUAL="$OPA_OPAOPER_S_DAY_OFFSET_START"
+  OPA_OPAOPER_S_DAY_OFFSET_END__ACTUAL="$OPA_OPAOPER_S_DAY_OFFSET_END"
+  OPA_OPAOPER_F_DAY_OFFSET_START__ACTUAL="$OPA_OPAOPER_F_DAY_OFFSET_START"
+  OPA_OPAOPER_F_DAY_OFFSET_END__ACTUAL="$OPA_OPAOPER_F_DAY_OFFSET_END"
+  opa_set_da_start_date $( $OPA_BINDIR/date --utc --date="$OPA_RUNDATE 00:00:00 $(( 0 - $OPA_OPAOPER_A_DAY_OFFSET_START )) days ago" +'%Y%m%d' )
+
+
+  if false ; then
+    cat <<EOFCAT
+#### I_OPA_VERSION_NUMBER           = [${I_OPA_VERSION_NUMBER}]
+#### OPA_VERSION                    = [${OPA_VERSION}]
+
+#### OPA_OPAOPER_A_DAY_OFFSET_START = [${OPA_OPAOPER_A_DAY_OFFSET_START}]
+#### OPA_OPAOPER_A_DAY_OFFSET_END   = [${OPA_OPAOPER_A_DAY_OFFSET_END}]
+#### OPA_OPAOPER_A_DATE_FORMAT      = [${OPA_OPAOPER_A_DATE_FORMAT}]
+
+#### OPA_OPAOPER_S_DAY_OFFSET_START = [${OPA_OPAOPER_S_DAY_OFFSET_START}]
+#### OPA_OPAOPER_S_DAY_OFFSET_END   = [${OPA_OPAOPER_S_DAY_OFFSET_END}]
+#### OPA_OPAOPER_S_DATE_FORMAT      = [${OPA_OPAOPER_S_DATE_FORMAT}]
+
+#### OPA_OPAOPER_F_DAY_OFFSET_START = [${OPA_OPAOPER_F_DAY_OFFSET_START}]
+#### OPA_OPAOPER_F_DAY_OFFSET_END   = [${OPA_OPAOPER_F_DAY_OFFSET_END}]
+#### OPA_OPAOPER_F_DATE_FORMAT      = [${OPA_OPAOPER_F_DATE_FORMAT}]
+
+#### OPA_DA_START_DATE              = [${OPA_DA_START_DATE}]
+#### OPA_DA_SAT_START_DATE          = [${OPA_DA_SAT_START_DATE}]
+#### OPA_DA_SAT_END_DATE            = [${OPA_DA_SAT_END_DATE}]
+EOFCAT
+    read aaa
+  fi
+}
+
+
+
+function opa_set_input_files__opaoper_a {
+  OPA_OPAOPER_A_INPUT_FILES_INDICES=' '
+  _Iopa_set_input_files__opaoper_a_s_f 'a'
+  _Iopa_set_input_files__opaoper_a_s_f 's'
+}
+
+function opa_set_input_files__opaoper_f {
+  OPA_OPAOPER_F_INPUT_FILES_INDICES=' '
+  _Iopa_set_input_files__opaoper_a_s_f 'f'
+}
+
+function _Iopa_set_input_files__opaoper_a_s_f {
+  # This is an internal function that evaluates the names for
+  # analyses, simulations and forecast; the first parameter can be
+  # * 'a' for analyses
+  # * 's' for simulations
+  # * 'f' for forecasts
+  typeset _a_s_f="$1"
+  shift 1
+
+  typeset _start
+  typeset _end
+  typeset _var
+  typeset _prefix_remote
+  typeset _date_format_remote
+  typeset _prefix_local=''
+  typeset _rdir
+  case  "$_a_s_f" in
+    a)
+      _start="$OPA_OPAOPER_A_DAY_OFFSET_START"
+      _end="$OPA_OPAOPER_A_DAY_OFFSET_END"
+      _prefix_remote="${OPA_OPAOPER_A_PREFIX}-"
+      _date_format_remote="$OPA_OPAOPER_A_DATE_FORMAT"
+      _rdir="$OPA_OPAOPER_A_RDIR"
+      _afs="-a"
+      ;;
+    s)
+      _start="$OPA_OPAOPER_S_DAY_OFFSET_START"
+      _end="$OPA_OPAOPER_S_DAY_OFFSET_END"
+      _prefix_remote="${OPA_OPAOPER_S_PREFIX}-"
+      _date_format_remote="$OPA_OPAOPER_S_DATE_FORMAT"
+      _rdir="$OPA_OPAOPER_S_RDIR"
+       _afs="-s"
+      ;;
+    f)
+      _start="$OPA_OPAOPER_F_DAY_OFFSET_START"
+      _end="$OPA_OPAOPER_F_DAY_OFFSET_END"
+      _prefix_remote="${OPA_OPAOPER_F_PREFIX}-"
+      _date_format_remote="$OPA_OPAOPER_F_DATE_FORMAT"
+      _rdir="$OPA_OPAOPER_F_RDIR"
+      _afs="-f"
+      ;;
+  esac
+  #echo "@@@ [${0}] _a_s_f=[${_a_s_f}]"
+  #echo "@@@ [${0}] _start=[${_start}]"
+  #echo "@@@ [${0}] _end=[${_end}]"
+  #echo "@@@ [${0}] _prefix_remote=[${_prefix_remote}]"
+  #echo "$_a_s_f $OPA_RUNDATE $_start $_end"
+      
+  # Set the name of the OPAOPER_F input files
+  typeset _opaoper_file_remote=''
+  typeset _opaoper_file=''
+  typeset _days_offset
+  typeset _date_local
+  typeset _date_remote
+  typeset -i _i
+  typeset _v
+  typeset -i _i_next
+  typeset    _day_offset_next
+  typeset    _date_local_next
+  typeset    _opaoper_file_local_next
+  typeset    _ln_next
+  echo "###> $_a_s_f :: $_start $_end"
+  for _i in $(opa_range $_start $_end ) ; do
+    # $_i is an offset (in number of days, with sign) to be added to the $OPA_RUNDATE
+    # in order to have the expected date of the input files.
+    if [[ $_i -lt 0 ]] ; then
+      _days_offset="$(( - $_i )) days ago"
+    else
+      _days_offset="$_i days"
+    fi
+    if [[ "$_a_s_f" == 'f' ]] ; then
+      _i_next=$(( $_i + 1 ))
+      if [[ $_i_next -lt 0 ]] ; then
+        _days_offset_next="$(( - $_i_next )) days ago"
+      else
+        _days_offset_next="$_i_next days"
+      fi
+      _date_local_next=$( $OPA_BINDIR/date --date "$OPA_RUNDATE $_days_offset_next" +'%y%m%d' )
+      _ln_next=""
+    fi
+    # Apply the offset and get the expected file rundate
+    _date_local=$( $OPA_BINDIR/date --date "$OPA_RUNDATE $_days_offset" +'%y%m%d' )
+    _date_remote=$( $OPA_BINDIR/date --date "$OPA_RUNDATE $_days_offset" +"$_date_format_remote" )
+    echo "@@@ [${_date_local}] [${_date_format_remote}] [${_date_remote}]" 1>&2
+    # For each input date, three files are downloaded (for T, U and V variables)
+    for _v in $OPA_VARIABLES ; do
+      case  "$_a_s_f" in
+        a)
+         _prod_cycle=${OPA_DATEDIR}
+         ;;
+        s)
+         _prod_cycle=${_date_remote}
+         ;;
+        f)
+         _prod_cycle=${OPA_RUNDATE}
+         ;;
+      esac
+      #_opaoper_file_remote="${_prefix_remote}${_prod_cycle}_${_date_remote}${_afs}_${_v}.nc.gz"
+      #V3C change: keep it unzipped
+      _opaoper_file_remote="${_prefix_remote}${_prod_cycle}-${_date_remote}${_afs}-${_v}.nc"
+      _opaoper_file_local="${_prefix_local}${_date_local}_$_v.nc"
+      typeset _rdir
+      case  "$_a_s_f" in
+        a|s)
+          case "$_a_s_f" in
+            a)
+              _rdir="$OPA_OPAOPER_A_RDIR/${OPA_DATEDIR}"
+              ;;
+            s)
+              _rdir="$OPA_OPAOPER_S_RDIR/${_date_remote}"
+              ;;
+          esac
+          OPA_OPAOPER_A_INPUT_RDIRS[OPA_OPAOPER_A_INPUT_FILES_NUM]="$_rdir"
+          OPA_OPAOPER_A_INPUT_RFILES[OPA_OPAOPER_A_INPUT_FILES_NUM]="$_opaoper_file_remote"
+          OPA_OPAOPER_A_INPUT_LFILES[OPA_OPAOPER_A_INPUT_FILES_NUM]="$_opaoper_file_local"
+          OPA_OPAOPER_A_INPUT_COMPRESS_MODES[OPA_OPAOPER_A_INPUT_FILES_NUM]="gzip"
+          #OPA_OPAOPER_A_INPUT_DOWNLOAD_MODES[OPA_OPAOPER_A_INPUT_FILES_NUM]="http:$_HTTPCONFIG_INGV"
+          #V3C change: use the new ftp server from INGV
+          OPA_OPAOPER_A_INPUT_DOWNLOAD_MODES[OPA_OPAOPER_A_INPUT_FILES_NUM]="http:$_FTPCONFIG_INGV"
+          OPA_OPAOPER_A_INPUT_DOWNLOAD_MODES_EMERG[OPA_OPAOPER_A_INPUT_FILES_NUM]="http:$_HTTPCONFIG_INGV_EMERG"
+          OPA_OPAOPER_A_INPUT_VARS[OPA_OPAOPER_A_INPUT_FILES_NUM]="$_v"
+          OPA_OPAOPER_A_INPUT_FILES_INDICES="${OPA_OPAOPER_A_INPUT_FILES_INDICES}${OPA_OPAOPER_A_INPUT_FILES_NUM} "
+          OPA_OPAOPER_A_INPUT_FILES_NUM=$(( $OPA_OPAOPER_A_INPUT_FILES_NUM + 1 ))
+          echo "@@@ [${0}] ::: [${_a_s_f}] $_opaoper_file_local"
+          #echo "@@@ [${0}] ::: OPA_OPAOPER_A_INPUT_FILES_INDICES=[${OPA_OPAOPER_A_INPUT_FILES_INDICES}]"
+          #echo "@@@ [${0}] ::: OPA_OPAOPER_A_INPUT_FILES_NUM=[${OPA_OPAOPER_A_INPUT_FILES_NUM}]"
+          ;;
+        f)
+          OPA_OPAOPER_F_INPUT_RDIRS[OPA_OPAOPER_F_INPUT_FILES_NUM]="$OPA_OPAOPER_F_RDIR/$OPA_RUNDATE"
+          OPA_OPAOPER_F_INPUT_RFILES[OPA_OPAOPER_F_INPUT_FILES_NUM]="$_opaoper_file_remote"
+          OPA_OPAOPER_F_INPUT_LFILES[OPA_OPAOPER_F_INPUT_FILES_NUM]="$_opaoper_file_local"
+          OPA_OPAOPER_F_INPUT_COMPRESS_MODES[OPA_OPAOPER_F_INPUT_FILES_NUM]="gzip"
+          #OPA_OPAOPER_F_INPUT_DOWNLOAD_MODES[OPA_OPAOPER_F_INPUT_FILES_NUM]="http:$_HTTPCONFIG_INGV"
+          #V3C change: use the new ftp server from INGV
+          OPA_OPAOPER_F_INPUT_DOWNLOAD_MODES[OPA_OPAOPER_F_INPUT_FILES_NUM]="http:$_FTPCONFIG_INGV"
+          OPA_OPAOPER_F_INPUT_DOWNLOAD_MODES_EMERG[OPA_OPAOPER_F_INPUT_FILES_NUM]="http:$_HTTPCONFIG_INGV_EMERG"
+          OPA_OPAOPER_F_INPUT_VARS[OPA_OPAOPER_F_INPUT_FILES_NUM]="$_v"
+          OPA_OPAOPER_F_INPUT_FILES_INDICES="${OPA_OPAOPER_F_INPUT_FILES_INDICES}${OPA_OPAOPER_F_INPUT_FILES_NUM} "
+          OPA_OPAOPER_F_INPUT_FILES_NUM=$(( $OPA_OPAOPER_F_INPUT_FILES_NUM + 1 ))
+          _opaoper_file_local_next="${_prefix_local}${_date_local_next}_$_v.nc"
+          _ln_next="${_ln_next}${_opaoper_file_local}|${_opaoper_file_local_next} "
+          echo "@@@ [${0}] ::: [${_a_s_f}] $_opaoper_file_local"
+          #echo "@@@ [${0}] ::: OPA_OPAOPER_F_INPUT_FILES_INDICES=[${OPA_OPAOPER_F_INPUT_FILES_INDICES}]"
+          #echo "@@@ [${0}] ::: OPA_OPAOPER_F_INPUT_FILES_NUM=[${OPA_OPAOPER_F_INPUT_FILES_NUM}]"
+          ;;
+      esac
+    done
+    if [[ "$_a_s_f" == 'f' ]] ; then
+      OPA_OPAOPER_F_LAST_FILES="$_ln_next"
+    fi
+  done
+}
+
+function opa_print_input_files__opaoper_a {
+  _Iopa_print_input_files__opaoper_a_f 'a'
+}
+
+function opa_print_input_files__opaoper_f {
+  _Iopa_print_input_files__opaoper_a_f 'f'
+}
+
+function _Iopa_print_input_files__opaoper_a_f {
+  # This is an internal function that prints the names for
+  # analyses, simulations and forecast; the first parameter can be
+  # * 'a' for analyses
+  # * 's' for simulations
+  # * 'f' for forecasts
+  typeset _a_f="$1"
+  shift 1
+  typeset _name
+  typeset _list
+  case "$_a_f" in
+    a)
+      _name="OPAOPER analyses"
+      _list="${OPA_OPAOPER_A_INPUT_LFILES[*]}"
+      ;;
+    f)
+      _name="OPAOPER forecast"
+      _list="${OPA_OPAOPER_F_INPUT_LFILES[*]}"
+      ;;
+  esac
+  echo "$_name"
+  typeset _file
+  typeset -i _c=0
+  for _file in $_list ; do
+    printf "%4d) %s\n" "$_c" "$_file"
+    _c=$(( $_c + 1 ))
+  done
+}
+
+function opa_set_input_files__da_sat {
+  typeset _da_sat_file_local
+  typeset _da_sat_file_remote
+  set_spec_data -date ${OPA_RUNDATE} -days "-7" -hours 12
+  RUNDATE_m7=$($OPA_BINDIR/date -d "${OPA_RUNDATE} -7 days" +%Y%m%d )
+  for j in $(opa_range -3 +3 ) ; do
+    YYYYMMDD=$($OPA_BINDIR/date -d "$RUNDATE_m7 +$j days" +%Y%m%d )
+    YYYY=$($OPA_BINDIR/date -d "$RUNDATE_m7 +$j days" +%Y )
+    JULIAN=$($OPA_BINDIR/date -d "$RUNDATE_m7 +$j days" +%j )
+
+    _da_sat_file_local="${YYYYMMDD}_d-OC_CNR-L4-CHL-MedOC3_A_7KM-MED-DT-v02.nc"
+#     _da_sat_file_local_nrt="${YYYYMMDD}_d-OC_CNR-L4-CHL-MedOC3_A_7KM-MED-NRT-v02.nc"
+    _da_sat_file_remote="${_da_sat_file_local}"
+    OPA_DA_SAT_INPUT_RDIRS[OPA_DA_SAT_INPUT_FILES_NUM]="$OPA_DA_SAT_RDIR/${YYYY}"
+    OPA_DA_SAT_INPUT_RFILES[OPA_DA_SAT_INPUT_FILES_NUM]="$_da_sat_file_remote"
+    OPA_DA_SAT_INPUT_LFILES[OPA_DA_SAT_INPUT_FILES_NUM]="$_da_sat_file_local"
+  #echo "$OPA_DA_SAT_START_DATE - $OPA_DA_SAT_END_DATE"
+  echo "===> $_da_sat_file_local $OPA_DA_SAT_INPUT_FILES_INDICES $OPA_DA_SAT_INPUT_FILES_NUM"
+  #read b
+    OPA_DA_SAT_INPUT_COMPRESS_MODES[OPA_DA_SAT_INPUT_FILES_NUM]="none"
+    OPA_DA_SAT_INPUT_DOWNLOAD_MODES[OPA_DA_SAT_INPUT_FILES_NUM]="ncftp:$_NCCONFIG_SAT"
+    OPA_DA_SAT_INPUT_VARS[OPA_DA_SAT_INPUT_FILES_NUM]=""
+    OPA_DA_SAT_INPUT_FILES_INDICES="${OPA_DA_SAT_INPUT_FILES_INDICES}${OPA_DA_SAT_INPUT_FILES_NUM} "
+    OPA_DA_SAT_INPUT_FILES_NUM=$(( $OPA_DA_SAT_INPUT_FILES_NUM + 1 ))
+    echo "@@@ [${0}] ::: [d] $_da_sat_file_local"
+  done
+}
+
+function opa_print_input_files__da_sat {
+  typeset -i _i
+  for _i in $OPA_DA_SAT_INPUT_FILES_INDICES ; do
+    printf "%4d) %s\n" "$_i" "${OPA_DA_SAT_INPUT_LFILES[_i]}"
+  done
+}
+
+# end of include guard:
+fi

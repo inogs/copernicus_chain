@@ -1,0 +1,90 @@
+if [[ $__OPA_RM_LL_IS_DEFINED__ == '' ]] ; then
+  __OPA_RM_LL_IS_DEFINED__='__defined__'
+
+OPA_RM_EO_FILENAME_PART="\$(step_name).\$(jobid).\$(stepid)."
+
+function opa_rm_wall_clock_limit {
+  # convert wall clock limit from standard OPA format (hh:mm:ss) to
+  # resource manager format
+  echo "$1"
+}
+
+function opa_rm_mpi_tasks {
+  # unused
+  printf "$1"
+}
+
+function opa_rm_submit {
+  # submit a job command file, and sets JOBID of the submitted job
+  typeset _llsubmit_stdout
+  typeset -i _llsubmit_ec
+  _llsubmit_stdout=$(llsubmit "$1" 2>&1) ; _llsubmit_ec=$?
+  if [[ $_llsubmit_ec -eq 0 ]] ; then
+    # get jobid and queue from llsubmit's standard output;
+    # here is an example of the llsubmit's standard output:
+    # llsubmit: The job "deisa013.sp5.cineca.it.145207" with 30 job steps has been submitted.
+    typeset _jobid _queue
+    typeset _jobid_line=$( echo "$_llsubmit_stdout" | $OPA_BINDIR/grep '^llsubmit: The job .* has been submitted.' )
+    OPA_RM_SUBMIT_JOBID=$( echo "$_jobid_line" | awk 'BEGIN{FS="\""}{print $2}' )
+  else
+    echo "ERR: Submission failed:"
+    echo "================================================================================"
+    echo "$_llsubmit_stdout"
+    echo "================================================================================"
+  fi
+  return $_llsubmit_ec
+}
+
+function opa_rm_job_stat {
+  _opa_rm_wrap_command "llq -u $USER $*"
+}
+
+function opa_rm_job_stat_formatted {
+  typeset _jobid
+  typeset _user
+  typeset _submitted_date
+  typeset _submitted_time
+  typeset _status
+  typeset _priority
+  typeset _class
+  typeset _host
+  echo "================================================================================"
+  opa_rm_job_stat_header
+  llq -u $USER "$@" | grep "$USER" | while read _jobid _user _submitted_date _submitted_time _status _priority _class _host ; do
+    case "$_status" in
+      R)
+        _rm_status="$OPA_RM_STATUS_RUNNING"
+        ;;
+      E)
+        _rm_status="$OPA_RM_STATUS_SUSPENDED"
+        ;;
+      S)
+        _rm_status="$OPA_RM_STATUS_HELD"
+        ;;
+      C|RM)
+        _rm_status="$OPA_RM_STATUS_FINISHED"
+        ;;
+      D|NQ|P|ST)
+        _rm_status="$OPA_RM_STATUS_QUEUED"
+        ;;
+      NR)
+        _rm_status="$OPA_RM_STATUS_UNKNOWN"
+        ;;
+      RP)
+        _rm_status="$OPA_RM_STATUS_EXITING"
+        ;;
+      *)
+        _rm_status="$OPA_RM_STATUS_UNKNOWN"
+        ;;
+    esac
+    opa_rm_job_stat_formatter "$_jobid" "$_rm_status"
+  done
+  echo "================================================================================"
+}
+
+function opa_rm_job_del {
+  _opa_rm_wrap_command "llcancel $*"
+}
+
+# end of include guard:
+fi

@@ -1,0 +1,99 @@
+#!/usr/bin/env python
+
+import time
+import datetime
+import sys
+import os
+import argparse
+from glob import glob
+
+def argument():
+    parser = argparse.ArgumentParser(description = 'Create month report')
+    parser.add_argument(   '--date', '-d',
+                                type = str,
+                                default = None,
+                                help = 'YYYYMM date format')
+
+    parser.add_argument(   '--logdir',"-l",
+                                type = str,
+                                default = None,
+                                help = 'log directory')
+  
+    return parser.parse_args()
+
+def main():
+
+    DATEFMT = '%Y%m'   #formato data richiesto per il file report
+
+    Component_name = ["BIO_Transfer", "BIO_Chain" ]  #component name dei log da creare
+
+
+# EventID associati ai component_name
+    BIO_Transfer = ["bio_transfer-tl-input_chl", 
+                    "bio_transfer-tl-input_forcing",
+                    "bio_transfer-tl-input_available",
+                    "bio_transfer-tl-output_delivery_done"]
+
+    BIO_Chain = ["bio_chain-tl-start_production",
+                 "bio_chain-tl-output_available"]
+		 
+#creazione dictionary key:component_name, value:EventID
+    Component = {}
+    for i in Component_name:
+        Component[i] = eval(i)
+
+# flags necessari per il programma
+    args = argument()
+
+#controllo esattezza delle flag
+    try:
+        t = time.strptime(args.date,DATEFMT)
+        datereport = args.date
+    except (ValueError, TypeError):
+        print("<%s> is not a valid YYYYMM date format" % args.date)
+        sys.exit(1)
+
+    if os.path.exists(args.logdir):
+        logdir = args.logdir
+    else:
+        print("log directory path {} doesn't exist ".format(args.logdir))
+        sys.exit(1)
+
+#partiamo...
+    os.chdir(logdir)
+    for _comp_name in Component_name:
+       _comp_file = "{0}.log.{1}".format(_comp_name,datereport)
+       if os.path.exists(_comp_file):
+          os.rename(_comp_file,"{0}.old".format(_comp_file))  #rinominare il vecchio se il file esiste per nn sovrascriverlo
+
+#files log da analizzare
+    logfiles = sorted(glob("opa.{0}*.log".format(datereport)))
+    for logfile in logfiles:
+         _file = open( logfile, "r" )
+         check_line = []
+         for line in _file:
+             #Formato della linea:
+             #${TimeStamp} , type_reg , ${ProdCycle} , ${EventID}
+             myline = line.strip().split(" , ")
+             EventID = myline[3]
+	#prendo il primo evento disponibile
+             if check_line.count(EventID) == 0:
+                 check_line.append(EventID)
+                 for _comp_name in Component_name:
+        #File di log mensile:
+        #${ComponentName}.log.${YYYYMM}
+                    _comp_file = "{0}.log.{1}".format(_comp_name,datereport)
+                    out_file = open(_comp_file,"a")
+                    for comp_value in Component[_comp_name]:
+                        if comp_value == EventID:
+                           out_file.write(line)
+                           print(_comp_file, line)
+                    out_file.close()
+         _file.close()
+         print
+
+
+if __name__ == '__main__':
+    main()
+
+

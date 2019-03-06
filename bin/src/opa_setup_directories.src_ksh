@@ -1,0 +1,29 @@
+#!/bin/ksh
+# This command creates some directories
+
+# Load common profile
+. @@(I:OPA_HOME)/bin/opa_profile.inc
+
+
+function setup_link {
+  typeset _dir="$1"
+  typeset _lnk="$2"
+  echo "### Create directory '$_dir' & link '$_lnk'"
+  if [[ ! -d "$_dir" ]] ; then
+    opa_mkdir "$_dir"
+  fi
+  if [[ -e "$_lnk" ]] ; then
+    opa_prex "rm -f '$_lnk'"
+  fi
+  opa_prex "ln -fs '$_dir' '$_lnk'"
+}
+
+for directory in $OPA_VARDIR/log $OPA_VARDIR/tmp $OPA_ARCDIR $I_OPA_HOME/HOST/$I_OPA_HOSTNAME ; do
+  echo "### Create directory '$directory'"
+  opa_mkdir $directory
+done
+
+setup_link "$OPA_ARCDIR_ROOT"	"$OPA_ARCDIR_ROOT_LINK"
+setup_link "$OPA_WRKDIR_ROOT"	"$OPA_WRKDIR_ROOT_LINK"
+setup_link "$OPA_INPDIR_ROOT"	"$OPA_INPDIR_ROOT_LINK"
+

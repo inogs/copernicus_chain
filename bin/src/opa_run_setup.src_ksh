@@ -1,0 +1,52 @@
+#!/bin/ksh
+# This script creates some working directory (if missing),
+# and clean their content (if they already exist).
+
+# Load common profile
+. @@(I:OPA_HOME)/bin/opa_profile.inc
+
+# Rundate definition
+opa_set_run
+
+opa_set_input_files__opaoper_a
+opa_set_input_files__opaoper_f
+
+# start
+opa_start
+
+typeset -i errors=0
+
+OPAOPERDIRS="OPAOPER OPAOPER_A OPAOPER_F"
+
+INTERPDIRS="INTERP INTERP/FORCINGS "
+
+DADIRS="DA DA/SATELLITE \
+           DA/DA_static_data/3D_VAR \
+           DA/DA_static_data/3D_VAR/EOF \
+           DA/DA_static_data/3D_VAR/GRID \
+           DA/DA_static_data/MISFIT \
+           DA/DA_static_data/MISFIT/VAR2D "
+
+MODELDIRS="MODEL MODEL/BC MODEL/FORCINGS MODEL/AVE_FREQ_1 MODEL/AVE_FREQ_2 MODEL/AVE_PHYS MODEL/RESTARTS MODEL/DA__FREQ_1 MODEL/KEXT"
+
+POSTPROCDIRS="POSTPROC POSTPROC/AVE_FREQ_1 POSTPROC/AVE_FREQ_1/TMP POSTPROC/AVE_FREQ_1/INTEGRALS \
+              POSTPROC/AVE_FREQ_1/STAT_PROFILES POSTPROC/AVE_FREQ_1/PROFILES POSTPROC/AVE_FREQ_2 \
+              POSTPROC/AVE_FREQ_2/TMP POSTPROC/AVE_FREQ_2/INTEGRALS POSTPROC/AVE_FREQ_2/STAT_PROFILES \
+              POSTPROC/AVE_FREQ_2/PROFILES"
+
+wrk_subdirs="$OPAOPERDIRS $DADIRS $INTERPDIRS $MODELDIRS $POSTPROCDIRS"
+
+# reset input directories
+for subdir in $wrk_subdirs ; do
+  dir="$OPA_WRKDIR/$subdir"
+  ec=0
+  opa_log 1 "cleaning directory [${subdir}] ..."
+  opa_prex "rm -rf '$dir'" ; ec=$?
+  errors=$(( $errors + $ec ))
+  opa_log 0 "cleaning directory [${subdir}] [$(opa_exitcode $ec)]"
+
+  opa_mkdir "$dir"
+  opa_log 0 "making directory [${subdir}] [$(opa_exitcode $ec)]"
+done
+
+opa_exit $errors

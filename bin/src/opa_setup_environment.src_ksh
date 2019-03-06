@@ -1,0 +1,16 @@
+#!/bin/ksh
+# This command creates env files
+
+# Load common profile
+. @@(I:OPA_HOME)/bin/opa_profile.inc
+
+echo "### Setting up env files"
+opa_prex "cd $OPA_ETCDIR/ENV"
+for file_tpl in *.template ; do
+  file="${file_tpl%%.template}"
+  opa_log 2 "Setting up template '${file_tpl}' -> '${file}'"
+  opa_setup_template "$file_tpl" "$file" || {
+    opa_log 0 "ERR: Template substitution failed!"
+    exit 1
+  }
+done

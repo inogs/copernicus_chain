@@ -1,0 +1,143 @@
+#!/bin/ksh
+# This script transfers specific file to Salon's direrctory
+# phase C5: put on INGV server
+# UPDATE OF 14/05/15: This script transfers postprocess nc.gz files to a safe directory
+
+# Load common profile
+. @@(I:OPA_HOME)/bin/opa_profile.inc
+
+function print_help {
+  cat <<EofCat
+Usage: $OPA_PROGNAME [options]
+[options]
+        --help | -h                     show this help
+        --type | -t                     select the type of postprocess data ("nc.gz") to copy
+                                        a = analysis, s = simulation, f = forecast
+                                        examples:
+                                        $OPA_PROGNAME -t s    copy only simulation data
+					$OPA_PROGNAME -t sf   copy simulation and forecast data, not analysis
+                                        $OPA_PROGNAME -t asf  copy all data
+                                        $OPA_PROGNAME -t rc   wrong format, copy nothing
+	--calval | -c                   calval purposes: only the first model fc file is copied
+EofCat
+}
+
+calval="false"
+
+while [[ ${#@} -ne 0 ]] ; do
+  arg="$1"
+  shift 1
+  case "$arg" in
+    --help|-h)
+      print_help
+      exit 0
+      ;;
+    --type|-t)
+      opa_type="$1"
+      echo $opa_type
+      if [[ $opa_type =~ "a" ]]
+      then
+        opa_type_an="true"
+      else
+        opa_type_an="false"
+      fi
+      if [[ $opa_type =~ "s" ]]
+      then
+        opa_type_sim="true"
+      else
+        opa_type_sim="false"
+      fi
+      if [[ $opa_type =~ "f" ]]
+      then
+        opa_type_for="true"
+      else
+        opa_type_for="false"
+      fi
+      shift 1
+      ;;
+    --calval|-c)
+      calval="true"
+#     shift 1
+      ;;
+    *)
+      echo "ERROR: wrong command line option <$arg>" 1>&2
+      exit 2
+      ;;
+  esac
+done
+
+
+# Rundate definition
+opa_prex "opa_set_default_run $opa_set_default_run_options"
+opa_prex "opa_set_run $OPA_DEFAULT_RUNDATE"
+# start
+
+#echo $(opa_simulates_dates $_opa_rundate)
+# dir forecast
+DIR_FORECAST=/gpfs/work/OGS_prod/CalVal/Q_REP_MODEL_FORECAST
+# dir satellite
+DIR_SAT=/gpfs/work/OGS_prod/CalVal/Q_REP_SATELLITE_DATA
+typeset -i errors=0
+
+opa_mkdir $DIR_FORECAST
+opa_mkdir $DIR_SAT
+# opa_exec_and_log opa_put                || errors=$(( $errors + 1 ))
+if $OPA_DA_ENABLE ; then
+
+#caso analisi
+if [[ $opa_type_an == "true" ]]
+then
+# ricerca del prodotto
+   for file in $(opa_ana_files $this_run_date) ; do
+       prodfile=$file
+# copia del prodotto
+   opa_cp $OPA_WRKDIR/POSTPROC/$prodfile $DIR_FORECAST
+   done
+else
+opa_log 0 "analysis not required and skipped"
+fi
+
+#caso simulazione
+if [[ $opa_type_sim == "true" ]]
+then
+# ricerca del prodotto
+   for file in $(opa_sim_files $this_run_date) ; do
+       prodfile=$file
+# copia del prodotto
+   opa_cp $OPA_WRKDIR/POSTPROC/$prodfile $DIR_FORECAST
+   done
+else
+opa_log 0 "simulation not required and skipped"
+fi
+
+#caso forecast
+if [[ $opa_type_for == "true" ]]
+then
+# ricerca del prodotto
+   for file in $(opa_pro_files $this_run_date) ; do
+       prodfile=$file
+# copia del prodotto
+   opa_cp $OPA_WRKDIR/POSTPROC/$prodfile $DIR_FORECAST
+   if [[ $calval == "true" ]]
+   then
+     break
+   fi
+     done 
+else
+opa_log 0 "forecast not required and skipped"
+fi
+
+# copia del satellite
+  opa_prex "gzip -dc $OPA_ARCDIR/DA_SAT/BILINEAR/sat16_onMesh.nc.gz > $DIR_SAT/sat16.$OPA_RUNDATE.nc"
+else
+  opa_log 2 "Data Assimilation is disabled!"
+  opa_log 0 "postprocess_C6 done [$(opa_exitcode $ec)]"
+  opa_exit 0
+fi
+
+opa_log 0 "postprocess_C6 done [$(opa_exitcode $ec)]"
+
+opa_exit "$errors"
+
+
+

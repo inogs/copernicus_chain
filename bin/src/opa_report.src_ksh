@@ -1,0 +1,147 @@
+#!/bin/ksh
+# This script creates a monthly report of the OPA runs
+
+# Load common profile
+. @@(I:OPA_HOME)/bin/opa_profile.inc
+
+function print_help {
+  cat <<EofCat
+Usage: $OPA_PROGNAME [options]
+[options]
+	--help|-h		show this help
+	--date|-d		set date
+	--from|-f		from date
+	--to|-t			to date
+EofCat
+}
+
+
+DATE="$OPA_RUNDATE"
+FROM_DATE=''
+TO_DATE=''
+
+function set_dates {
+  typeset _date="${1:-$DATE}"
+  typeset _day=$($OPA_BINDIR/date --date="$_date" +%d)
+  typeset _from_date_YYYYMM
+  typeset _to_date_YYYYMM
+  if [[ $_day -le $OPA_REPORT_DAY ]] ; then
+    _from_date_YYYYMM=$($OPA_BINDIR/date --date="$_date 2 month ago" +'%Y%m')
+    _to_date_YYYYMM=$($OPA_BINDIR/date --date="$_date 1 month ago" +'%Y%m')
+  else
+    _from_date_YYYYMM=$($OPA_BINDIR/date --date="$_date 1 month ago" +'%Y%m')
+    _to_date_YYYYMM=$($OPA_BINDIR/date --date="$_date" +'%Y%m')
+  fi
+  DATE="$_date"
+  FROM_DATE="${_from_date_YYYYMM}$OPA_REPORT_DAY"
+  TO_DATE=$($OPA_BINDIR/date --date="${_to_date_YYYYMM}$OPA_REPORT_DAY 1 day ago" +'%Y%m%d')
+}
+
+set_dates "$OPA_TODAY"
+  
+opa_log_inspect_options=" "
+notify=false
+while [[ ${#@} -ne 0 ]] ; do
+  arg="$1"
+  shift 1
+  case "$arg" in
+    --help|-h)
+      print_help
+      exit 0
+      ;;
+    --date|-d)
+      set_dates "$1"
+      shift 1
+      ;;
+    --from|-f)
+      FROM_DATE="$1"
+      shift 1
+      ;;
+    --to|-t)
+      TO_DATE="$1"
+      shift 1
+      ;;
+    --notify|-n)
+      notify=true
+      ;;
+    --)
+      while [[ ${#@} -ne 0 ]] ; do
+        opa_log_inspect_options="${opa_log_inspect_options}'$1' "
+        shift 1
+      done
+      ;;
+    *)
+      echo "ERROR: wrong command line option <$arg>" 1>&2
+      exit 2
+      ;;
+  esac
+done
+
+cat <<EOFCAT
+DATE=$DATE
+FROM_DATE=$FROM_DATE
+TO_DATE=$TO_DATE
+EOFCAT
+
+thisdate=$(date --date="$OPA_RUNDATE" +%d)
+echo "today is: $thisdate"
+
+#OPA_NOTIFY_ADDRESSES='s.campagna@cineca.it'
+opa_report_dir="$OPA_LOGDIR/report"
+[[ -d $opa_report_dir ]] || opa_mkdir $opa_report_dir
+#if [[ $thisdate = "01" ]];then
+#monthdate=$(date --date="$OPA_RUNDATE 1 month ago" +%Y%m)
+#else
+monthdate=$(date --date="$OPA_RUNDATE" +%Y%m)
+#fi
+fulldate=$monthdate$thisdate
+opa_report="$opa_report_dir/monthly_report_$fulldate.auto"
+export OPA_HOME="$I_OPA_HOME"
+export OPA_HOSTNAME="$I_OPA_HOSTNAME"
+
+cat <<EOFCAT
+OPA_HOME=$OPA_HOME
+OPA_HOSTNAME=$OPA_HOSTNAME
+EOFCAT
+
+# opa_prex "$OPA_SCRDIR/opa_log_inspect.py --from $FROM_DATE --to $TO_DATE -r $opa_log_inspect_options > $opa_report"
+
+#monthdate=$(date --date="$DATE 1 month ago" +%Y%m)
+if [[ $thisdate = "01" ]];then
+monthdate=$(date --date="$OPA_RUNDATE 1 month ago" +%Y%m)
+else
+monthdate=$(date --date="$OPA_RUNDATE" +%Y%m)
+fi
+opa_prex "$OPA_SCRDIR/opa_log_report.py -d $monthdate -l $opa_report_dir > $opa_report"
+
+if $notify ; then
+if [[ $thisdate = "01" ]];then
+  mail -s "Monthly report $monthdate - $OPA_HOSTNAME" $OPA_REPORT_ADDRESSES <<EOFCAT
+Monthly report $monthdate has been automatically generated.
+File is: $opa_report
+Content is:
+---
+$(cat $opa_report)
+---
+EOFCAT
+else
+  mail -s "Partial monthly report $monthdate - $OPA_HOSTNAME" $OPA_REPORT_ADDRESSES <<EOFCAT
+Partial Monthly report up to $fulldate has been automatically generated.
+File is: $opa_report
+Content is:
+---
+$(cat $opa_report)
+---
+EOFCAT
+fi
+  echo "Notification has been sent to: $OPA_REPORT_ADDRESSES"
+fi
+
+tmp_suffix=.tmp
+remote_dir="/log/ogs"
+
+
+for i in BIO_Transfer BIO_Chain;do
+    put_command="$OPA_BINDIR/ncftpput -f '$OPA_ETCDIR/nc-config/.ingv.ncconfig' -m -S '$tmp_suffix' -r 3 -Z -T .tmp. '${remote_dir}' '$opa_report_dir/$i.log.$monthdate'"
+    opa_prex "$put_command" $OPA_SIMULATE_TRANSFER
+done

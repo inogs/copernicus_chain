@@ -1,0 +1,58 @@
+#!/bin/ksh
+# This script archives the input and output data
+# phase C4: archiving
+
+# Load common profile
+. @@(I:OPA_HOME)/bin/opa_profile.inc
+
+# Rundate definition
+opa_set_run
+
+# start
+opa_start
+
+typeset -i errors=0
+
+
+opa_prex "$OPA_SCRDIR/opa_archive.ksh --input"	|| errors=$(( $errors + 1 ))
+
+#opa_prex "mv $OPA_WRKDIR/MODEL/AVE_PHYS/ave.*.phys.nc $OPA_WRKDIR/POSTPROC/"
+opa_prex "$OPA_SCRDIR/opa_archive.ksh --output"	|| errors=$(( $errors + 1 ))
+# DA INSERIRE CON C3 funzionante opa_prex "$OPA_SCRDIR/opa_archive.ksh --maps"	|| errors=$(( $errors + 1 ))
+
+opa_prex "cp $OPA_WRKDIR/POSTPROC/AVE_FREQ_1/maps.tar                         $I_OPA_HOME/archive/current/"
+
+opa_mkdir "$I_OPA_HOME/archive/current"
+if $OPA_DA_ENABLE ; then
+opa_prex "cp $OPA_WRKDIR/POSTPROC/AVE_FREQ_1/online_validation/medeaf_pub.tar $I_OPA_HOME/archive/current/"
+fi
+
+#if $I_OPA_BACKUP ; then
+#  PROD="backup"
+#else
+#  PROD="nominal"
+#fi
+
+#if [[ "$I_OPA_STAGE" == "prod" ]]; then
+#  STAGE="prod"
+#else
+#  STAGE="dev"
+#fi
+
+#REMOTEDIR=ogs@130.186.13.163:Recv/V3C/$PROD/$STAGE
+#opa_prex "scp -i $HOME/.ssh/keyVMpico-key.03 $OPA_WRKDIR/POSTPROC/AVE_FREQ_1/maps.tar                         $REMOTEDIR"
+#opa_prex "scp -i $HOME/.ssh/keyVMpico-key.03 $OPA_WRKDIR/POSTPROC/AVE_FREQ_1/online_validation/medeaf_pub.tar $REMOTEDIR"
+
+
+opa_mkdir "@@(I:OPA_HOME)/log/current"
+opa_prex "echo $OPA_RUNDATE > @@(I:OPA_HOME)/log/current/last"
+if $OPA_DA_ENABLE ; then  
+  opa_prex "echo $OPA_RUNDATE > @@(I:OPA_HOME)/log/current/lastbio"
+  opa_prex "cp  $OPA_WRKDIR/POSTPROC/AVE_FREQ_1/online_validation/BioFloats_Descriptor.xml  @@(I:OPA_HOME)/log/current/ "
+fi
+opa_log 0 "postprocess_C4 done [$(opa_exitcode $ec)]"
+
+opa_exit "$errors"
+
+
+

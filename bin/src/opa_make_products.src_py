@@ -1,0 +1,121 @@
+#!/usr/bin/env python3
+
+import argparse
+import os, shutil,sys
+from datetime import timedelta, datetime
+from subprocess import *
+import numpy as np
+import logging
+
+
+
+
+def fromto(fromdate,todate):
+   rundates=[]
+   fromdate = datetime.strptime(fromdate,'%Y%m%d')                    # January 1st
+   todate = datetime.strptime(todate,'%Y%m%d') 
+   fromdate += timedelta(days = 1 - fromdate.weekday())  # First Sunday
+   while fromdate <= todate:
+      rundates.append(fromdate)
+      fromdate += timedelta(days = 7)
+   return rundates
+
+def readTimeString(date17):
+    year  = int(date17[0:4]);
+    month = int(date17[4:6]);
+    day   = int(date17[6:8]);
+    hr    = int(date17[9:11]);
+    d = datetime(year, month, day, hr, 0, 0);
+    return d;
+
+def process(command_args):
+    logging.info('Eseguo >>> {}'.format(command_args))
+    _process = Popen(command_args, stdout=PIPE, stderr=PIPE)
+    stdout, stderr = _process.communicate()
+
+    returncode = _process.returncode
+    if not returncode:
+        logging.info('Eseguito [{1}]<<< {0}'.format(command_args,returncode))
+    else:
+        logging.error('NON Eseguito [{1}]<<< {0}]'.format(command_args,returncode))
+    return returncode
+
+def argument():
+    parser = argparse.ArgumentParser(prog="crea_prodotti", description='crea il primo prodotto della data',
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    parser.add_argument('--todate',
+                        type=str,
+                        help="inserts the data from run: es.:20140707")
+			
+    parser.add_argument('--fromdate',
+                        type=str,
+                        help="inserts the data to run: es.:20140707")
+
+    parser.add_argument('--workdir',
+                        type=str,default="@@(I:OPA_HOME)/WORK_TEMP",
+                        help="inserts workdir")
+			
+    return parser.parse_args()
+	
+
+args = argument()
+
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+
+
+OPA_HOME="@@(I:OPA_HOME)"
+MODELDIR=os.path.join(OPA_HOME)
+BINDIR=os.path.join(MODELDIR,"HOST","@@(I:OPA_HOSTNAME)","bin")
+SCRDIR=os.path.join(MODELDIR,"bin")
+WORKDIR=os.path.join(args.workdir,"WORK_TEMP")
+crea_pro = os.path.join(BINDIR,"crea_pro")
+
+file_in = os.path.join(WORKDIR, "file_in_ave.fc")
+file_out = os.path.join(WORKDIR, "file_out_pro.fc")
+file_time = "times_array_fc"
+
+fromdate=args.fromdate
+todate=args.todate
+
+print(fromdate,todate)
+rundates=fromto(fromdate,todate)
+
+if not os.path.exists(WORKDIR):
+    os.makedirs(WORKDIR)
+os.chdir(WORKDIR)
+
+for myrundate in rundates:
+    rundate=myrundate.strftime("%Y%m%d")
+    print(rundate)
+    ARCHDIR=os.path.join(MODELDIR,"archive",rundate)
+
+    file_ave="ave.{}-12:00:00.nc".format(rundate)
+    file_ave_in_gz = os.path.join(WORKDIR,"{}.gz".format(file_ave))
+    error = process(["cp", os.path.join(ARCHDIR,"POSTPROC","AVE_FREQ_1","{}.gz".format(file_ave)),file_ave_in_gz])
+    if error:
+        continue
+
+    error =process(["gzip", "-d", file_ave_in_gz])
+
+    mydata=datetime.strptime(rundate, '%Y%m%d').strftime("%Y-%m-%d")
+
+    with open(file_in,"w") as f:
+        f.write("{}\n".format(mydata))
+        f.write("{}\n".format(os.path.join(WORKDIR,file_ave)))
+
+    with open(file_out,"w") as f:
+        f.write(os.path.join("{}_dm-OGS---opatm_bfm4-MED-b{}_fc-fv04.00.nc\n".format(rundate,rundate)))
+
+    RefTime="19700101-00:00:00"
+    Dref   = readTimeString(RefTime)
+    date17=file_ave[4:21]
+    D = readTimeString(date17);
+    Diff = D-Dref
+    np.savetxt(file_time, [Diff.days*3600*24 + Diff.seconds], fmt='%.10e', delimiter=' ', newline='\n')
+
+
+    error = process([crea_pro, file_in, file_out, file_time, "fc"])
+
+
+

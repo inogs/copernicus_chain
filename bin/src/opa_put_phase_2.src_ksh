@@ -1,0 +1,243 @@
+#!/bin/ksh
+
+# Load common profile
+. @@(I:OPA_HOME)/bin/opa_profile.inc
+opa_prex "source $OPA_VENV_1/bin/activate"
+PYTHONPATH=${PYTHONPATH}:$OPA_BITSEA
+
+function print_help {
+  cat <<EofCat
+Usage: $OPA_PROGNAME [options]
+[options]
+        --help|-h                               show this help
+	--no-dnt				delivers the products, but doesn't deliver the delivery note	
+                                                ["$_NO_DNT"]
+        --dry-run                               doesn't deliver, just prints the delivery commands
+                                                ["$_DRY_RUN"]
+        --max-tries                             max tries per file
+                                                ["$_MAX_TRIES"]
+        --type|-y                               mandatory from V2C onwards; specifies the type
+                                                of files to send ("BIOL","NUTR","CARB","PFTC")
+EofCat
+}
+
+
+###CONFIGURE THE LINES BELOW
+product=MEDSEA_ANALYSIS_FORECAST_BIO_006_014
+PushingEntity="MED-OGS-TRIESTE-IT"
+
+_NO_DNT=false
+_DRY_RUN=false
+typeset -i _MAX_TRIES=10
+while [[ ${#@} -ne 0 ]] ; do
+  arg="$1"
+  shift 1
+  case "$arg" in
+    --help|-h)
+      print_help
+      exit 0
+      ;;
+    --no-dnt)
+      _NO_DNT=true
+      ;;
+    --dry-run)
+      _DRY_RUN=true
+      ;;
+    --max-tries)
+      _MAX_TRIES="$1"
+      shift 1
+      ;;
+    --type|-y)
+      _TYPE="$1"
+      shift 1
+      ;;
+    *)
+      echo "ERROR: wrong command line option <$arg>" 1>&2
+      exit 2
+      ;;
+  esac
+done
+
+
+# Rundate definition
+opa_prex "opa_set_default_run $opa_set_default_run_options"
+opa_prex "opa_set_run $OPA_DEFAULT_RUNDATE"
+
+# start
+opa_start
+
+#Directory settings (they need the above opa_start)
+BINDIR=$OPA_BINDIR
+PROD_DIR=$OPA_WRKDIR/POSTPROC/PRODUCTS
+ARCHIVE_DIR=$I_OPA_HOME/archive
+RUNDATE=$OPA_RUNDATE
+#Set up the type of the files to transfer
+if [[ "$_TYPE" == "BIOL" ]]; then
+  type="bio"
+elif [[ "$_TYPE" == "CARB" ]]; then
+  type="car"
+elif [[ "$_TYPE" == "NUTR" ]]; then
+  type="nut"
+elif [[ "$_TYPE" == "PFTC" ]]; then
+  type="pft"
+else
+  opa_log 0 "ERR: wrong type in opa_put (must be NUTR,PFTC,CARB,or BIOL)"
+  opa_exit 1
+fi
+
+dataset=sv03-med-ogs-${type}-an-fc-d
+FILES_TO_SEND="*${_TYPE}*.nc"
+
+#DNT file definitions
+DntTime=`date --utc +%Y%m%dT%H%M%SZ`
+DNT_FILE=$PROD_DIR/${product}_${DntTime}.xml
+#DNT_FILE=DNT.xml #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+cat <<EOFCAT
+_NO_DNT ................ $_NO_DNT
+_DRY_RUN ............... $_DRY_RUN
+_MAX_TRIES ............. $_MAX_TRIES
+EOFCAT
+
+#XML file head
+ echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" >  $DNT_FILE
+ echo "<delivery product=\"${product}\" PushingEntity=\"${PushingEntity}\" date=\"${DntTime}\">" >> $DNT_FILE
+ echo "    <dataset DatasetName=\"${dataset}\">" >> $DNT_FILE
+
+#Set up the ncftp credentials from the .cmems.ncconfig file (filepath indicated in opa_profile)
+OPA_NCCONFIGS_FILE=$OPA_PRO_REMOTE_SERVER_NCCONFIGS_PHASE_2
+for ncconfig in $OPA_NCCONFIGS_FILE ; do
+    ogs_host=$(cat $ncconfig|grep -e "host"|cut -d " " -f2)
+    ogs_user=$(cat $ncconfig|grep -e "user"|cut -d " " -f2)
+#             echo "xxx${ogs_user}xxx"
+    ogs_pass=$(cat $ncconfig|grep -e "pass"|cut -d " " -f2)
+done
+
+#Set up the ncftp credentials from the .cmcc.ncconfig file, for delivering the DNTs to the archive
+OPA_NCCONFIGS_FILE_DNT=$OPA_PRO_REMOTE_SERVER_NCCONFIGS
+for ncconfig in $OPA_NCCONFIGS_FILE_DNT ; do
+    ogs_host_dnt=$(cat $ncconfig|grep -e "host"|cut -d " " -f2)
+    ogs_user_dnt=$(cat $ncconfig|grep -e "user"|cut -d " " -f2)
+#             echo "xxx${ogs_user}xxx"
+    ogs_pass_dnt=$(cat $ncconfig|grep -e "pass"|cut -d " " -f2)
+    ogs_port_dnt=$(cat $ncconfig|grep -e "port"|cut -d " " -f2)
+done
+
+#error counter
+errs=0
+filecount=0
+for file in `ls ${PROD_DIR}/${FILES_TO_SEND}` ; do
+    filecount=$(( $filecount + 1 ))
+    echo "Processing file no. $filecount: $file"
+
+#launche the rolling_archive.py to check what files have to be deleted
+    basename=`basename $file`
+    to_remove_file=$( python $BINDIR/rolling_archive.py -p $basename -d $RUNDATE -g $_TYPE -a $ARCHIVE_DIR )
+    echo "python $BINDIR/rolling_archive.py -p $basename -d $RUNDATE -g $_TYPE -a $ARCHIVE_DIR"
+    echo "rolling_archive result: $to_remove_file"
+    if [[ ${to_remove_file} != "None" ]] ; then
+       DELETE_STR="<file FileName=\"${to_remove_file}\" > <KeyWord>Delete</KeyWord> </file>"
+    fi	
+
+#setup the remote directory and check the md5s of the files to send
+    yyyy=${basename:0:4}
+      mm=${basename:4:2}
+    remotedir=/${product}/${dataset}/$yyyy/$mm
+    remotefile="${yyyy}/${mm}/${basename}"
+    md5s=`md5sum $file|awk '{print $1}'`
+	StarTime=`date --utc +%Y%m%dT%H%M%SZ`
+	EndTime=${StarTime}
+	NumberOfAttempts=1
+	errCod=0
+	
+	#TOTAL_RESEND_STR= 
+
+#actual send of the file
+	for i in `seq 1 $_MAX_TRIES`;do
+	      put_command="$BINDIR/ncftpput -u ${ogs_user} -p ${ogs_pass} -T .tmp. ${ogs_host} $remotedir ${file} 2>&1"
+              if $_DRY_RUN ; then
+                echo "SIMULATE: >>> $put_command"
+                success=true
+                break
+              else
+ 	        #echo $put_command
+ 	        opa_prex_with_output "$BINDIR/ncftpput -u ${ogs_user} -p ${ogs_pass} -T .tmp. ${ogs_host} $remotedir ${file} 2>&1"; errCod=$?
+   		stderr=$my_var
+		#echo "${errCod}"
+	        if [ ${errCod} -eq 0 ];then
+      	           EndTime=`date --utc +%Y%m%dT%H%M%SZ`
+		   break
+	 	else
+# storage on arrays for future use  ##########
+                   ERRCOD[$NumberOfAttempts]=${errCod}
+                   STDERR[$NumberOfAttempts]=${stderr}
+		      
+		   lastErrCod=${errCod}
+		   lastError=${stderr}
+		   ((NumberOfAttempts++))	    
+		 fi
+
+               fi
+	done
+     
+#check success of file transfer
+        status=Delivered
+        if [[ "${StarTime}" == "${EndTime}" ]];then
+	    status=Failed
+            errs=$(( $errs + 1 ))
+	    if [[ $NumberOfAttempts -eq $_MAX_TRIES+1 ]] ; then
+	       NumberOfAttempts=$_MAX_TRIES
+	    fi  
+ 	fi
+	
+	if [[ ${NumberOfAttempts} -eq 1 ]] ; then 
+	    close="/"
+ 	else
+	    close=""
+	fi
+
+#Write transfer info to XML file
+	FINAL_STR="<file FileName=\"${remotefile}\" StartUploadTime=\"${StarTime}\"  StopUploadTime=\"${EndTime}\" Checksum=\"${md5s}\"  FinalStatus=\"${status}\"${close}>"
+	echo "             $FINAL_STR" >> $DNT_FILE
+	if [[ $status == Delivered ]] && [[ ${to_remove_file} != "None" ]] ; then 
+	    echo "             $DELETE_STR"  >> $DNT_FILE
+	fi
+	
+	if [[ ${NumberOfAttempts} -ne 1 ]]; then
+	    close=""
+	    RESEND_STR="<resendAttempt DueToErrorCode=\"${lastErrCod}\" DueToErrorMsg=\"${lastError}\" NumberOfAttempts=\"${NumberOfAttempts}\"/>"
+	    echo "                         $RESEND_STR" >> $DNT_FILE
+	    echo "                </file>" >> $DNT_FILE
+	fi
+done
+
+#XML file delivery
+echo "    </dataset>"  >> $DNT_FILE
+echo "</delivery>" >> $DNT_FILE
+if $_NO_DNT; then
+  echo "NO_DNT: not delivering XML file"
+elif $_DRY_RUN; then
+  echo "SIMULATING: not delivering XML file"
+else
+  opa_prex "$BINDIR/ncftpput -u ${ogs_user} -p ${ogs_pass} -T .tmp. ${ogs_host} /${product}/DNT $DNT_FILE"
+  opa_prex "$BINDIR/ncftpput -u ${ogs_user_dnt} -p ${ogs_pass_dnt} -P ${ogs_port_dnt}  -T .tmp. ${ogs_host_dnt} /${product}/DNT $DNT_FILE  "
+  
+  #caso di backup
+  #OGS_USER=bio_b
+
+fi
+
+
+#Check on errors and close the script
+if [[ $errs -eq 0 ]] ; then
+    opa_log 0 "pro upload on ftp server completed successfully"
+    opa_report "bio_transfer-tl-output_delivery_done" "0" "true"
+    pro_successfully_uploaded=true
+else
+    pro_successfully_uploaded=false
+    opa_log 0 "ERROR: pro upload on ftp server failed. $errs files failed delivery"
+fi
+
+opa_exit "$errs"
+
+

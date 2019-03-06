@@ -1,0 +1,381 @@
+#!/bin/ksh
+# This script transfers products to INGV FTP server
+
+# Load common profile
+. @@(I:OPA_HOME)/bin/opa_profile.inc
+
+function print_help {
+  cat <<EofCat
+Usage: $OPA_PROGNAME [options]
+[options]
+$(opa_set_default_run__print_options)
+	--help|-h				show this help
+	--force-upload				do not try to resume upload
+						["$_FORCE_UPLOAD"]
+	--force-gzip				do not try to resume gzip
+						["$_FORCE_GZIP"]
+	--try-resume				try to resume upload & gzip
+						["! ( $_FORCE_UPLOAD && $_FORCE_GZIP )"]
+	--dry-run				show only required files
+						["$_DRY_RUN"]
+	--max-tries				max tries per file
+						["$_MAX_TRIES"]
+	--recovery				actually => nothing
+						["$_RECOVERY"]
+
+EofCat
+}
+
+_DRY_RUN=false
+_FORCE_UPLOAD=false
+_FORCE_GZIP=false
+_DISABLE_UPLOAD=false
+_RECOVERY=false
+typeset -i _MAX_TRIES=10
+while [[ ${#@} -ne 0 ]] ; do
+  arg="$1"
+  shift 1
+  case "$arg" in
+    --help|-h)
+      print_help
+      exit 0
+      ;;
+    --rundate|-r|--weekday|-w|--today|-t|--submit-day-offset|-s)
+      opa_set_default_run_options="${opa_set_default_run_options}$arg '$1' "
+      shift 1
+      ;;
+    --dry-run)
+      _DRY_RUN=true
+      ;;
+    --force-upload)
+      _FORCE_UPLOAD=true
+      ;;
+    --force-gzip)
+      _FORCE_GZIP=true
+      ;;
+    --try-resume)
+      _FORCE_UPLOAD=false
+      ;;
+    --disable-upload)
+      _DISABLE_UPLOAD=true
+      ;;
+    --recovery)
+      _RECOVERY=true
+      ;;
+    --max-tries)
+      _MAX_TRIES="$1"
+      shift 1
+      ;;
+    *)
+      echo "ERROR: wrong command line option <$arg>" 1>&2
+      exit 2
+      ;;
+  esac
+done
+    
+# Rundate definition
+opa_prex "opa_set_default_run $opa_set_default_run_options"
+opa_prex "opa_set_run $OPA_DEFAULT_RUNDATE"
+
+
+# start
+opa_start
+
+if ! opa_is_prod ; then
+  opa_log 0 "WRN: opa_put is disabled for non-production chain <${OPA_VERSION}>"
+  opa_exit 0
+fi
+
+_FTP_MODE="FTP-DIRECT"		# ssh on login node, then scp to fec
+
+typeset -i errors=0
+
+opa_prex "cd $OPA_WRKDIR/POSTPROC"
+
+this_run_date="$OPA_RUNDATE"
+
+set -A this_run_dates -- $(opa_dates "$this_run_date")
+
+set -A F_LFILE --
+set -A F_RFILE --
+set -A F_LDIR --
+set -A F_RDIR --
+set -A F_TO_GZIP --
+
+set -A F_TO_UPLOAD --
+set -A F_STATUS --
+set -A F_UPLOADED --
+set -A F_GZIPPED --
+set -A F_NUM_TRIES --
+typeset -i F_NUM=0
+typeset    F_INDICES=" "
+
+function F_add {
+  typeset _arg
+  typeset _f_lfile=''
+  typeset _f_rfile=''
+  typeset _f_ldir=''
+  typeset _f_rdir=''
+  typeset _f_to_gzip=true
+  typeset _f_gzipped=false
+  while [[ ${#@} -ne 0 ]] ; do
+    _arg="$1"
+    shift 1
+    case "$_arg" in
+      --local-file|--lfile)
+        _f_lfile="$1"
+        shift 1
+        ;;
+      --remote-file|--rfile)
+        _f_rfile="$1"
+        shift 1
+        ;;
+      --local-dir|--ldir)
+        _f_ldir="$1"
+        shift 1
+        ;;
+      --remote-dir|--rdir)
+        _f_rdir="$1"
+        shift 1
+        ;;
+      --enable-gzip)
+        _f_to_gzip="true"
+        ;;
+      --disable-gzip)
+        _f_to_gzip="false"
+        ;;
+      *)
+        echo "[${0}] ERR: invalid argument '$_arg'" 1>&2
+        exit 1
+        ;;
+    esac
+  done
+  if [[ $_f_lfile == '' ]] ; then
+    echo "[${0}] ERR: missing option --local-file" 1>&2
+    exit 1
+  fi
+  if [[ $_f_ldir == '' ]] ; then
+    echo "[${0}] ERR: missing option --local-dir" 1>&2
+    exit 1
+  fi
+  if [[ $_f_rfile == '' ]] ; then
+    if $_f_to_gzip ; then
+      _f_rfile="${_f_lfile}.gz"
+    else
+      _f_rfile="${_f_lfile}"
+    fi
+  fi
+  F_LFILE[F_NUM]="$_f_lfile"
+  F_RFILE[F_NUM]="$_f_rfile"
+  F_LDIR[F_NUM]="$_f_ldir"
+  F_RDIR[F_NUM]="$_f_rdir"
+  F_TO_GZIP[F_NUM]="$_f_to_gzip"
+  F_INDICES="${F_INDICES}$F_NUM "
+  F_NUM=$(( $F_NUM + 1 ))
+}
+
+function F_init {
+  typeset -i _f_index
+  for _f_index in $F_INDICES ; do
+    F_init_index $_f_index
+  done
+}
+
+function F_init_index {
+  typeset -i _f_index=$1
+  if $_FORCE_GZIP ; then
+    F_GZIPPED[_f_index]=false
+  elif ${F_TO_GZIP[_f_index]} ; then
+    if [[ -f ${F_LDIR[_f_index]}/${F_RFILE[_f_index]} ]] ; then
+      F_GZIPPED[_f_index]=true
+    else
+      F_GZIPPED[_f_index]=false
+    fi
+  else
+    F_GZIPPED[_f_index]=false
+  fi
+  F_TO_UPLOAD[_f_index]="true"
+  F_STATUS[_f_index]="$_STATUS_PENDING"
+  F_NUM_TRIES[_f_index]=0
+}
+
+V3_OPA_PRO_DESCRIPTION_FILE="$OPA_WRKDIR/POSTPROC/${OPA_RUNDATE}.devel.pro"
+opa_prex "rm -f $OPA_PRO_DESCRIPTION_FILE"
+for file in $(opa_pro_files $this_run_date) ; do
+  file_new=$(echo ${file}|sed -e 's%bfm1%bfm3%g' -e 's%fv02%fv03%g')
+  opa_prex "ln -s ${file} ${file_new}"
+  F_add --local-file "${file_new}" --local-dir "$OPA_WRKDIR/POSTPROC" --enable-gzip
+  opa_prex "echo $file_new >> ${V3_OPA_PRO_DESCRIPTION_FILE}"
+done
+
+F_add --local-file "${V3_OPA_PRO_DESCRIPTION_FILE}" --local-dir "/" --disable-gzip
+
+date_index=0
+date_indices=' '
+while [[ $date_index -lt ${#this_run_dates[*]} ]] ; do
+  date_indices="${date_indices}${date_index} "
+  date_index=$(( $date_index + 1 ))
+done
+
+pro_successfully_uploaded=false
+production_day_yyyymmdd="$OPA_RUNDATE"
+ncftpput_options=' '
+
+cat <<EOFCAT
+_RECOVERY .............. $_RECOVERY
+_FORCE_UPLOAD .......... $_FORCE_UPLOAD
+_FORCE_GZIP --.......... $_FORCE_GZIP
+_DISABLE_UPLOAD ........ $_DISABLE_UPLOAD
+_DRY_RUN ............... $_DRY_RUN
+_MAX_TRIES ............. $_MAX_TRIES
+EOFCAT
+
+if $_FORCE_UPLOAD ; then
+  ncftpput_options="$ncftpput_options -Z "
+else
+  ncftpput_options="$ncftpput_options -Z " # warning: server do not allow appending/resuming
+fi
+
+_STATUS_DONE='DONE'
+_STATUS_PENDING='PENDING'
+_STATUS_FAILED='FAILED'
+
+typeset -i errs=0
+set -A F_TO_UPLOAD --
+set -A F_STATUS --
+set -A F_UPLOADED --
+set -A F_GZIPPED --
+set -A F_NUM_TRIES --
+
+F_init
+
+function dump_status {
+  typeset _f_index
+  typeset _f_ldir
+  typeset _f_file
+  printf "%3s  %8s %8s %8s %8s %8s %8s %s\n" "IND" "#TRIES" "TOGZIP" "GZIPPED" "TOUPLOAD" "UPLOADED" "STATUS" "PATH"
+  for _f_index in $F_INDICES ; do
+    _f_ldir="${F_LDIR[_f_index]}"
+    _f_file="${F_LFILE[_f_index]}"
+    #echo "printf \"%3d) %8d %8s %8s %8s %8s %8s %s\n\" \"$_f_index\" \"${F_NUM_TRIES[_f_index]}\" \"${F_TO_GZIP[_f_index]}\" \"${F_GZIPPED[_f_index]}\" \"${F_TO_UPLOAD[_f_index]}\" \"${F_UPLOADED[_f_index]}\" \"${F_STATUS[_f_index]}\" \"$_f_ldir/$_f_file\""
+    printf "%3d) %8d %8s %8s %8s %8s %8s %s\n" "$_f_index" "${F_NUM_TRIES[_f_index]}" "${F_TO_GZIP[_f_index]}" "${F_GZIPPED[_f_index]}" "${F_TO_UPLOAD[_f_index]}" "${F_UPLOADED[_f_index]}" "${F_STATUS[_f_index]}" "$_f_ldir/$_f_file"
+  done
+}
+
+
+typeset -i num_ok=0
+typeset -i num_tot=$F_NUM
+
+tmp_suffix=.tmp
+
+# { OPA_TRANSFER_PRO_BEGIN
+if $OPA_TRANSFER_PRO ; then
+  opa_log 0 "starting pro upload in '$_FTP_MODE' mode"
+  case "$_FTP_MODE" in
+    "FTP-DIRECT")
+      typeset -i num_cycles=0
+      while true ; do
+        if [[ $num_ok -eq $num_tot ]] ; then
+          echo "### All done."
+          break
+        fi
+        num_cycles=$(( $num_cycles + 1 ))
+        echo "### starting upload cycle #${num_cycles} ..."
+        dump_status
+        typeset -i errs=0
+        something_to_do=false
+        for f_index in $F_INDICES ; do
+          if ! ${F_TO_UPLOAD[f_index]} ; then
+            continue
+          fi
+          something_to_do=true
+          f_ldir="${F_LDIR[f_index]}"
+          f_file="${F_LFILE[f_index]}"
+          if ${F_TO_GZIP[f_index]} ; then
+            f_file_to_transfer="${f_file}.gz"
+            if ! ${F_GZIPPED[f_index]} ; then
+              if opa_prex "gzip -c $f_ldir/$f_file > $f_ldir/${f_file_to_transfer}${tmp_suffix}" ; then
+                if opa_prex "mv $f_ldir/${f_file_to_transfer}${tmp_suffix} $f_ldir/$f_file_to_transfer" ; then
+                  F_GZIPPED[f_index]=true
+                else
+                  opa_log 0 "ERR: mv $f_ldir/${f_file_to_transfer}${tmp_suffix} $f_ldir/$f_file_to_transfer failed"
+                  continue
+                fi
+              else
+                opa_log 0 "ERR: gzip failed for tile $f_ldir/$f_file"
+                continue
+              fi
+            fi
+          else
+            f_file_to_transfer="${f_file}"
+          fi
+          success=false
+          F_NUM_TRIES[f_index]=$(( ${F_NUM_TRIES[f_index]} + 1 ))
+          for ncconfig in $OPA_PRO_REMOTE_SERVER_NCCONFIGS ; do
+            put_command="$OPA_BINDIR/ncftpput -f '$ncconfig' -m -S '$tmp_suffix' -r 3 $ncftpput_options 'MEDSEA_FORECAST_BIO_006_002/myov03-med-ogs-bio-fc/$production_day_yyyymmdd' '$f_ldir/$f_file_to_transfer'"
+            if $_DRY_RUN ; then
+              echo ">>> $put_command"
+              success=true
+              break
+            else
+              opa_prex "$put_command" && {
+                success=true
+                break
+              }
+            fi
+          done
+          echo "## success=$success"
+          if $success ; then
+            num_ok=$(( $num_ok + 1 ))
+            opa_log 2 "File[${f_index}] <$f_file> successfully uploaded"
+            F_TO_UPLOAD[f_index]=false
+            F_STATUS[f_index]="$_STATUS_DONE"
+            F_UPLOADED[f_index]="true"
+          else
+            errs=$(( $errs + 1 ))
+            if [[ $_MAX_TRIES -gt 0 && ${F_NUM_TRIES[f_index]} -gt $_MAX_TRIES ]] ; then
+              F_TO_UPLOAD[f_index]=false
+              F_STATUS[f_index]="$_STATUS_FAILED"
+              F_UPLOADED[f_index]="false"
+            fi
+          fi
+        done
+        echo "something_to_do=<$something_to_do>"
+        if ! $something_to_do ; then
+          break
+        fi
+        if [[ $errs -eq 0 ]] ; then
+          opa_log 1 "Upload of $f_file completed [${num_ok}/${num_tot}]"
+        else
+          opa_log 1 "Upload of $f_file NOT completed [${num_ok}/${num_tot}]"
+        fi
+      done
+      ;;
+    *)
+      opa_die 101 "unsupported FTP MODE <${_FTP_MODE}>"
+  esac
+  # nothing to upload
+
+  dump_status
+
+  typeset -i uncompleted=0
+  for f_index in $F_INDICES ; do
+    if [[ ${F_STATUS[f_index]} != ${_STATUS_DONE} ]] ; then
+      f_ldir="${F_LDIR[f_index]}"
+      f_file="${F_LFILE[f_index]}"
+      opa_log 0 "ERR: file $f_ldir/$f_file NOT completed"
+      uncompleted=$(( $uncompleted + 1 ))
+    fi
+  done
+  if [[ $uncompleted -eq 0 ]] ; then
+    opa_log 0 "pro upload on ftp server completed successfully"
+    pro_successfully_uploaded=true
+  else
+    pro_successfully_uploaded=false
+    opa_log 0 "ERROR: pro upload on ftp server failed"
+    errors=$(( $errors + 1 ))
+  fi
+fi  
+
+opa_exit "$errors"
+

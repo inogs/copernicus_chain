@@ -1,0 +1,51 @@
+#!/bin/ksh
+
+# Load common profile
+. @@(I:OPA_HOME)/bin/opa_profile.inc
+
+opa_prex "opa_set_run $RUNDATE"
+opa_set_input_files__opaoper_a
+opa_set_input_files__opaoper_f
+
+
+echo "#######  CLEANING INPDIR RESIDUALS      ######## "
+opa_prex  "rm -f $OPA_INPDIR/OPAOPER_A/*nc"
+opa_prex  "rm -f $OPA_INPDIR/OPAOPER_F/*nc"
+opa_prex  "rm -f $OPA_WRKDIR/OPAOPER_A/*nc"
+opa_prex  "rm -f $OPA_WRKDIR/OPAOPER_F/*nc"
+
+
+for i in $OPA_OPAOPER_A_INPUT_FILES_INDICES ; do
+   filename=${OPA_OPAOPER_A_INPUT_LFILES[i]}
+   link_name=$OPA_INPDIR/OPAOPER_A/$filename
+   try_1_filename=${OPA_INPDIR_ROOT}/${OPA_RESTART_RUNDATE}/OPAOPER_A/$filename
+   try_2_filename=${OPA_INPDIR_ROOT}/${OPA_RESTART_RUNDATE}/OPAOPER_F/$filename
+   if [ -f $try_1_filename ] ; then
+        PreviousRun_found_file=$try_1_filename
+   else
+        PreviousRun_found_file=$try_2_filename
+   fi
+
+   opa_prex_or_die " ln -s ${PreviousRun_found_file}  $OPA_INPDIR/OPAOPER_A/$filename "
+   opa_prex_or_die " ln -s ${PreviousRun_found_file}  $OPA_WRKDIR/OPAOPER_A/$filename "
+done
+
+
+
+
+for _v in U V W T; do
+   for i in $OPA_OPAOPER_F_INPUT_FILES_INDICES ; do
+      filename=${OPA_OPAOPER_F_INPUT_LFILES[i]}
+      [[ ${filename:7:1} != $_v ]] && continue  # to have a cycle on a single var
+      try_1_filename=${OPA_INPDIR_ROOT}/${OPA_RESTART_RUNDATE}/OPAOPER_F/$filename
+      try_2_filename=$LAST_EXISTING
+      if [ -f $try_1_filename ] ; then
+          LAST_EXISTING=$try_1_filename
+          PreviousRun_found_file=$try_1_filename
+      else
+          PreviousRun_found_file=$LAST_EXISTING
+      fi
+      opa_prex_or_die "ln -s ${PreviousRun_found_file} $OPA_INPDIR/OPAOPER_F/$filename "
+      opa_prex_or_die "ln -s ${PreviousRun_found_file} $OPA_WRKDIR/OPAOPER_F/$filename "
+   done
+done

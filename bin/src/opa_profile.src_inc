@@ -1,0 +1,1425 @@
+if [[ $__OPA_PROFILE_IS_DEFINED__ == '' ]] ; then
+  __OPA_PROFILE_IS_DEFINED__='__defined__'
+
+OPA_UNDEFINED='__undefined__'					# Undefined value (used in scripts)
+
+I_OPA_HOME="@@(I:OPA_HOME)"
+if [[ ! -d "$I_OPA_HOME" ]] ; then
+  echo "ERROR: I_OPA_HOME [${I_OPA_HOME}] does not exist" 1>&2
+  exit 2
+fi
+
+I_OPA_HOSTNAME="@@(I:OPA_HOSTNAME)"				# Symbolic name of the execution host
+
+I_OPA_MODULE="@@(I:OPA_MODULE)"					# Opa module name
+
+I_OPA_STAGE="@@(I:OPA_STAGE)"					# Stage (currently: prod|devel)
+
+I_OPA_BACKUP="@@(I:OPA_BACKUP)"					# Is backup? (true|false)
+I_OPA_EXTENSION="@@(I:OPA_EXTENSION)"				# suffix for directories
+I_OPA_VERSION_NUMBER="@@(I:OPA_VERSION_NUMBER)"			# Version number (currently: 0|1|2|3)
+OPA_VERSION="V$I_OPA_VERSION_NUMBER$I_OPA_EXTENSION"		# Vesion         (currently: V0|V1|V2)
+
+OPA_FTPSERVER_SUBDIR=''						# subdir on the ftp server for pro data
+OPA_TRUE_VERSION_NUMBER=''					# this is the true version of the chain,
+								# used for publishing
+case "$OPA_VERSION" in 
+  V3noDA|V3.1noDA)
+    OPA_TRUE_VERSION_NUMBER='1'
+    ;;
+  *)
+    OPA_TRUE_VERSION_NUMBER="$I_OPA_VERSION_NUMBER"
+    ;;
+esac
+
+OPA_PROD_VERSION_NUMBER=4C					# Production version
+
+OPA_FTPSERVER_SUBDIR="v${OPA_TRUE_VERSION_NUMBER}-med-ogs-forecast"    #MEDSEA_FORECAST_BIO_006_002/myov0${OPA_TRUE_VERSION_NUMBER}-med-ogs-bio-fc
+OPA_PRO_FILE_FMT="%8s_dm-OGS---opatm_bfm4-MED-b%8s_fc-fv0${OPA_TRUE_VERSION_NUMBER}.00.nc"	# format specification for the pro file
+OPA_ANA_FILE_FMT="%8s_dm-OGS---opatm_bfm4-MED-b%8s_an-fv0${OPA_TRUE_VERSION_NUMBER}.00.nc"	# format specification for the ana file
+OPA_SIM_FILE_FMT="%8s_dm-OGS---opatm_bfm4-MED-b%8s_sm-fv0${OPA_TRUE_VERSION_NUMBER}.00.nc"	# format specification for the sim file
+OPA_V2C_FILE_FMT="%8s_d-OGS--%4s-ogstm_bfm4-MED-b%8s_%2s-fv06.00.nc"		#format specification for the V2C file
+OPA_V3C_FILE_FMT="%8s_d-OGS--%4s-MedBFM2-MED-b%8s_%2s-sv03.00.nc"		#format specification for the V3C file
+  
+OPA_TRANSFER_PRO="${RT_OPA_TRANSFER_PRO:-true}"			# enable transfer of pro data
+OPA_UPDATE_TDS_CATALOG="${RT_OPA_UPDATE_TDS_CATALOG:-true}"	# enable update of the thredds catalog
+OPA_TRANSFER_IMAGES="${RT_OPA_TRANSFER_IMAGES:-true}"		# enable transfer of images
+
+OPA_RM="$OPA_UNDEFINED"						# Resource Manager
+I_OPA_ARCH="@@(I:OPA_ARCH)"					# Architecture
+I_OPA_OS="@@(I:OPA_OS)"						# Operating System
+I_OPA_COMPILER="@@(I:OPA_COMPILER)"				# Compiler
+OPA_MPI="$OPA_UNDEFINED"					# type of the MPI library
+
+OPA_OGS_REMOTE_HOST='poseidon.inogs.it'
+OPA_OGS_REMOTE_USER='opaopech'
+OPA_OGS_REMOTE_DIR='/home/opaopech/MERSEA/'
+
+OPA_START_HOUR_UTC="07:30:00"					# UTC time for chain submission
+OPA_GET_ADVANCE_MIN="90"					# minutes for advance execution of opa_get
+OPA_GET_TARGET_TIME="07:30:00"
+OPA_TEST=false
+OPA_DOWNLOAD_HOUR_UTC="03:00:00"
+
+# These values can eventually be changed by opa_profile__${I_OPA_HOSTNAME}.inc:
+OPA_ODD_ALPHA="${RT_OPA_ODD_ALPHA:-0.75}"			# Alpha correction for ODD algorithm
+
+
+# I_OPA_HOSTNAME, OPA_RM and OPA_MPI are set based on hostname
+case "$I_OPA_HOSTNAME" in
+  clx|bcc|bcx|xc3|xc2|a3k)
+    OPA_RM=lsf
+    OPA_MPI=mpich
+    ;;
+  sp5|sp6)
+    OPA_RM=ll
+    OPA_MPI=poe
+    ;;
+  plx)
+    OPA_RM=pbs
+    OPA_MPI=openmpi
+    ;;
+  pico|galileo|marconi)
+    OPA_RM=slurm
+    OPA_MPI=intelmpi
+    ;;
+  $OPA_UNDEFINED)
+    echo "ERROR: I_OPA_HOSTNAME [${I_OPA_HOSTNAME}] is not supported" 1>&2
+    echo "Only [clx|bcc|xc3|xc2|a3k|sp5|sp6] are supported." 1>&2
+    exit 1
+    ;;
+esac
+
+
+OPA_HOSTDIR=$I_OPA_HOME/HOST/$I_OPA_HOSTNAME
+OPA_BINDIR=$OPA_HOSTDIR/bin					# Directory for binaries
+OPA_LIBDIR=$OPA_HOSTDIR/lib					# Directory for libraries
+OPA_SCRDIR=$I_OPA_HOME/bin					# Directory for scripts
+OPA_ETCDIR=$I_OPA_HOME/etc					# Directory for configuration files and static data
+OPA_TPLDIR=$I_OPA_HOME/tpl					# Directory for templates
+OPA_VARDIR=$I_OPA_HOME/var					# Directory for OPA_VARDIR/out : standard output of cron commands
+OPA_BASE_WRKDIR="@@(I:OPA_WORKDIR)"                             # Directory for Workdir, depends on the module
+OPA_BASE_ARCDIR="@@(I:OPA_WORKDIR)"				# Directory for Arcdir, depends on the module
+OPA_VENV_1=$OPA_HOSTDIR/venvs/venv1				# Directory for maps virtualenv
+OPA_VENV_2=$OPA_HOSTDIR/venvs/venv2				# Directory for co2caller virtualenv
+OPA_BITSEA=$OPA_HOSTDIR/bit.sea					# Directory for bit.sea
+OPA_CO2CALLER=$OPA_HOSTDIR/co2_caller				# Directory for co2caller
+OPA_TMPDIR=$OPA_VARDIR/tmp					# Directory for:
+OPA_NAME='opa_chain'						# This is the name of the last dir in $I_OPA_HOME
+
+OPA_LOGDIR=$I_OPA_HOME/log					# Directory for logs
+
+OPA_DEFAULT_WALL_CLOCK_LIMIT="$OPA_UNDEFINED"			# Default wall clock limit [[hh:]mm:]ss
+OPA_DEFAULT_TASKS="$OPA_UNDEFINED"				# Default tasks' number
+OPA_DEFAULT_QUEUE="$OPA_UNDEFINED"				# Default queue
+
+if $I_OPA_BACKUP ; then
+  OPA_PRO_REMOTE_SERVER_NCCONFIGS=" $OPA_ETCDIR/nc-config/.cmcc.ncconfig.backup "               # NCconfigs for nominal remote servers (backup version)
+  OPA_PRO_REMOTE_SERVER_NCCONFIGS_B=" $OPA_ETCDIR/nc-config/.cmcc.b.ncconfig.backup "           # NCconfigs for backup remote servers (backup version)
+  OPA_PRO_REMOTE_SERVER_NCCONFIGS_PHASE_2=" $OPA_ETCDIR/nc-config/.cmems.ncconfig"              # NCconfigs for cmems remote servers
+else
+  OPA_PRO_REMOTE_SERVER_NCCONFIGS=" $OPA_ETCDIR/nc-config/.cmcc.ncconfig "                   # NCconfigs for nominal remote servers
+  OPA_PRO_REMOTE_SERVER_NCCONFIGS_B=" $OPA_ETCDIR/nc-config/.cmcc.b.ncconfig "               # NCconfigs for backup remote servers
+  OPA_PRO_REMOTE_SERVER_NCCONFIGS_PHASE_2=" $OPA_ETCDIR/nc-config/.cmems.ncconfig"           # NCconfigs for cmems remote servers
+fi
+
+if [[ "$I_OPA_STAGE" == "prod" ]]; then
+  OPA_SIMULATE_TRANSFER=${RT_OPA_SIMULATE_TRANSFER:-false}
+else
+  OPA_SIMULATE_TRANSFER=${RT_OPA_SIMULATE_TRANSFER:-true}
+fi
+
+function opa_date {
+  # print the date in the forma used by opa_log
+  date +'%Y%m%d-%H:%M:%S'
+}
+
+# function opa_prex {
+#   # PRint a command and EXecutes it;
+#   # after the command has been executed, opa_prex prints its exit_code and returns the same value
+#   typeset -i _ec
+#   printf "PrEx $(opa_date)    > %s\n" "$*"
+#   eval "$1" ; _ec=$?
+#   typeset _status
+#   if [[ $_ec -eq 0 ]] ; then
+#     _status="ok"
+#   else
+#     _status="KO"
+#   fi
+#   printf "PrEx $(opa_date) %3d< %s [%s]\n" "$_ec" "$*" "$_status"
+#   return $_ec
+# }
+function opa_reportdate {
+  # print the date in the forma used by opa_log
+  date +'%Y/%m/%d:%H:%M:%S'
+}
+
+
+# function opa_prex_check_sim {
+function opa_prex {
+  # PRint a command and EXecutes it;
+  # after the command has been executed, opa_prex prints its exit_code and returns the same value
+  typeset -i _ec
+  printf "PrEx $(opa_date)    > %s\n" "$*"
+  _logical_sim="${2:-false}"
+
+  if $_logical_sim ; then
+    echo "[WRN: CMD SIMULATED]:: $1" ; _ec=$?
+  else
+    eval "$1" ; _ec=$?
+  fi
+  typeset _status	
+  if [[ $_ec -eq 0 ]] ; then
+    _status="ok"
+  else
+    _status="KO"
+  fi
+  printf "PrEx $(opa_date) %3d< %s [%s]\n" "$_ec" "$*" "$_status"
+  return $_ec
+}
+
+function opa_prex_or_die {
+  # Like opa_prex, but in case of failure runs opa_die
+  typeset _command="$1"
+  shift 1
+  opa_prex "$_command" || {
+    typeset -i _ec=${1:-1}
+    typeset    _message="${2:-Command '$_command' failed}"
+    opa_die "$_ec" "$_message"
+  }
+}
+
+function opa_prex_with_output {
+  # PRint a command and EXecutes it;
+  # after the command has been executed, opa_prex prints its exit_code and returns the same value
+  typeset -i _ec
+  printf "PrEx $(opa_date)    > %s\n" "$*"
+  _logical_sim="${2:-false}"
+  if $_logical_sim ; then
+    echo "[WRN: CMD SIMULATED]:: $1" ; _ec=$?
+  else
+    my_var=`eval "$1"` ; _ec=$?
+    echo $my_var
+  fi
+  typeset _status
+  if [[ $_ec -eq 0 ]] ; then
+    _status="ok"
+  else
+    _status="KO"
+  fi
+  printf "PrEx $(opa_date) %3d< %s [%s]\n" "$_ec" "$*" "$_status"
+  return $_ec
+}
+
+OPA_BATCH="${RT_OPA_BATCH:-false}"				# batch job
+
+function opa_batch_prex {
+  # Like opa for batch jobs, silent for interactive
+  if $OPA_BATCH ; then
+    opa_prex "$@" ; return $?
+  else
+    eval "$@" ; return $?
+  fi
+}
+
+. @@(I:OPA_HOME)/bin/opa_profile__@@(I:OPA_HOSTNAME).inc		# Host-specific paths and hostnames
+OPA_WRKDIR_ROOT="$OPA_BASE_WRKDIR/$OPA_VERSION/$I_OPA_STAGE/wrkdir"
+OPA_WRKDIR_ROOT_LINK="$I_OPA_HOME/wrkdir"
+OPA_WRKDIR=''								# set by opa_set_run to $OPA_WRKDIR_ROOT/$OPA_WEEKDAY
+
+OPA_ARCDIR_ROOT=$OPA_BASE_ARCDIR/$OPA_VERSION/$I_OPA_STAGE/archive	# Directory for archive
+OPA_ARCDIR_ROOT_LINK=$I_OPA_HOME/archive					# link to the arcdir, not used by the chain
+OPA_ARCDIR=''								# set by opa_set_run to $OPA_WRKDIR_ROOT/$OPA_RUNDATE
+
+OPA_INPDIR_ROOT=$OPA_BASE_WRKDIR/$OPA_VERSION/$I_OPA_STAGE/inpdir		# Directory for input download
+OPA_INPDIR_ROOT_LINK=$I_OPA_HOME/inpdir					# link to the inpdir, not used by the chain
+OPA_INPDIR=''								# set by opa_set_run to $OPA_INPDIR_ROOT/$OPA_RUNDATE
+
+
+OPA_RUNDATE=''					# Run date YYYYMMDD (set by opa_set_run)
+typeset -i OPA_NEXT_RUNDATE_OFFSET=0		# Number of days to be added to $OPA_RUNDATE to get the next run
+typeset -i OPA_PREV_RUNDATE_OFFSET=0		# Number of days to be subtracted to $OPA_RUNDATE to get the prev run
+OPA_PRODDATE=''					# Production date YYYYMMDD (set by opa_set_run)
+OPA_WEEKDAY=''					# Run date weekday (0 is sunday)
+OPA_WEEKDAYS=' 2 5 '				# Weekdays to run
+OPA_RESTART_WEEKDAY=''				# Restart from weekday run
+OPA_RESTART_RUNDATE=''				# Restart from rundate
+OPA_RESTART_ARCHIVE_OFFSETS=' 0 '		# Offset in days with respect to the $OPA_RUNDATE for
+						# the files to be archived as input for next chain(s)
+OPA_RUNLOGDIR=''				# Directory for the run log (set by opa_set_run)
+OPA_LOGFILE=''					# Run logfile (set by opa_set_run)
+OPA_REPORTFILE=''				# Run reportfile
+OPA_PROGNAME=$(basename $0)			# Name of the called script
+OPA_LOGMAX=3					# Maximum level of logs stored on $OPA_LOGFILE
+OPA_DISABLE_LOG_ON_LOGFILE=-1			# Disable log on log file $OPA_LOGFILE
+OPA_DISABLE_LOG=-2				# Disable log on log file $OPA_LOGFILE and on stdout
+
+OPA_INPUT_TIMEOUT__UTC="09:00:00"		# Timeout for input in UTC (HH:MM:SS)
+OPA_INPUT_TIMEOUT_COUNT_MAX=5			# Max number of failing download before applying $OPA_INPUT_TIMEOUT__UTC
+OPA_INPUT_TIMEOUT_ENABLED=${RT_OPA_INPUT_TIMEOUT_ENABLED:-true}	# Input timeout is enabled
+OPA_INPUT_ABORT_ON_ERRORS=${RT_OPA_INPUT_ABORT_ON_ERRORS:-true}	# Input abort on errors is enabled
+
+OPA_MAIL_ADDRESS="service.med.ogs@ogs.trieste.it"		# OGS Address used for notification
+
+OPA_REPORT_NOTIFY_ADDRESSES="service.med.ogs@ogs.trieste.it"
+OPA_NOTIFY_ADDRESSES="myocean-support@list.cineca.it"
+OPA_REPORT_ADDRESSES="myocean-support@list.cineca.it, service.med.ogs@ogs.trieste.it"
+OPA_MONITORING_ADDRESSES="service.med@bo.ingv.it, myocean-support@LIST.CINECA.IT, service.med.ogs@ogs.trieste.it"
+OPA_DEBUG_ADDRESSES="myocean-support@LIST.CINECA.IT"
+						# Addresses used for notification
+
+OPA_REPORT_DAY="16"
+OPA_CRON_REPORT_DAY="1"
+OPA_CRON_PART_REPORT_DAY="26"
+
+OPA_TODAY=$($OPA_BINDIR/date +'%Y%m%d')		# Today's date (in the same format as $OPA_RUNDATE)
+
+OPA_RUNID="${RT_OPA_RUNID:----}"		# RUNID (an incremental number to distinguish files
+						# For interactive scripts it is '---'
+OPA_KEEP_INPUT="${RT_OPA_KEEP_INPUT:-true}"	# if true, input data are not deleted during run setup
+						# in $OPA_RUNLOGDIR; it is set during submission and
+						# exported to the batch environment.
+
+OPA_LAST_RUNDATE=${OPA_TODAY}
+
+OPA_DEFAULT_RUNDATE="${RT_OPA_RUNDATE:-$OPA_TODAY}"	# Default rundate
+	# The default rundate is $RT_OPA_RUNDATE if defined, $OPA_TODAY otherways
+
+OPA_DEBUG_MODE=${RT_OPA_DEBUG_MODE:-false}	# Activates model debugging
+
+
+
+OPA_DEBUG_EXTENSION=''				# Extension for debug mode
+if $OPA_DEBUG_MODE ; then
+  OPA_DEBUG_EXTENSION='.dbg'
+fi
+
+OPA_RECOVERY_MODE="${RT_OPA_RECOVERY_MODE:-false}"			# Recovery mode (do not try remote download)
+
+OPA_TASKS=${RT_OPA_TASKS:-$OPA_DEFAULT_TASKS}
+
+OPA_FORECAST_DAYS=10				# days of forecast
+OPA_ANALYSES_DAYS=7				# days of analyses
+
+OPA_FORECAST_DAYS_MIN=2				# minimum number of forecast days
+OPA_ANALYSES_DAYS_MIN=2				# minimum number of analysis days
+
+OPA_ANALYSES_DAYS__ACTUAL="$OPA_ANALYSES_DAYS"	# actual number of analyses days (from input)
+OPA_FORECAST_DAYS__ACTUAL="$OPA_FORECAST_DAYS"	# actual number of forecast days (from input)
+
+OPA_ACTUAL_INPUT_DESCRIPTION_FILE=''		# set by opa_set_run to "$OPA_WRKDIR/opa_actual_input_description.inc"
+
+OPA_PRO_DESCRIPTION_FILE=''			# pro output file names, for myocean
+
+OPA_TIMESTEP=1800				# model timestep in seconds
+OPA_RDT="$OPA_TIMESTEP"
+OPA_RDTMIN="$OPA_TIMESTEP"
+OPA_RDTMAX="$OPA_TIMESTEP"
+OPA_RDTH="$OPA_TIMESTEP"
+
+#. @@(I:OPA_HOME)/bin/opa_profile__@@(I:OPA_HOSTNAME).inc
+OPA_PRIMARY_LOGIN_NODE="$OPA_HOST_PRIMARY_LOGIN_NODE"
+OPA_SECONDARY_LOGIN_NODE="$OPA_HOST_SECONDARY_LOGIN_NODE"
+OPA_LOGIN_NODES="$OPA_HOST_LOGIN_NODES"
+OPA_PRO_UHD_LIST="$OPA_HOST_PRO_UHD_LIST"
+OPA_PRO_FTP_LIST="$OPA_HOST_PRO_FTP_LIST"
+
+set -A OPA_VARIABLE -- 'T' 'U' 'V' 'W'
+OPA_VARIABLE_INDICES=' 0 1 2 3 '
+OPA_VARIABLES=' '
+for i in $OPA_VARIABLE_INDICES ; do
+  OPA_VARIABLES="${OPA_VARIABLES}${OPA_VARIABLE[i]} "
+done
+
+OPA_OUTPUT_VARIABLES='B1c B1n B1p N1p N3n N4n N5s N6r O2o P1c P1l P1n P1p P1s P2c P2l P2n P2p P3c P3l P3n P3p P4c P4l P4n P4p R1c R1n R1p R1s R2c R6c R6n R6p R6s R7c Z3c Z3n Z3p Z4c Z4n Z4p Z5c Z5n Z5p Z6c Z6n Z6p O3c O3h O4n'
+
+
+
+OPA_HIGH_FREQ_VARIABLES='Ac DIC N1p N3n N4n N5s O2o O3c O3h P1c P1l P1n P1p P1s P2c P2l P2n P2p P3c P3l P3n P3p P4c P4l P4n P4p pCO2 pH ppn'
+
+OPA_DA_VARIABLES='P1l P2l P3l P4l P1n P2n P3n P4n P1c P2c P3c P4c P1p P2p P3p P4p P1s'
+
+
+OPA_SUBMIT_DAY_OFFSET=1					# number of days after rundate for submission
+OPA_CHECK_HOURS_OFFSET=6				# number of hours for opa_check_run after run submission
+
+export LD_LIBRARY_PATH="${OPA_LIBDIR}:${LD_LIBRARY_PATH}"
+
+OPA_ENABLE_PRE_PHASES="${RT_OPA_ENABLE_PRE_PHASES:- SETUP GET A1 A2 A4}"	# List of phases in step pre
+OPA_DISABLE_PRE_PHASES="${RT_OPA_DISABLE_PRE_PHASES}"			# List of phases in step pre
+
+OPA_ENABLE_MODEL_PHASES="${RT_OPA_ENABLE_MODEL_PHASES:- B1 B2 B3 C1}"	# List of phases in step model
+OPA_DISABLE_MODEL_PHASES="${RT_OPA_DISABLE_MODEL_PHASES}"		# List of phases in step model
+
+OPA_ENABLE_POST_PHASES="${RT_OPA_ENABLE_POST_PHASES:- PUT_INGV PUT_CMCC C1 C3 C4 PUT_SALON}"	# List of phases in step post
+OPA_DISABLE_POST_PHASES="${RT_OPA_DISABLE_POST_PHASES}"			# List of phases in step post
+
+### DA (Data Assimilation) parameters:
+typeset -i OPA_DA_SAT_DAYS=5				# num days in sat file for Data Assimilation
+OPA_DA_START_DATE=""					# start date of the Data Assimilation
+OPA_DA_SAT_START_DATE=""				# start date of the sat file
+OPA_DA_SAT_END_DATE=""					# end date of the sat file
+OPA_DA_ENABLE="${RT_OPA_DA_ENABLE:-true}"		# Data Assimilation is enabled (eventually overridden by opa_set_run)
+
+OPA_FORCE_DOWNLOAD="${RT_OPA_FORCE_DOWNLOAD:-true}"	# Download input data even if already downloaded
+
+function opa_exitcode {
+  # Format an exit code as:
+  # == 0 -> Ok
+  # != 0 -> ERR:<exit code>
+  typeset _ec=${1:-0}
+  if [[ $_ec -eq 0 ]] ; then
+    echo "Ok"
+  else
+    echo "ERR:$_ec"
+  fi
+}
+
+. @@(I:OPA_HOME)/bin/opa_input_files.inc
+
+function opa_last_rundate {
+  typeset    _opa_today="${1:-$OPA_TODAY}"
+  typeset    _opa_submit_day_offset="${2:-$OPA_SUBMIT_DAY_OFFSET}"
+  typeset    _opa_today_submit=$($OPA_BINDIR/date --utc --date="$_opa_today $_opa_submit_day_offset days ago" +"%Y%m%d")
+  #echo "_opa_today='$_opa_today', _opa_today_submit='$_opa_today_submit', _opa_submit_day_offset='$_opa_submit_day_offset'" 1>&2
+  typeset    _opa_rundate="$_opa_today_submit"
+  typeset -i _weekday=$($OPA_BINDIR/date --utc --date="$_opa_rundate" +"%w")
+  typeset -i _opa_weekday
+  if [[ $_weekday -lt 2 ]] ; then
+    _opa_rundate=$($OPA_BINDIR/date --utc --date="$_opa_rundate $(( 7 + $_weekday - 5 )) days ago" +"%Y%m%d")
+  elif [[ $_weekday -eq 2 ]] ; then
+     _opa_rundate="$_opa_rundate"
+  elif [[ $_weekday -lt 5 ]] ; then
+    _opa_rundate=$($OPA_BINDIR/date --utc --date="$_opa_rundate $(( $_weekday - 2 )) days ago" +"%Y%m%d")
+  elif [[ $_weekday -eq 5 ]] ; then
+     _opa_rundate="$_opa_rundate"
+  else
+    _opa_rundate=$($OPA_BINDIR/date --utc --date="$_opa_rundate $(( $_weekday - 5 )) days ago" +"%Y%m%d")
+  fi
+  typeset _opa_weekday=$($OPA_BINDIR/date --utc --date="$_opa_rundate" +"%w")
+  #echo "$_opa_rundate : $_opa_weekday" 1>&2
+  echo "$_opa_rundate"
+}
+
+function opa_translate_weekday {
+  typeset -l _weekday="$1"
+  case "$_weekday" in
+    0|sun|sunday)
+      echo 0
+      ;;
+    1|mon|monday)
+      echo 1
+      ;;
+    2|tue|tuesday)
+      echo 2
+      ;;
+    3|wed|wednesday)
+      echo 3
+      ;;
+    4|thu|thursday)
+      echo 4
+      ;;
+    5|fri|friday)
+      echo 5
+      ;;
+    6|sat|saturday)
+      echo 6
+      ;;
+    *)
+      echo "ERR: invalid weekday '$1'" 1>&2
+      exit 1
+      ;;
+  esac
+}
+
+function opa_mkdir {
+#mkdir che da'status KO se la directory non viene creata
+  mkdir -p $1
+  typeset -i _er
+  typeset _status
+  if [[ ! -d $1 ]]; then
+    _status="KO"
+    _er=1
+  else
+    _status="Ok"
+    _er=0
+  fi
+  printf "PrEx $(opa_date) < mkdir %s [%s]\n" "$*" "$_status"
+  return $_er
+}
+
+function opa_scp {
+#scp che da'status KO se la copia non viene eseguita
+  typeset _arguments
+  _arguments=$@
+  scp -r $_arguments
+  typeset _targ
+  typeset _dest
+  _dest=`echo $_arguments | awk '{print $NF}'`
+  _targ=`echo $_arguments | awk '{print $(NF-1)}'`
+  typeset -i _er
+  typeset _status
+  _status="KO"
+  _er=1
+  if [[ -f $_dest ]]; then
+    _status="Ok"
+    _er=0
+  fi
+  if [[ -d $_targ ]] && [[ -d $_dest ]]; then
+    _status="Ok"
+    _er=0
+  fi
+  if [[ -f $_targ ]] && [[ -d $_dest ]]; then
+    typeset _name
+    typeset _check
+    _name=`echo $_targ | sed 's_^.*/__'`
+    _check="$_dest/$_name"
+    if [[ -f $_check ]]; then
+      _status="Ok"
+      _er=0
+    fi
+  fi
+  printf "PrEx $(opa_date) < scp %s [%s]\n" "$*" "$_status"
+  return $_er
+}
+
+function opa_cp {
+#cp che da'status KO se la copia non viene eseguita
+  typeset _arguments
+  _arguments=$@
+  cp $_arguments
+  typeset _targ
+  typeset _dest
+  _dest=`echo $_arguments | awk '{print $NF}'`
+  _targ=`echo $_arguments | awk '{print $(NF-1)}'`
+  typeset -i _er
+  typeset _status
+  _status="KO"
+  _er=1
+  if [[ -f $_dest ]]; then
+    _status="Ok"
+    _er=0
+  fi
+  if [[ -d $_targ ]] && [[ -d $_dest ]]; then
+    _status="Ok"
+    _er=0
+  fi
+  if [[ -f $_targ ]] && [[ -d $_dest ]]; then
+    typeset _name
+    typeset _check
+    _name=`echo $_targ | sed 's_^.*/__'`
+    _check="$_dest/$_name"
+    if [[ -f $_check ]]; then
+      _status="Ok"
+      _er=0
+    fi
+  fi
+  printf "PrEx $(opa_date) < cp %s [%s]\n" "$*" "$_status"
+  return $_er
+}
+    
+function opa_set_run {
+  # Set $OPA_RUNDATE and the variables whose value depends on $OPA_RUNDATE
+  # Without arguments, OPA_RUNDATE is $OPA_DEFAULT_RUNDATE
+  # With 1 argument, this is the value for OPA_RUNDATE
+  if [[ "$1" != '' ]] ; then
+    OPA_RUNDATE="$1"
+  else
+    OPA_RUNDATE="$OPA_DEFAULT_RUNDATE"
+  fi
+  OPA_WEEKDAY=$($OPA_BINDIR/date --utc --date="$OPA_RUNDATE" +"%w")
+  OPA_RUNLOGDIR="$OPA_LOGDIR/$OPA_RUNDATE"
+  [[ -d "$OPA_RUNLOGDIR" ]] || opa_mkdir $OPA_RUNLOGDIR
+
+  OPA_LOGFILE="$OPA_RUNLOGDIR/opa.${I_OPA_HOSTNAME}.log"
+  [[ -f "$OPA_LOGFILE" ]] || opa_prex "touch $OPA_LOGFILE"
+
+  [[ -d "$OPA_LOGDIR/report" ]] || opa_mkdir $OPA_LOGDIR/report
+
+  OPA_REPORTFILE="$OPA_LOGDIR/report/opa.${OPA_RUNDATE}.log"
+  [[ -f "$OPA_REPORTFILE" ]] || opa_prex "touch $OPA_REPORTFILE"
+
+  typeset _opa_restart_weekday
+  OPA_RESTART_ARCHIVE_OFFSETS=" 0 "	# restart for +7d chain
+  case "$OPA_WEEKDAY" in
+    2)
+      # Tuesday
+      #_opa_restart_weekday=$OPA_WEEKDAY
+      _opa_restart_weekday=5
+      OPA_RESTART_ARCHIVE_OFFSETS="${OPA_RESTART_ARCHIVE_OFFSETS}-4 "
+      #OPA_DISABLE_POST_PHASES=" ${OPA_DISABLE_POST_PHASES} C2 "
+      OPA_NEXT_RUNDATE_OFFSET=3
+      OPA_PREV_RUNDATE_OFFSET=4
+      ;;
+    5)
+      # Friday
+      #_opa_restart_weekday=$OPA_WEEKDAY
+      _opa_restart_weekday=2
+      OPA_RESTART_ARCHIVE_OFFSETS="${OPA_RESTART_ARCHIVE_OFFSETS}-3 "
+      OPA_DISABLE_POST_PHASES=" ${OPA_DISABLE_POST_PHASES} C2 "
+      OPA_NEXT_RUNDATE_OFFSET=4
+      OPA_PREV_RUNDATE_OFFSET=3
+      OPA_DA_ENABLE=false # Data Assimilation is disabled on Friday!
+      ;;
+    *)
+      echo "ERR: unsupported weekday [${OPA_WEEKDAY}]" 1>&2
+      exit 1
+      ;;
+  esac
+  case "$OPA_TRUE_VERSION_NUMBER" in
+    1)
+      case "$OPA_WEEKDAY" in
+        2)
+          # Tuesday
+          #OPA_TRANSFER_IMAGES=true
+          :
+          ;;
+        5)
+          # Friday
+          OPA_TRANSFER_IMAGES=false
+          ;;
+      esac
+      OPA_DA_ENABLE=false
+      ;;
+    4|2C|3C|4C)
+      OPA_TRANSFER_IMAGES=false
+      ;;
+    *)
+      echo "ERR: unsupported version [${I_OPA_VERSION_NUMBER}]" 1>&2
+      exit 1
+      ;;
+  esac
+  #echo "OPA_TRUE_VERSION_NUMBER=$OPA_TRUE_VERSION_NUMBER"
+  #echo "OPA_DA_ENABLE=$OPA_DA_ENABLE"
+  opa_input_files__setup
+  OPA_RESTART_WEEKDAY="${RT_OPA_RESTART_WEEKDAY:-$_opa_restart_weekday}"
+  _opa_get_default_run --weekday "$OPA_RESTART_WEEKDAY" --today "$OPA_RUNDATE" --submit-day-offset 1
+  OPA_WRKDIR="$OPA_WRKDIR_ROOT/$OPA_WEEKDAY"
+  OPA_INPDIR="$OPA_INPDIR_ROOT/$OPA_RUNDATE"
+  OPA_ARCDIR="$OPA_ARCDIR_ROOT/$OPA_RUNDATE"
+  OPA_PRO_DESCRIPTION_FILE="$OPA_WRKDIR/POSTPROC/${OPA_RUNDATE}.${I_OPA_STAGE}.pro"
+  OPA_ACTUAL_INPUT_DESCRIPTION_FILE="$OPA_WRKDIR/opa_actual_input_description.inc"
+  OPA_RESTART_RUNDATE="$_OPA_RUNDATE"
+  OPA_PRODDATE=$(opa_get_proddate)
+  if $OPA_BATCH ; then
+    opa_dump_run
+  fi
+}
+
+function opa_dump_run {
+  cat <<EOFCAT
+### OPA_RUNDATE ...................... '${OPA_RUNDATE}'
+### OPA_WEEKDAY ...................... '${OPA_WEEKDAY}'
+###  OPA_TODAY ....................... '${OPA_TODAY}
+###  OPA_DEFAULT_RUNDATE ............. '${OPA_DEFAULT_RUNDATE}'
+###  OPA_PRODDATE .................... '${OPA_PRODDATE}
+### OPA_RESTART_RUNDATE .............. '${OPA_RESTART_RUNDATE}'
+### OPA_RESTART_WEEKDAY .............. '${OPA_RESTART_WEEKDAY}'
+EOFCAT
+}
+
+function opa_is_prod {
+  if [[ $OPA_TRUE_VERSION_NUMBER == $OPA_PROD_VERSION_NUMBER ]] ; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+function opa_get_proddate {
+  typeset _opa_rundate="${1:-$OPA_RUNDATE}"
+  echo "$_opa_rundate"
+  #$OPA_BINDIR/date --utc --date="$_opa_rundate 1 day" +'%Y%m%d'
+}
+
+function opa_range {
+  # Returns a list of integer values between FIRST and LAST,
+  # with increment INC.
+  # For instance, 'opa_range 0 10 3' returns the string "0 3 6 9"
+  # opa_range F	L I	-> opa_range F L I
+  # opa_range F L	-> opa_range F L 1
+  # opa_range L		-> opa_range 0 L 1
+  typeset -i _first=0
+  typeset -i _inc=1
+  typeset -i _last=1
+  if [[ ${#@} -eq 1 ]] ; then
+    _last=$1
+  elif [[ ${#@} -eq 2 ]] ; then
+    _first=$1
+    _last=$2
+  elif [[ ${#@} -gt 2 ]] ; then
+    _first=$1
+    _last=$2
+    _inc=$3
+  fi
+  typeset -i _i=$_first
+  typeset _indices=' '
+  while [[ $_i -le $_last ]] ; do
+    _indices="${_indices}$_i "
+    _i=$(( $_i + $_inc ))
+  done
+  printf "%s\n" "$_indices"
+}
+
+function opa_wait {
+  # Waits $1 seconds
+  typeset -i _secs=${1:-10}
+  #opa_log 3 "...wait $_secs"
+  echo "... wait $_secs"
+  opa_prex "sleep $_secs"
+}
+
+function opa_die {
+  # log an error message and die
+  typeset -i _ec="$1"
+  shift 1
+  opa_log 0 "$@"
+  opa_exit $_ec
+}
+
+function opa_set_log_verbose_level {
+  # Set the maximum verbose level for log file; if a log has a level
+  # greater that $OPA_LOGMAX, it is not logged onto $OPA_LOGFILE.
+  # Notice that, if $OPA_LOGMAX is negative, nothing is logged onto
+  # $OPA_LOGFILE
+  OPA_LOGMAX="$1"
+}
+
+function opa_log {
+  # Write a log messages ($2...) on standard output; 
+  # is $1 is lower than $OPA_LOGMAX, the messages is written also onto $OPA_LOGFILE
+  if [[ $OPA_LOGMAX -eq $OPA_DISABLE_LOG ]] ; then
+    return 0
+  fi
+  typeset -i _nlog="$1"
+  shift 1
+  for _message in "$@" ; do
+    if ( $OPA_BATCH ) && [[ $OPA_LOGMAX -ne $OPA_DISABLE_LOG_ON_LOGFILE && $_nlog -le $OPA_LOGMAX ]] ; then
+      printf '%s %02d (%s) : %s\n' "$(opa_date)" "$_nlog" "$OPA_RUNID" "$_message" | tee -a $OPA_LOGFILE
+    else
+      printf '%s %02d (%s) : %s\n' "$(opa_date)" "$_nlog" "$OPA_RUNID" "$_message" 
+    fi
+  done
+}
+
+function opa_report {
+# da utilizzare nel seguente modo: TimeStamp , event_time_record ($1), ProdCycle ($OPA_RUNDATE) , EventID (bio_transfer-... o bio_chain-...)
+  typeset type_reg="event_time_record"
+  typeset eventid=$1
+  typeset -i reporterrors=${2:-0}
+  typeset disabletimeout=${3:-false}
+
+  typeset _targettime=$(opa_date_day_offset "${OPA_RUNDATE} $OPA_GET_TARGET_TIME" $OPA_SUBMIT_DAY_OFFSET "%Y%m%d%H%M")
+  typeset _timeout=$(opa_date_day_offset "${OPA_RUNDATE} $OPA_GET_TARGET_TIME" $OPA_SUBMIT_DAY_OFFSET "%Y%m%d %H:%M:%S")
+  typeset _timeout_s=$( $OPA_BINDIR/date --utc --date="$_timeout" +%s)
+  typeset _now=$( $OPA_BINDIR/date --utc +'%Y%m%d %H:%M:%S' )
+  typeset _now_s=$( $OPA_BINDIR/date --utc --date="$_now" +'%s' )
+  typeset _timeout_exceeded=false
+
+  if [[ "$_now_s" -gt "$_timeout_s" ]] ; then
+    _timeout_exceeded=true
+  fi
+  if $disabletimeout; then
+    _timeout_exceeded=false
+  fi
+
+  _rdate=$(opa_reportdate)
+
+  # se non ci sono errori
+  if [[ $reporterrors == 0 ]]; then
+
+    # se ho superato il timelimit ma i dati sono stati scaricati
+    if $_timeout_exceeded; then
+
+      type_reg="target_time_recover"
+      _string=$(echo "${_rdate}" "${type_reg}" "$OPA_RUNDATE" "$eventid")
+
+      opa_prex "rm $OPA_REPORTFILE.tmp"
+      printf 'EventID:%s , TimeStamp:%s , ProdCycle:%s , TypeRegistration:%s-fail\n' ${_string} | tee -a $OPA_REPORTFILE.tmp
+
+      # solo se in precedenza ho fallito mando un email che i dati sono stati recuperati
+      if [[ -f $OPA_RUNDATE.$eventid.fail ]]; then
+        opa_mail $eventid
+      else
+        opa_prex "rm $OPA_REPORTFILE.tmp"
+      fi
+
+    else
+
+      type_reg="event_time_record"
+      _string=$(echo "${_rdate}" "${type_reg}" "$OPA_RUNDATE" "$eventid")
+
+    fi
+###
+      printf '%s , %s , %s , %s\n'  ${_string} | tee -a $OPA_REPORTFILE
+
+  #se ci sono errori significa che NON sono riuscito a scaricare i dati nel tempo previsto, pertanto mando un email
+  else
+
+    type_reg="target_time_fail"
+    _string=$(echo "${_rdate}" "${type_reg}" "$OPA_RUNDATE" "$eventid" "${_targettime}")
+###
+#     printf '%s , %s , %s , %s-fail, %s\n' ${_string} | tee -a $OPA_REPORTFILE
+    opa_prex "rm $OPA_REPORTFILE.tmp"
+    printf 'EventID:%s , TimeStamp:%s , ProdCycle:%s , TypeRegistration:%s-fail, TargetTime:%s\n' ${_string} | tee -a $OPA_REPORTFILE.tmp
+
+    opa_mail $eventid-fail
+    opa_prex "touch $OPA_RUNDATE.$eventid.fail"
+
+  fi
+}
+
+function opa_mail {
+
+  _eventid=$1
+  fileout=$OPA_RUNDATE.${_eventid}.html
+
+  $OPA_SCRDIR/opa_HTML.py --filein $OPA_REPORTFILE.tmp --fileout ${fileout}
+
+# |TimeStamp	|TypeRegistration	|ProdCycle	|EventID	|TargetTime|
+
+  if [[ $I_OPA_STAGE == "prod" ]];then
+    addresses=$OPA_MONITORING_ADDRESSES
+  else
+    addresses=$OPA_DEBUG_ADDRESSES
+  fi
+  cat ${fileout}|mail -s "$(echo -e "Catena_BIO: MyOcean Med-MFC realtime monitoring\nContent-Type: text/html")" $addresses
+# $OPA_MONITORING_ADDRESSES
+
+  rm $OPA_REPORTFILE.tmp
+}
+
+
+function opa_log_to_file {
+  typeset _opa_batch="$OPA_BATCH"
+  OPA_BATCH="true"
+  opa_log "$@"
+  OPA_BATCH="$_opa_batch"
+}
+
+
+_OPA_START_DONE=false
+function opa_start {
+  # Log message for script start
+  opa_log 0 "* START(${OPA_PROGNAME})"
+  _OPA_START_DONE=true
+}
+
+_OPA_EXIT_DONE=false
+_OPA_EXIT_CODE=''
+function opa_exit {
+  # Log message for script exit
+  typeset -i _default_ec=${_OPA_EXIT_CODE:-$?}
+  typeset -i _ec=${1:-$_default_ec}
+  #echo "opa_exit(${1}->${_default_ec}->${_ec})"
+  typeset    _message=""
+  if [[ "$1" == "" ]] ; then
+    _message=" (from last executed command)"
+  fi
+  if $_OPA_START_DONE && ! $_OPA_EXIT_DONE ; then
+    opa_log 0 "* EXIT(${OPA_PROGNAME}) [$(opa_exitcode ${_ec})]$_message"
+    _OPA_EXIT_DONE=true
+    _OPA_EXIT_CODE=${_ec}
+  fi
+  exit $_ec
+}
+
+function opa_signal_handler {
+  typeset    _signal="$1"
+  typeset -i _isignal
+  typeset    _ssignal
+  if [[ $(echo "$_signal" | grep -c '[^0-9]') -eq 0 ]] ; then
+    # Numeric signal
+    _isignal="$_signal"
+    _ssignal=$(kill -l "$_isignal")
+  else
+    # Symbolic signal
+    _ssignal="$_signal"
+    _isignal=$(kill -l "$_ssignal")
+  fi
+  typeset _ec=$(( $_isignal + 100 ))
+  typeset _tmp_opa_logmax=0
+  if [[ $OPA_LOGMAX -eq $OPA_DISABLE_LOG ]] ; then
+    # if log is disabled at all, force log on stdout
+    _tmp_opa_logmax=$OPA_DISABLE_LOG_ON_LOGFILE
+  fi
+  typeset _old_opa_logmax="$OPA_LOGMAX"
+  OPA_LOGMAX="$_tmp_opa_logmax"
+  opa_log 0 "* SIGNAL(${_ssignal}[${_isignal}]) - exiting [${_ec}]"
+  OPA_LOGMAX="$_old_opa_logmax"
+  opa_exit $_ec
+}
+
+function opa_stage_in {
+  # Stage-in of files; copy only if necessary!
+  typeset _target_dir="$1"
+  [[ -d $_target_dir ]] || opa_mkdir -p $_target_dir
+  if [[ ! -d $_target_dir ]] ; then
+    opa_log 0 "ERR: cannot create target dir $_target_dir"
+    return 1
+  fi
+  shift 1
+  typeset _line
+  typeset _source_file
+  typeset _target_base
+  typeset _target_file
+  typeset _do_copy
+  typeset -i _errors=0
+  for _line in "$@" ; do
+    if [[ $( echo "$_line" | grep -c '|' ) -eq 0 ]] ; then
+      _source_file="$_line"
+      _target_base=$(basename "$_source_file")
+    else
+      _source_file=$(echo "$_line" | cut -d\| -f1)
+      _target_base=$(echo "$_line" | cut -d\| -f2-)
+    fi
+    if [[ ! -f $_source_file ]] ; then
+      opa_log 0 "ERR: [${0}] : missing source file $_source_file"
+      _errors=$(( $_errors + 1 ))
+      continue
+    fi
+    _do_copy=false
+    _target_file="$_target_dir/$_target_base"
+    if [[ ! -f $_target_file ]] ; then
+      _do_copy=true
+    elif ! cmp $_source_file $_target_file; then
+      echo "[${0}]: target and source file differ!"
+      _do_copy=true
+    fi
+    if $_do_copy ; then
+      [[ -f $_target_file ]] && opa_prex "rm -f $_target_file"
+      opa_cp $_source_file $_target_file
+    else
+      echo "[${0}] : COMMENT : stage-in of ${_source_file} is not necessary"
+    fi
+  done
+  return $_errors
+}
+
+function opa_analyses_dates {
+  typeset    _opa_rundate="${1:-$OPA_RUNDATE}"
+  typeset -i _day_offset=$OPA_ANALYSES_DAYS
+  typeset    _date
+  while [[ _day_offset -gt 0 ]] ; do
+    _date=$($OPA_BINDIR/date --utc --date="$_opa_rundate $_day_offset days ago" +"%Y%m%d")
+    echo "$_date"
+    #printf "${file_out_fmt}\n" "$_date" "$_opa_rundate"
+    _day_offset=$(( $_day_offset - 1 ))
+  done
+}
+
+function opa_simulates_dates {
+  typeset    _opa_rundate="${1:-$OPA_RUNDATE}"
+  typeset -i _day_offset=$OPA_ANALYSES_DAYS-1
+  typeset    _date
+  while [[ _day_offset -gt 0 ]] ; do
+    _date=$($OPA_BINDIR/date --utc --date="$_opa_rundate $_day_offset days ago" +"%Y%m%d")
+    echo "$_date"
+    #printf "${file_out_fmt}\n" "$_date" "$_opa_rundate"
+    _day_offset=$(( $_day_offset - 1 ))
+  done
+}
+
+function opa_forecast_dates {
+  typeset    _opa_rundate="${1:-$OPA_RUNDATE}"
+  typeset -i _day_offset=0
+  typeset    _date
+  while [[ _day_offset -lt $OPA_FORECAST_DAYS ]] ; do
+    _date=$($OPA_BINDIR/date --utc --date="$_opa_rundate $_day_offset days" +"%Y%m%d")
+    echo "$_date"
+    #printf "${file_out_fmt}\n" "$_date" "$_opa_rundate"
+    _day_offset=$(( $_day_offset + 1 ))
+  done
+}
+
+function opa_dates {
+  typeset    _opa_rundate="${1:-$OPA_RUNDATE}"
+  opa_analyses_dates "$_opa_rundate"
+  opa_forecast_dates "$_opa_rundate"
+}
+
+function opa_pro_files {
+  typeset    _opa_rundate="${1:-$OPA_RUNDATE}"
+  typeset    _opa_proddate=$(opa_get_proddate "$_opa_rundate")
+  typeset    _file_out_fmt="$OPA_PRO_FILE_FMT"
+  typeset    _date
+  for _date in $(opa_forecast_dates $_opa_rundate) ; do
+    printf "${_file_out_fmt}\n" "$_date" "$_opa_proddate"
+  done
+}
+
+function opa_ana_files {
+  typeset    _opa_rundate="${1:-$OPA_RUNDATE}"
+  typeset    _workdir="$OPA_WRKDIR/POSTPROC"
+  typeset    _opa_proddate=$(opa_get_proddate "$_opa_rundate")
+  typeset    _file_out_fmt="$OPA_ANA_FILE_FMT"
+  typeset    _date
+
+  _date=$($OPA_BINDIR/date --utc --date="$_opa_rundate $OPA_ANALYSES_DAYS days ago" +"%Y%m%d")
+  _file=$(printf "${_file_out_fmt}\n" "$_date" "$_opa_proddate")
+  printf "${_file_out_fmt}\n" "$_date" "$_opa_proddate"
+}
+
+function opa_sim_files {
+  typeset    _opa_rundate="${1:-$OPA_RUNDATE}"
+  typeset    _workdir="$OPA_WRKDIR/POSTPROC"
+  typeset    _opa_proddate=$(opa_get_proddate "$_opa_rundate")
+  typeset    _file_out_fmt="$OPA_SIM_FILE_FMT"
+  typeset    _date
+
+  _hot_start=${2:false}
+
+  if ! $_hot_start ; then 
+    for _date in $(opa_analyses_dates $_opa_rundate) ; do
+      _file=$(printf "${_file_out_fmt}\n" "$_date" "$_opa_proddate")
+      printf "${_file_out_fmt}\n" "$_date" "$_opa_proddate"
+    done
+  else
+    for _date in $(opa_simulates_dates $_opa_rundate) ; do
+      _file=$(printf "${_file_out_fmt}\n" "$_date" "$_opa_proddate")
+      printf "${_file_out_fmt}\n" "$_date" "$_opa_proddate"
+    done
+  fi
+}
+
+function opa_v2c_files {
+  typeset    _opa_rundate="${1:-$OPA_RUNDATE}"
+  typeset    _workdir="$OPA_WRKDIR/POSTPROC/PRODUCTS"
+  typeset    _opa_proddate=$(opa_get_proddate "$_opa_rundate")
+  typeset    _file_out_fmt="$OPA_V2C_FILE_FMT"
+  typeset    _date
+
+  _hot_start=${2:false}
+
+#Analyses file
+  if $_hot_start ; then
+    _date=$($OPA_BINDIR/date --utc --date="$_opa_rundate $OPA_ANALYSES_DAYS days ago" +"%Y%m%d")
+    _file=$(printf "${_file_out_fmt}\n" "$_date" "$3" "$_opa_proddate" "an")
+    printf "${_file_out_fmt}\n" "$_date" "$3" "$_opa_proddate" "an"
+  fi
+
+#Forecast files
+  for _date in $(opa_forecast_dates $_opa_rundate) ; do
+    printf "${_file_out_fmt}\n" "$_date" "$3" "$_opa_proddate" "fc"
+  done
+
+#Simulation files
+  if ! $_hot_start ; then 
+    for _date in $(opa_analyses_dates $_opa_rundate) ; do
+      _file=$(printf "${_file_out_fmt}\n" "$_date" "$3" "$_opa_proddate" "sm")
+      printf "${_file_out_fmt}\n" "$_date" "$3" "$_opa_proddate" "sm"
+    done
+  else
+    for _date in $(opa_simulates_dates $_opa_rundate) ; do
+      _file=$(printf "${_file_out_fmt}\n" "$_date" "$3" "$_opa_proddate" "sm")
+      printf "${_file_out_fmt}\n" "$_date" "$3" "$_opa_proddate" "sm"
+    done
+  fi
+}
+
+function opa_v3c_files {
+  typeset    _opa_rundate="${1:-$OPA_RUNDATE}"
+  typeset    _workdir="$OPA_WRKDIR/POSTPROC/PRODUCTS"
+  typeset    _opa_proddate=$(opa_get_proddate "$_opa_rundate")
+  typeset    _file_out_fmt="$OPA_V3C_FILE_FMT"
+  typeset    _date
+
+  _hot_start=${2:false}
+
+#Analyses file
+  if $_hot_start ; then
+    _date=$($OPA_BINDIR/date --utc --date="$_opa_rundate $OPA_ANALYSES_DAYS days ago" +"%Y%m%d")
+    _file=$(printf "${_file_out_fmt}\n" "$_date" "$3" "$_opa_proddate" "an")
+    printf "${_file_out_fmt}\n" "$_date" "$3" "$_opa_proddate" "an"
+  fi
+
+#Forecast files
+  for _date in $(opa_forecast_dates $_opa_rundate) ; do
+    printf "${_file_out_fmt}\n" "$_date" "$3" "$_opa_proddate" "fc"
+  done
+
+#Simulation files
+  if ! $_hot_start ; then 
+    for _date in $(opa_analyses_dates $_opa_rundate) ; do
+      _file=$(printf "${_file_out_fmt}\n" "$_date" "$3" "$_opa_proddate" "sm")
+      printf "${_file_out_fmt}\n" "$_date" "$3" "$_opa_proddate" "sm"
+    done
+  else
+    for _date in $(opa_simulates_dates $_opa_rundate) ; do
+      _file=$(printf "${_file_out_fmt}\n" "$_date" "$3" "$_opa_proddate" "sm")
+      printf "${_file_out_fmt}\n" "$_date" "$3" "$_opa_proddate" "sm"
+    done
+  fi
+}
+
+_OPA_TODAY=''
+_OPA_SUBMIT_DAY_OFFSET=''
+_OPA_RUNDATE=''
+function _opa_get_default_run {
+  typeset _opa_submit_day_offset="$OPA_SUBMIT_DAY_OFFSET"
+  typeset _opa_today="$OPA_TODAY"
+  typeset _opa_rundate=""
+  typeset _opa_weekday="${OPA_WEEKDAY}"
+  typeset _arg
+  while [[ ${#@} -ne 0 ]] ; do
+    _arg="$1"
+    shift 1
+    case "$_arg" in
+      --rundate|-r)
+        _opa_rundate="$1"
+        shift 1
+        ;;
+      --weekday|-w)
+        _opa_weekday=$(opa_translate_weekday $1)
+        shift 1
+        ;;
+      --today|-t)
+        _opa_today=$($OPA_BINDIR/date --utc --date="$1 12:00:00" +"%Y%m%d")
+        shift 1
+        ;;
+      --submit-day-offset|-s)
+        _opa_submit_day_offset="$1"
+        shift 1
+        ;;
+    esac
+  done
+  #echo "DEBUG: _opa_rundate='$_opa_rundate', _opa_weekday='$_opa_weekday'"
+  if [[ "$_opa_rundate" == '' ]] ; then
+    if [[ "$_opa_weekday" == '' ]] ; then
+      _opa_rundate=$(opa_last_rundate "$_opa_today" "$_opa_submit_day_offset")
+    else
+      typeset _opa_submit_weekday=$(( $_opa_weekday + $_opa_submit_day_offset ))
+
+      typeset _opa_today_weekday=$($OPA_BINDIR/date +%w --utc --date="$_opa_today")
+      typeset _opa_day_offset
+      # the opa_rundate is the previous Tuesday;
+      # * $_opa_today_weekday - $_opa_submit_weekday is the number of days since the last $submit_weekday
+      # * $_opa_today_weekday - $_opa_submit_weekday + $_opa_submit_day_offset is the number of days since the last $opa_weekday
+      # * ( $_opa_today_weekday - $_opa_submit_weekday + 7 + $_opa_submit_day_offset ) % 7 ) is normalized between 0 and 6
+      # * 1 offset day is added because opa_rundate is Tuesday, not Wednesday
+      _opa_day_offset=$(( ( ( $_opa_today_weekday - $_opa_submit_weekday + 7 ) % 7 ) + $_opa_submit_day_offset ))
+      _opa_rundate=$( $OPA_BINDIR/date --utc --date="$_opa_today 00:00:00 $_opa_day_offset days ago" +%Y%m%d)
+      #echo "DEBUG: _opa_submit_weekday='$_opa_submit_weekday', _opa_today_weekday='$_opa_today_weekday', _opa_day_offset='$_opa_day_offset', _opa_rundate='$_opa_rundate'"
+    fi
+  fi
+  _OPA_TODAY="$_opa_today"
+  _OPA_SUBMIT_DAY_OFFSET="$_opa_submit_day_offset"
+  if [[ "$_opa_rundate" == '' ]] ; then
+    _opa_rundate="${OPA_RUNDATE:-$OPA_DEFAULT_RUNDATE}"
+  fi
+  _OPA_RUNDATE="$_opa_rundate"
+  #echo "DEBUG: _OPA_RUNDATE='$_OPA_RUNDATE'"
+}
+
+function opa_set_default_run {
+  _opa_get_default_run --rundate "$RT_OPA_RUNDATE" "$@"
+  OPA_DEFAULT_RUNDATE="$_OPA_RUNDATE"
+  OPA_TODAY="$_OPA_TODAY"
+  OPA_SUBMIT_DAY_OFFSET="$_OPA_SUBMIT_DAY_OFFSET"
+}
+
+OPA_DEFAULT_RUN_PATTERN="--rundate|-r|--weekday|-w|--today|-t|--submit-day-offset|-s" # does not work on AIX's ksh!
+function opa_set_default_run__print_options {
+  cat <<EOFCAT
+        --rundate|-r YYYYMMDD                   set the run date
+                                                [DEFAULT: "${OPA_RUNDATE:-$OPA_DEFAULT_RUNDATE}"]
+        --weekday|-w WW                         set the opa weekday
+                                                [DEFAULT: "$OPA_WEEKDAY"]
+        --today|-t YYYYMMDD                     set the "today" date
+                                                [DEFAULT: "$OPA_TODAY"]
+        --submit-day-offset|-s O                set the "opa_submit_day_offset"
+                                                [DEFAULT: "$OPA_SUBMIT_DAY_OFFSET"]
+EOFCAT
+}
+
+function opa_step_has_phase {
+  typeset _step="$1"
+  typeset _phase="$2"
+  shift 2
+  typeset _enable_phases
+  typeset _disable_phases
+  case "$_step" in
+    pre)
+      _enable_phases="$OPA_ENABLE_PRE_PHASES"
+      _disable_phases="$OPA_DISABLE_PRE_PHASES"
+      ;;
+    model)
+      _enable_phases="$OPA_ENABLE_MODEL_PHASES"
+      _disable_phases="$OPA_DISABLE_MODEL_PHASES"
+      ;;
+    post)
+      _enable_phases="$OPA_ENABLE_POST_PHASES"
+      _disable_phases="$OPA_DISABLE_POST_PHASES"
+      ;;
+    *)
+      echo "[${0}]: ERR: invalid step ${_step}" 1>&2
+      return 1
+      ;;
+  esac
+  if [[ $( echo " $_enable_phases " | grep -c " $_phase " ) -eq 0 ]] ; then
+    echo "WARNING: step [${step}]: phase [${_phase}] is not enabled"
+    return 1
+  elif [[ $( echo " $_disable_phases " | grep -c " $_phase " ) -ne 0 ]] ; then
+    echo "WARNING: step [${step}]: phase [${_phase}] is disabled"
+    return 1
+  else
+    return 0
+  fi
+}
+
+
+function opa_exec_and_log {
+  # Exec the opa script $1  with arguments $2...,
+  #  and redirect standard output and standard error on a log file
+  # The opa script $1 must be given without path and trailing .ksh!!!
+  typeset _command="$1"
+  shift 1
+  typeset _arg
+  typeset _args=""
+  for _arg in "$@" ; do
+    _args="${_args}'$_arg' "
+  done
+  typeset _logfile="$OPA_RUNLOGDIR/opa.${I_OPA_HOSTNAME}.${OPA_RUNID}.${_command}.out"
+  opa_prex "$OPA_SCRDIR/${_command}.ksh $_args 1>$_logfile 2>&1" ; return $_ec
+}
+
+function opa_date_day_offset {
+  typeset    _date="$1"
+  typeset -i _day_offset="$2"
+  typeset    _out_date_format="${3:-%Y%m%d}"
+  if [[ $_day_offset -lt 0 ]] ; then
+    $OPA_BINDIR/date --utc --date="$_date $(( 0 - $_day_offset)) days ago" +"$_out_date_format"
+  elif [[ $_day_offset -eq 0 ]] ; then
+    $OPA_BINDIR/date --utc --date="$_date" +"$_out_date_format"
+  else
+    $OPA_BINDIR/date --utc --date="$_date $_day_offset days" +"$_out_date_format"
+  fi
+}
+
+function opa_unformatted_runid {
+  typeset -i _last_jcf_id
+  typeset    _last_jcf_id_s
+  _last_jcf_id_s=$( cd $OPA_RUNLOGDIR ; ls -1 opa.*.*.jcf_* 2>/dev/null | cut -d. -f3 | sort | tail -1 )
+  if [[ "$_last_jcf_id_s" == "" ]] ; then
+    _last_jcf_id=0
+  else
+    _last_jcf_id=$(echo "$_last_jcf_id_s" | sed -e 's/^0*//')
+  fi
+  printf '%s' "$_last_jcf_id"
+}
+
+function opa_runid {
+  typeset _i _opa_runid_i=$(opa_unformatted_runid)
+  typeset -ZR3 _opa_runid=$_opa_runid_i
+  printf '%s' "$_opa_runid"
+}
+
+function opa_new_unformatted_runid {
+  typeset -i _opa_runid_i=$(opa_unformatted_runid)
+  typeset -i _opa_new_runid_i=$(( $_opa_runid_i + 1 ))
+  printf '%s' "$_opa_new_runid_i"
+}
+
+function opa_new_runid {
+  typeset _i _opa_new_runid_i=$(opa_new_unformatted_runid)
+  typeset -ZR3 _opa_new_runid=$_opa_new_runid_i
+  printf '%s' "$_opa_new_runid"
+}
+
+function opa_runjobid_file {
+  typeset _opa_runid="$1"
+  if [[ "$_opa_runid" == '' ]] ; then
+    _opa_runid=$(opa_runid)
+  fi
+  typeset _opa_runjobid_file="$OPA_RUNLOGDIR/opa.${I_OPA_HOSTNAME}.${_opa_runid}.${OPA_RM}.jobids"
+  #echo ">>> $_opa_runid -> $_opa_runjobid_file" 1>&2
+  printf '%s' "$_opa_runjobid_file"
+}
+function opa_add_jobid {
+  typeset _opa_jcf="$1"
+  typeset _opa_jobid="$2"
+  typeset _opa_runid="$3"
+  echo "${_opa_jcf}:${_opa_jobid}" >> "$(opa_runjobid_file $_opa_runid)"
+}
+
+function opa_get_jobids {
+  typeset    _opa_runid="$1"
+  typeset    _opa_runjobid_file=$(opa_runjobid_file $_opa_runid)
+  #echo "::: _opa_runid=<$_opa_runid> -> _opa_runjobid_file=<$_opa_runjobid_file>" 1>&2
+  if [[ -f "$_opa_runjobid_file" ]] ; then
+    cut -d: -f2- "$_opa_runjobid_file" | tr '\n' ' '
+  fi
+}
+
+function opa_setup_template {
+  typeset _source="$1"
+  typeset _target="$2"
+  sed	-e "s%@@(T:OPA_HOME)%${I_OPA_HOME}%g"			\
+	-e "s%@@(T:OPA_LIBDIR)%${OPA_LIBDIR}%g"			\
+	-e "s%@@(T:OPA_BINDIR)%${OPA_BINDIR}%g"			\
+	-e "s%@@(T:OPA_ETCDIR)%${OPA_ETCDIR}%g"			\
+	-e "s%@@(T:OPA_SCRDIR)%${OPA_SCRDIR}%g"			\
+	-e "s%@@(T:OPA_HOSTNAME)%${I_OPA_HOSTNAME}%g"		\
+	-e "s%@@(T:OPA_GRADS_HOME)%${OPA_GRADS_HOME}%g"		\
+	"$_source" > "$_target"
+  typeset _check_pattern='@@(T:[a-zA-Z_0-9]*)'
+  if [[ $($OPA_BINDIR/grep -c "$_check_pattern" "$_target") -ne 0 ]] ; then
+    opa_log 0 "ERR: unexpanded macros in '$_source':"
+    opa_prex "$OPA_BINDIR/grep '$_check_pattern' '$_target'"
+    return 1
+  fi
+  return 0
+}
+
+
+function set_spec_data {
+  # definisce le variabili globali dipendenti da rundate
+#   per esempio: dato RUNDATE E TOT DI giorni DA ANDARE/AVANTI/RITORNARE INDIETRO + le ora partendo dalle 00:00:00
+#   ritorna una variabile globale del tipo %Y%m%d-%H:%M:S
+# ESEMPIO DI SOTTOMISSIONE:
+# set_spec_run -date 20120216 -days 5 -hours 12
+#  genera 20120221-12:00:00
+# set_spec_run -date 20120216 -days -5 -hours 12
+#  genera 20120221-12:00:00
+  typeset -i _date
+  typeset -i _hours=0
+  typeset -i _days=0
+  typeset    _arg
+
+  while [[ ${#@} -ne 0  ]] ; do
+    _arg="$1"
+    shift 1
+    case "$_arg" in
+      ?(-)-date)
+        _date=$1
+        shift 1
+        ;;
+      ?(-)-hours)
+        _hours=$1
+        shift 1
+        ;;
+      ?(-)-days)
+        _days=$1
+        shift 1
+        ;;
+      *)
+	echo "OPTION $arg sconosciuta"
+	exit -- -1
+	;;
+    esac
+  done
+
+  if [[ ${_days} -gt 0 ]]; then
+    _ago="s"
+  else
+    _days=$(( -1*${_days} ))
+    _ago=" ago"
+  fi
+#   echo   "typeset RUNDATE_m_tmp= --date=${_date} ${_hours}:00:00  ${_days} day${_ago}"
+  eval "RUNDATE_tmp=$( date --utc +"%Y%m%d-%H:%M:%S" --date="${_date} 00:00:00  ${_days} day${_ago} ${_hours} hour" )"
+  eval "LAST_RUNDATE=$( date --utc +"%Y%m%d" --date="${_date} ${_days} day${_ago} " )"
+}
+
+function opa_check_da {
+  typeset _restart_rundate=$($OPA_BINDIR/date --utc --date="$OPA_RUNDATE 00:00:00 7 days ago" +'%Y%m%d')
+  typeset _restart_rundate_yyyy=$( $OPA_BINDIR/date --utc +'%Y%m%d-%H:%M:%S' --date="$_restart_rundate 01:00:00" )
+  typeset _restart_dir="$OPA_WRKDIR/MODEL/DA__FREQ_1"
+  typeset _type_file="RST"
+
+  typeset    _restart_file
+  typeset    _output_var
+  typeset -i _num_missing=0
+
+  _prefix="RST"
+  _suffix="nc"
+  _variables="$OPA_DA_VARIABLES"
+
+  for _output_var in ${_variables} ; do
+    _restart_file="${_prefix}.${_restart_rundate_yyyy}.${_output_var}.${_suffix}"
+    if [[ ! -f $_restart_dir/${_restart_file} ]] ; then
+      _num_missing=$(( $_num_missing + 1 ))
+    fi
+  done
+  return $_num_missing
+}
+
+# trap only for batch
+for signal in HUP INT QUIT TERM ; do
+  trap "opa_signal_handler $signal" "$signal"
+done
+trap "opa_exit" EXIT
+
+# end of include guard:
+fi
+
+
+function opa_defdomain {
+  typeset _opa_tasks=$1
+  case "${_opa_tasks}" in
+    48)
+      _domain_suff="${_opa_tasks}x1"
+      ;;
+    96)
+      _domain_suff="48x2"
+      ;;
+   128)
+      _domain_suff="64x2"
+      ;;
+     *)
+      _domain_suff="${_opa_tasks}x1"
+      ;;
+  esac
+#    "${_domain_suff}"
+  printf '%s\n' "${_domain_suff}"
+
+}
+
+secs2hhmmss() {
+  # converte $1 secondi in una stringa "hh:mm:ss"
+  # $1 : secondi
+  typeset -i secs
+  secs=$1
+  typeset -i h m s
+  typeset -ZR2 sm ss 
+  typeset -R3 sh
+  h=$(( $secs / 3600 ))
+  m=$(( ( $secs - ( $h * 3600 ) ) / 60 ))
+  s=$(( $secs - ( $h * 3600 )  - ( $m * 60 ) ))
+  ###echo "$h:$m:$s" | sed -e "s% %0%g"
+  sh=$h
+  sm=$m
+  ss=$s
+  echo "$sh:$sm:$ss"
+}
+
+
+time_sum() {
+  # calcola la differenza in secondi fra
+  #   "hh:mm:ss[B]" e "hh:mm:ss[A]"
+  #   e stampa questo valore come stringa "hh:mm:ss"
+  #   Se B e' minore di A, viene aumentato di un giorno
+  #   (in tal modo, la differenza e' modulo 24)
+  # $1 : "hh:mm:ss[A]"
+  # $2 : "hh:mm:ss[B]"
+  # $3 : s|f (s indica output in secondi, f in formato hh:mm:ss)
+  typeset -i sA sB sS
+
+
+  typeset -i Ah=$( echo "$1" | cut -d':' -f1 )
+  typeset -i Am=$( echo "$1" | cut -d':' -f2 )
+  typeset -i As=$( echo "$1" | cut -d':' -f3 )
+  sA=$(( $As + ( $Am * 60 ) + ( $Ah * 3600 ) ))
+
+  typeset -i Bh=$( echo "$2" | cut -d':' -f1 )
+  typeset -i Bm=$( echo "$2" | cut -d':' -f2 )
+  typeset -i Bs=$( echo "$2" | cut -d':' -f3 )
+  sB=$(( $Bs + ( $Bm * 60 ) + ( $Bh * 3600 ) ))
+
+  sS=$(( $sB + $sA ))
+
+  if [[ $3 = f ]] ; then
+    secs2hhmmss $sS
+  else
+    echo $sS
+  fi
+}

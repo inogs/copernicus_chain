@@ -1,0 +1,106 @@
+#!/usr/bin/env python
+
+import datetime
+import time
+import sys
+import calendar
+import optparse
+
+opt_list = [
+		optparse.make_option(   '-d','--rundate',
+			dest='opa_rundate',
+			type='string',
+			default=None,
+			help='opa_rundate YYYYMMDD',
+		),
+		optparse.make_option(   '-a','--analyses-days',
+			dest='opa_analyses_days',
+			type='int',
+			default=7,
+			help='opa_analyses_days',
+		),
+		optparse.make_option(   '-f','--forecast-days',
+			dest='opa_forecast_days',
+			type='int',
+			default=10,
+			help='opa_forecast_days',
+		),
+		optparse.make_option(	'-V', '--verbose',
+			dest='verbose',
+			action="store_true",
+			default=False,
+			help="verbose",
+		),
+		optparse.make_option(	'-D', '--debug',
+			dest='debug',
+			action="store_true",
+			default=False,
+			help="debug",
+		),
+]
+
+help_formatter=optparse.IndentedHelpFormatter(max_help_position=38)
+parser = optparse.OptionParser(option_list=opt_list,formatter=help_formatter)
+
+(options,args) = parser.parse_args(sys.argv[1:])
+
+if options.opa_rundate is None:
+  if args:
+    options.opa_rundate = args.pop(0)
+  else:
+    sys.stderr.write("ERR: missing mandatory option -d/--rundate\n")
+    sys.exit(2)
+if options.opa_rundate is None:
+  options.opa_rundate = datetime.datetime.now().strftime("%Y%m%d"),
+
+if options.opa_analyses_days is None:
+  if args:
+    options.opa_analyses_days = args.pop(0)
+  else:
+    sys.stderr.write("ERR: missing mandatory option -a/--analyses-days\n")
+    sys.exit(2)
+
+if options.opa_forecast_days is None:
+  if args:
+    options.opa_forecast_days = args.pop(0)
+  else:
+    sys.stderr.write("ERR: missing mandatory option -f/--forecast-days\n")
+    sys.exit(2)
+
+try:
+  opa_rundate = datetime.datetime(*time.strptime(options.opa_rundate, "%Y%m%d") [:6])
+except Exception, e:
+  sys.stderr.write("ERR: %s is not a valid date: %s: %s\n" % (options.opa_rundate, e.__class__.__name__, e))
+  sys.exit(1)
+opa_analyses_days = options.opa_analyses_days
+opa_forecast_days = options.opa_forecast_days
+#print opa_analyses_days, type(opa_analyses_days)
+#print opa_forecast_days, type(opa_forecast_days)
+
+def format_table(table, separator='|'):
+  if not table:
+    return
+  l = max([len(row) for row in table])
+  table = [[str(e) for e in list(row)+['' for i in xrange(len(row), l+1)]] for row in table]
+  lm = [max([len(row[c]) for row in table]) for c in xrange(l)]
+  t = [separator.join([str(row[c]).rjust(lm[c]) for c in xrange(l)]) for row in table]
+  return '\n'.join(t)
+
+table = []
+if options.verbose:
+  table.append(("DAY_OFFSET", "OPA_RUNDATE", "OPA_DATE", "OPA_DATE-OPA_RUNDATE", "DATE_J", "DATE_K"))
+for i in range(-opa_analyses_days, opa_forecast_days+1):
+  day_offset = datetime.timedelta(days=i)
+  opa_date = opa_rundate + day_offset
+  opa_date_j = int(opa_date.strftime("%j"))
+  days = 365
+  if calendar.isleap(opa_date.year):
+    days += 1
+  opa_date_k = int(round(float(opa_date_j)*365./days, 0))
+  if options.verbose:
+    #sys.stderr.write("%2d)\t%20s\t%20s\t%20s\t%03d\t%03d\n" % (i, opa_date, opa_rundate, datetime.timedelta(days=i), opa_date_j, opa_date_k))
+    table.append((i, opa_date, opa_rundate, day_offset, opa_date_j, opa_date_k))
+  print opa_date_k
+
+if options.verbose:
+  print format_table(table)

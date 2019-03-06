@@ -1,0 +1,1506 @@
+#!/usr/bin/env python
+import os
+import sys
+import math
+import time
+import random
+import hashlib
+import resource
+try:
+    from collections import OrderedDict as odict
+except ImportError:
+    from __builtin__ import dict as odict
+
+
+class PError(Exception):
+    pass
+
+class PStats(object):
+    def __init__(self):
+        self.data = odict()
+
+    def add_entry(self, algorithm, L, P, tr, te):
+        self.data.setdefault(algorithm, odict()).setdefault(L, dict()).setdefault(P, list()).append((tr, te))
+
+    def report(self):
+        al = max(len(algorithm) for algorithm in tuple(self.data.iterkeys()) + ("ALGORITHM", ))
+        lengths = (	 al,	  6,	  6,	  6,	    8,	    8,	    8,	    8,	   8,	   8)
+        aligns =  (	'>',	'>',	'>',	'>',	  '>',	  '>',	  '>',	  '>',	 '>',	 '>')
+        fmts_h =  (	's',	's',	's',	's',	  's',	  's',	  's',	  's',	 's',	 's')
+        fmts_d =  (	's',	'd',	'd',	'd',	'.2f',	'.2f',	'.2f',	'.2f',	'.2f',	'.2f')
+        fmt_h_l = []
+        fmt_d_l = []
+        for i, (l, a, fh, fd) in enumerate(zip(lengths, aligns, fmts_h, fmts_d)):
+            fmt_h_l.append("{{{0}:{1}{2}{3}}}".format(i, a, l, fh))
+            fmt_d_l.append("{{{0}:{1}{2}{3}}}".format(i, a, l, fd))
+        fmt_h = ' '.join(fmt_h_l)
+        fmt_d = ' '.join(fmt_d_l)
+        #print fmt_h
+        #print fmt_d
+        lines = []
+        lines.append(fmt_h.format("ALGORITHM", "L", "P", "#TIMES", "TR_MIN", "TR_MAX", "TR_AVE", "TE_MIN", "TE_MAX", "TE_AVE"))
+        for algorithm, algorithm_data in self.data.iteritems():
+            for L in sorted(algorithm_data.iterkeys()):
+                L_data = algorithm_data[L]
+                for P in sorted(L_data.iterkeys()):
+                    P_data = L_data[P]
+                    Pr_data = map(lambda x: x[0], P_data)
+                    Pe_data = map(lambda x: x[1], P_data)
+                    t_num = len(P_data)
+                    tr_min = min(Pr_data)
+                    tr_max = max(Pr_data)
+                    tr_ave = sum(Pr_data) / float(t_num)
+                    te_min = min(Pe_data)
+                    te_max = max(Pe_data)
+                    te_ave = sum(Pe_data) / float(t_num)
+                    #l.append("{0:8d} {1:8d} {2:8d} {3:10.2f} {4:10.2f} {5:10.2f}".format(L, P, t_num, t_min, t_max, t_ave))
+                    lines.append(fmt_d.format(algorithm, L, P, t_num, tr_min, tr_max, tr_ave, te_min, te_max, te_ave))
+        return '\n'.join(lines)
+            
+    @classmethod
+    def _tdata(cls):
+        return resource.getrusage(resource.RUSAGE_SELF), time.time()
+
+    @classmethod
+    def start(cls, algorithm, L, P):
+        return (algorithm, L, P, cls._tdata())
+            
+    def stop(self, timer):
+        algorithm, L, P, d0 = timer
+        ru0, te0 = d0
+        d1 = self._tdata()
+        ru1, te1 = d1
+        tr = ru1.ru_utime - ru0.ru_utime
+        te = te1 - te0
+        self.add_entry(algorithm, L, P, tr, te)
+
+class PArray(tuple):
+    def __new__(cls, init):
+        instance = tuple.__new__(cls, init)
+        return instance
+
+    @classmethod
+    def fromfile(cls, input_file, input_type=float):
+        if isinstance(input_file, basestring):
+            with open(input_file, 'rb') as input_f:
+                data_l = input_f.read().split()
+        else:
+            data_l = input_file.read().split()
+        data = [input_type(i) for i in data_l]
+        return cls(data)
+
+    @classmethod
+    def random(cls, length, min_value=0.0, max_value=100.0, value_type=None):
+        if value_type is None:
+            value_type = float
+        if issubclass(value_type, float):
+            random_function = random.uniform
+        elif issubclass(value_type, (int, long)):
+            random_function = random.randrange
+        else:
+            raise PError, "type {0} not supported".format(value_type)
+        return cls(random_function(min_value, max_value) for i in xrange(length))
+
+    def tofile(self, output_file):
+        s = '\n'.join(str(e) for e in self) + '\n'
+        if isinstance(output_file, basestring):
+            with open(output_file, 'wb') as output_f:
+                output_f.write(s)
+        else:
+            output_file.write(s)
+
+    def hexdigest(self):
+        return hashlib.md5(str(self)).hexdigest()
+
+class PManagerMeta(type):
+    def __new__(cls, class_name, class_bases, class_dict):
+        c = type.__new__(cls, class_name, class_bases, class_dict)
+        optimize_root = c.OPTIMIZE_ROOT
+        optimize_init_root = c.OPTIMIZE_INIT_ROOT
+        ol = set()
+        il = set()
+        for fun_name in dir(c):
+            if fun_name.startswith(optimize_root):
+                ol.add(fun_name[len(optimize_root):])
+            if fun_name.startswith(optimize_init_root):
+                il.add(fun_name[len(optimize_init_root):])
+        algorithms = ol.intersection(il)
+        map_names = dict((algorithm, algorithm) for algorithm in algorithms)
+        assert hasattr(c, 'DEFAULT_ALGORITHM')
+        for alias, algorithm in c.OPTIMIZE_ALIASES.iteritems():
+            alias__init = "optimize_init__{0}".format(alias)
+            alias__optimize = "optimize__{0}".format(alias)
+            algorithm__init = "optimize_init__{0}".format(algorithm)
+            algorithm__optimize = "optimize__{0}".format(algorithm)
+            setattr(c, alias__init, getattr(c, algorithm__init))
+            setattr(c, alias__optimize, getattr(c, algorithm__optimize))
+            algorithms.add(alias)
+            map_names[alias] = algorithm
+        c.ALGORITHMS = algorithms
+        c.MAP_NAMES = map_names
+        assert c.DEFAULT_ALGORITHM in algorithms, c.DEFAULT_ALGORITHM
+        return c
+
+class PManager(object):
+    __metaclass__ = PManagerMeta
+    OPTIMIZE_ROOT = 'optimize__'
+    OPTIMIZE_INIT_ROOT = 'optimize_init__'
+    DEFAULT_ALGORITHM = 'odd'
+    OPTIMIZE_ALIASES = {
+	'odd':		'odd_O3',
+	'bruteforce':	'bruteforce_O1',
+    }
+    def __init__(self, num_partitions, array,
+		load_db=True,
+		dump_db=True,
+		db_path=None,
+		verbose_level=None):
+        self.P = num_partitions
+        if isinstance(array, basestring):
+            array = PArray.fromfile(array)
+        elif not isinstance(array, PArray):
+            array = PArray(array)
+        self.pstats = PStats()
+        self.A = array
+        self.L = len(self.A)
+        #raw_input("P={0}".format(P))
+        assert len(self.A) >= self.P, "array is too small"
+        self._ave = float(sum(self.A)) / self.P
+        self._fitness_factor = 1.0 / self._ave
+        self.last_partition = None
+        self.best_partition = None
+        hexdigest = self.A.hexdigest()
+        #if db_path is None:
+        #    db_path = 'a{0}.db'.format(hexdigest)
+        #db_path = os.path.abspath(db_path)
+        self.db_path = db_path
+        if self.db_path is None:
+            db_file = None
+        else:
+            db_file = os.path.join(db_path, '{0}-{1}.db'.format(hexdigest, self.P))
+        self.db_file = db_file
+
+        self.load_db = load_db
+        self.dump_db = dump_db
+        if self.db_file is None or not os.path.lexists(self.db_file):
+            self.load_db = False
+
+        if self.load_db:
+            self.load_partitions()
+
+        if verbose_level is None:
+            verbose_level = 1
+        self.verbose_level = verbose_level
+
+    @classmethod
+    def _init_file(cls, filename):
+        dirname = os.path.abspath(os.path.dirname(filename))
+        if not os.path.isdir(dirname):
+            os.makedirs(dirname)
+
+    @classmethod
+    def fromfile(cls, input_file, P, input_type=float):
+        A = PArray.fromfile(input_file, input_type=input_type)
+        return cls(A, P)
+            
+    def tofile(self, output_file):
+        self._init_file(output_file)
+        return self.A.tofile(output_file)
+     
+    load_array = fromfile
+    dump_array = tofile
+
+    def _load_partitions(self, input_file):
+        last_lines = collections.deque(maxlen=2)
+        for last_line in input_file:
+            last_lines.append(last_line)
+        if not last_lines:
+            return None
+        else:
+            data_i_l = []
+            data_l = last_lines[0].split() + last_lines[1].split()
+            assert len(data_l) == 4 * self.P, "Invalid partition size: {0} != {1}".format(len(data_l), 4 * self.P)
+            for i in xrange(2 * self.P):
+                k = 2 * i
+                ib = int(data_l[k])
+                il = int(data_l[k + 1])
+                data_i_l.append((ib, il))
+            last_partition = data_i_l[:self.P]
+            best_partition = data_i_l[self.P:]
+            return last_partition, best_partition
+
+    def load_partitions(self):
+        input_file = self.db_file
+        if input_file is not None:
+            if isinstance(input_file, basestring):
+                with open(input_file, 'rb') as input_f:
+                    self.last_partition, self.best_partition = self._load_partitions(input_f)
+            else:
+                self.last_partition, self.best_partition = self._load_partitions(input_file)
+
+    def dump_partitions(self):
+        self._dump_partitions(self.last_partition, self.best_partition)
+
+    def _save_partitions(self, last_partition, best_partition):
+        self.last_partition = tuple(last_partition)
+        self.best_partition = tuple(best_partition)
+        #print "Saving last:", self.last_partition
+        #print "Saving best:", self.best_partition
+        if self.dump_db:
+            self.dump_partitions()
+
+    def _dump_partitions(self, last_partition, best_partition, append=False):
+        output_file = self.db_file
+        if output_file is not None:
+            sl = []
+            for partition in last_partition, best_partition:
+                l = []
+                for ib, il in partition:
+                    l.append("{0:8d} {1:8d}".format(ib, il))
+                sl.append(' '.join(l))
+            s = '\n'.join(sl) + '\n'
+            if isinstance(output_file, basestring):
+                if append:
+                    mode = 'wba'
+                else:
+                    mode = 'wb'
+                self._init_file(output_file)
+                with open(output_file, mode) as output_f:
+                    output_f.write(s)
+            else:
+                output_file.write(s)
+
+    @classmethod
+    def partition2odd(cls, partition):
+        l = [(il - ib) + 2 for ib, il in partition]
+        l[0] -= 1
+        l[-1] -= 1
+        return tuple(l)
+
+    @classmethod
+    def odd2partition(cls, odd):
+        partition = []
+        ib = 0
+        l_odd = [e - 2 for e in odd]
+        l_odd[0] += 1
+        l_odd[-1] += 1
+        for ic in l_odd:
+            il = ib + ic
+            partition.append((ib, il))
+            ib = il
+        return tuple(partition)
+
+    @classmethod
+    def load_partition(cls, input_file):
+        if isinstance(input_file, basestring):
+            with open(input_file, 'rb') as input_f:
+                data_l = input_f.read()
+        else:
+            data_l = input_file.read()
+        data = tuple(int(i) for i in data_l.split())
+        partition = []
+        ib = 0
+        for ic in data:
+            il = ib + ic
+            partition.append((ib, il))
+            ib = il
+        return tuple(partition)
+      
+    @classmethod
+    def dump_partition(cls, output_file, partition):
+        data_s = '\n'.join("{0} {1}".format(ib, il) for ib, il in partition) + '\n'
+        if isinstance(output_file, basestring):
+            cls._init_file(output_file)
+            with open(output_file, 'wb') as output_f:
+                output_f.write(data_s)
+        else:
+            output_f.write(data_s)
+
+    @classmethod
+    def load_odd(cls, input_file):
+        if isinstance(input_file, basestring):
+            with open(input_file, 'rb') as input_f:
+                data_l = input_f.read()
+        else:
+            data_l = input_file.read()
+        odd = tuple(int(i) for i in data_l.split())
+        return odd
+      
+    @classmethod
+    def dump_odd(cls, output_file, odd):
+        data_s = '\n'.join(str(e) for e in odd) + '\n'
+        if isinstance(output_file, basestring):
+            cls._init_file(output_file)
+            with open(output_file, 'wb') as output_f:
+                output_f.write(data_s)
+        else:
+            output_f.write(data_s)
+
+    def print_odd(self):
+        best_measure = self._measure_sums(best_sums)
+        best_fitness = self._normalized_measure(best_measure)
+        print "Measure = {0:10.2f}, fitness={1:10.2f}".format(best_measure, best_fitness)
+        for i, ((ib, il), isum) in enumerate(zip(self.best_partition, best_sums)):
+            print "{0:4d}) {1:4d} : {2:4d} -> {3:10.2f}".format(i, ib, il, isum)
+            
+
+    def _init_partition__nearest_to(self, value):
+        if value is None:
+            value = self._ave
+        ib = 0
+        L = self.L
+        P = self.P
+        A = self.A
+        partition = []
+        for ind in xrange(P - 1):
+           il_max = L - (P - ind)
+           partial_sum = A[ib]
+           #print "___", ind, ib, L, P, il_max, partial_sum, '...', ib + 1, il_max
+           for ic in xrange(ib + 1, il_max):
+               partial_sum_new = partial_sum + A[ic]
+               #print partial_sum, partial_sum_new, value, '+++', A[ic], '---', (partial_sum_new - value), (partial_sum - value)
+               if abs(partial_sum_new - value) > abs(partial_sum - value):
+                   il = ic - 1
+                   break
+               partial_sum = partial_sum_new
+           else:
+               il = il_max
+           il = max(il, ib + 1)
+           partition.append((ib, il))
+           ib = il
+        partition.append((ib, self.L))
+        return partition
+
+    def _init_partition__first(self):
+        partition = []
+        ib = 0
+        for i in xrange(self.P - 1):
+            il = ib + 1
+            partition.append((ib, il))
+            ib = il
+        partition.append((ib, self.L))
+        return partition
+
+    def optimize_init__probabilistic_O0(self, **opt_args):
+        self.last_partition = opt_args.get('starting_partition', None)
+        if self.last_partition is None:
+            self.last_partition = self._init_partition__nearest_to(self._ave)
+        self.best_partition = self.last_partition[:]
+
+    def optimize_init__probabilistic_O1(self, **opt_args):
+        self.last_partition = opt_args.get('starting_partition', None)
+        if self.last_partition is None:
+            self.last_partition = self._init_partition__nearest_to(self._ave)
+        self.best_partition = self.last_partition[:]
+
+    optimize_init__probabilistic = optimize_init__probabilistic_O1
+
+    def optimize_init__bruteforce_O0(self, **opt_args):
+        self.last_partition = opt_args.get('starting_partition', None)
+        if self.last_partition is None:
+            self.last_partition = self._init_partition__first()
+        self.best_partition = self._init_partition__nearest_to(self._ave)
+
+    def optimize_init__bruteforce_O1(self, **opt_args):
+        self.last_partition = opt_args.get('starting_partition', None)
+        if self.last_partition is None:
+            factor = opt_args.get('factor', 0.9)
+            self.last_partition = self._init_partition__nearest_to(self._ave * factor)
+        self.best_partition = self._init_partition__nearest_to(self._ave)
+
+    def optimize_init__bruteforce_r(self, **opt_args):
+        self.last_partition = opt_args.get('starting_partition', None)
+        if self.last_partition is None:
+            self.last_partition = self._init_partition__first()
+        self.best_partition = self._init_partition__nearest_to(self._ave)
+
+    def optimize_init__odd(self, **opt_args):
+        self.last_partition = opt_args.get('starting_partition', None)
+        if self.last_partition is None:
+            self.last_partition = self._init_partition__first()
+        self.best_partition = self.last_partition[:]
+
+    optimize_init__odd_O0 = optimize_init__odd
+    optimize_init__odd_O1 = optimize_init__odd
+    optimize_init__odd_O2 = optimize_init__odd
+    optimize_init__odd_O3 = optimize_init__odd
+
+    def _str_partition(self, partition=None):
+        if partition is None:
+            partition = self.last_partition
+        if partition is None:
+            return str(None)
+        else:
+            lines = []
+            for c, (ib, il) in enumerate(partition):
+                sm = float(sum(self.A[ib:il]))
+                line = "{c:4d} [{ib:4d}:{il:4d}] #x={nx:4d}, sum={sum:10.2f} ave={ave:10.2f} diff={diff:10.2f}".format(
+			c=c, ib=ib, il=il, nx=il - ib, sum=sm, ave=self._ave, diff=sm - self._ave)
+                lines.append(line)
+            return '\n'.join(lines)
+               
+    def _report_fitness(self, partition=None, header=''):
+        if partition is None:
+            partition = self.best_partition
+        sums = self._sums(partition)
+        measure = self._measure_sums(sums)
+        fitness = self._normalized_measure(measure)
+        stddev = self._stddev_sums(sums)
+        return "{0}measure={1:10.2f}, fitness={2:10.2f}, stddev={3:10.2f}".format(header, measure, fitness, stddev)
+
+    def print_fitness(self, partition=None, header=''):
+        print self._report_fitness(partition=partition, header=header)
+
+    def print_partition_fitness(self, partition, header=''):
+        if partition is None:
+            print "{0}None".format(header)
+        else:
+            self.print_fitness(partition, header)
+            #sums = self._sums(partition)
+            #measure = self._measure_sums(sums)
+            #fitness = self._normalized_measure(measure)
+            #stddev = self._stddev_sums(sums)
+            #print "{0}measure={1:10.2f}, fitness={2:10.2f}, stddev={3:10.2f}".format(header, measure, fitness, stddev)
+            self.print_partition(partition)
+
+    def print_partition(self, partition=None):
+        if partition is None:
+            partition = self.best_partition
+        print self._str_partition(partition)
+
+    def print_partitions(self):
+        self.print_partition_fitness(self.last_partition, header='Last partition, ')
+        self.print_partition_fitness(self.best_partition, header='Best partition, ')
+        
+    def print_stats(self):
+        print self.pstats.report()
+
+    def _stddev_sums(self, sums):
+        ave = float(sum(sums)) / len(sums)
+        ls_sum = 0.0
+        for s in sums:
+            ls_sum += (s - ave) ** 2
+        if len(sums) > 1:
+            n = len(sums) - 1
+        else:
+            n = len(sums)
+        return math.sqrt(ls_sum / float(n))
+
+    def _stddev(self, partition):
+        return self._stddev_sums(self._sums(partition))
+
+    def stddev(self, partition=None):
+        if partition is None:
+            partition = self.best_partition
+        return self._stddev(partition)
+
+    def _measure(self, partition):
+        return self._measure_sums(self._sums(partition))
+
+    def best_measure(self):
+        return self._measure(self.best_partition)
+
+    def _array_measure(self, partition, A):
+        return self._measure_sums(self._array_sums(partition, A))
+
+    def _measure_sums(self, sums):
+        return max(sums)
+
+    def _sums(self, partition):
+        return [sum(self.A[ib:il]) for ib, il in partition]
+
+    def _array_sums(self, partition, A):
+        return [sum(A[ib:il]) for ib, il in partition]
+
+    def _normalized_measure(self, max_sums):
+        return ( max_sums - self._ave ) * self._fitness_factor
+
+    def _ave_normalized_measure(self, max_sums, ave):
+        return ( max_sums - ave ) * self._fitness_factor
+
+    def _fitness(self, partition):
+        return self._normalized_measure(self._measure(partition))
+
+    def _fitness_sums(self, sums):
+        return self._normalized_measure(self._measure_sums(sums))
+
+    def fitness(self):
+        return self._fitness(self.last_partition)
+
+    def log_found(self, best_partition, best_fitness=None):
+        if best_fitness is None:
+            best_fitness = self._fitness(best_partition)
+        if self.verbose_level > 0:
+            print "Found new partition with fitness {0:10.2f}".format(best_fitness)
+            if self.verbose_level > 1:
+                print self._str_partition(best_partition)
+
+    def validate(self, partition=None):
+        if partition is None:
+            partition = self.best_partition
+        assert partition[0][0] == 0, "First index is not 0"
+        assert partition[-1][-1] == self.L, "Last index is not {0}".format(self.L)
+        for i, ci in enumerate(partition[:-1]):
+           j = i + 1
+           cj = partition[j]
+           assert cj[0] == ci[-1], "Partition cells #{0} and #{1} do not match: {2}, {3}".format(j, i, cj, ci)
+        
+    def optimize(self, algorithm, **opt_args):
+        depth = opt_args.pop('depth', sys.maxint)
+        self._optimize('', depth, 0, algorithm, self.pstats, **opt_args)
+
+    def _optimize(self, string, depth, level, algorithm, pstats, **opt_args):
+        if not algorithm in self.ALGORITHMS:
+            raise PError("Invalid algorithm {0!r}".format(algorithm))
+        if depth is None:
+            depth = sys.maxint
+        if level is None:
+            level = 0
+        if self.last_partition is None:
+            init_function = 'optimize_init__{0}'.format(algorithm)
+            getattr(self, init_function)(**opt_args)
+        if self.best_partition is None:
+            self.best_partition = self.last_partition[:]
+
+        if self.verbose_level > 1:
+            print "================================================================================"
+            print "Starting optimize__{0}[string={1!r}, depth={2}, level={3}] from:".format(algorithm, string, depth, level)
+            self.print_partitions()
+            print 
+            #raw_input("Press ENTER to continue")
+
+        optimize_function_name = '{0}{1}'.format(self.OPTIMIZE_ROOT, algorithm)
+        optimize_function = getattr(self, optimize_function_name)
+        timer = pstats.start(self.MAP_NAMES[algorithm], len(self.A), self.P)
+        optimize_function(**opt_args)
+        pstats.stop(timer)
+
+        if self.verbose_level > 0:
+            print "================================================================================"
+            print "First level optimization completed:"
+            self.print_partitions()
+            print self.verbose_level
+
+        #raw_input("depth={0}, level={1}".format(depth, level))
+        if level < depth:
+            best_partition = self.best_partition[:]
+            best_sums = self._sums(best_partition)
+            best_measure = self._measure_sums(best_sums)
+            best_index = best_sums.index(best_measure)
+            ib, il = best_partition[best_index]
+            lP = best_index
+            rP = self.P - 1 - best_index
+            if lP > 1 and lP < ib:
+                substring = '{0}l'.format(string)
+                pmanager = self.__class__(num_partitions=lP, array=self.A[:ib], verbose_level=self.verbose_level)
+                if self.verbose_level > 1:
+                    print "Sub-optimizing {0}".format(substring)
+                pmanager._optimize(substring, depth, level + 1, algorithm, pstats, **opt_args)
+
+                if self.verbose_level > 2:
+                    print "BEST_INDEX[{0}]={1}, ib={2}, il={3}".format(string, best_index, ib, il)
+                    self.print_partition_fitness(self.best_partition, 'my best_partition: ')
+                    pmanager.print_partition_fitness(pmanager.best_partition, 'L best_partition: ')
+
+                best_partition = pmanager.best_partition + best_partition[best_index:]
+
+                if self.verbose_level > 2:
+                    self.print_partition_fitness(best_partition, '>> best_partition: ')
+                #raw_input("---l---")
+            if rP > 1 and rP < self.P - il:
+                substring = '{0}r'.format(string)
+                pmanager = self.__class__(num_partitions=rP, array=self.A[il:], verbose_level=self.verbose_level)
+                if self.verbose_level > 1:
+                    print "Sub-optimizing {0}".format(substring)
+                pmanager._optimize(substring, depth, level + 1, algorithm, pstats, **opt_args)
+
+                if self.verbose_level > 2:
+                    print "BEST_INDEX[{0}]={1}, ib={2}, il={3}".format(string, best_index, ib, il)
+                    self.print_partition_fitness(self.best_partition, 'my best_partition: ')
+                    pmanager.print_partition_fitness(pmanager.best_partition, 'R best_partition: ')
+
+                partition_r = tuple((il + rib, il + ril) for rib, ril in pmanager.best_partition)
+                best_partition = best_partition[:best_index + 1] + partition_r
+
+                if self.verbose_level > 2:
+                    self.print_partition_fitness(best_partition, '>> best_partition: ')
+                #raw_input("---r---")
+            #print ">>>", best_partition
+            self.best_partition = tuple(best_partition)
+        self.validate()
+        self._save_partitions(self.last_partition, self.best_partition)
+    
+    def _select_weight(self, weights):
+        wl0 = sorted(enumerate(i**2 for i in weights), key=lambda x: x[1])
+        wl1 = []
+        wc = 0.0
+        for ind, w in wl0:
+            wc += w
+            wl1.append((ind, wc))
+#        print 'wl0=', wl0
+#        print 'wl1=', wl1
+#        print 'wc=', wc
+        f = random.uniform(0.0, wc)
+#        print 'f=', f
+        weight_c = None
+        for ind, wc in wl1:
+            if f <= wc:
+                 weight_c = wc
+                 break
+        else:
+            weight_c = wl1[self.P - 1][1]
+#        print 'weight_c=', weight_c
+        indices = filter(lambda x: x[1] == weight_c, wl1)
+#        print 'indices=', indices
+        index = random.choice(indices)[0]
+        return index
+        
+    def optimize__probabilistic_O0(self, **opt_args):
+        threshold = opt_args.get('threshold', 0.02)
+        stop_after = opt_args.get('stop_after', 100000)
+        last_partition = list(self.last_partition)
+        last_sums = self._sums(last_partition)
+        last_fitness = self._fitness_sums(last_sums)
+
+        best_partition = self.best_partition[:]
+        best_fitness = self._fitness(best_partition)
+
+        iterations = 0
+        candidates = []
+        while iterations < stop_after and best_fitness > threshold:
+            iterations += 1
+            try:
+                # Select index to change:
+                index = self._select_weight(last_sums)
+    
+    
+                # Remove 1:
+                i = index
+                ib, il = last_partition[i]
+                best_new_fitness, best_new_partition, best_new_sums = None, None, None
+                if i > 0 and ib < il:
+                    j = i - 1
+                    jb, jl = last_partition[j]
+                    ai0 = self.A[ib]
+                    new_sums = last_sums[:]
+                    new_partition = last_partition[:]
+                    new_partition[i] = ib + 1, il
+                    new_partition[j] = jb, jl + 1
+                    new_sums[i] -= ai0
+                    new_sums[j] += ai0
+                    new_fitness = self._fitness_sums(new_sums)
+                    candidates.append((new_fitness, new_partition, new_sums))
+                    #if best_new_fitness is None or new_fitness < best_new_fitness:
+                    #    best_new_fitness, best_new_partition, best_new_sums = new_fitness, new_partition, new_sums
+                if i < self.P - 1 and ib < il:
+                    j = i + 1
+                    jb, jl = last_partition[j]
+                    ai0 = self.A[il - 1]
+                    new_sums = last_sums[:]
+                    new_partition = last_partition[:]
+                    new_partition[i] = ib, il - 1
+                    new_partition[j] = jb - 1, jl
+                    new_sums[i] -= ai0
+                    new_sums[j] += ai0
+                    new_fitness = self._fitness_sums(new_sums)
+                    candidates.append((new_fitness, new_partition, new_sums))
+                    #if best_new_fitness is None or new_fitness < best_new_fitness:
+                    #    best_new_fitness, best_new_partition, best_new_sums = new_fitness, new_partition, new_sums
+
+                best_new_fitness = min(e[0] for e in candidates)
+
+                random.shuffle(candidates)
+                max_new_fitness = max(e[0] for e in candidates)
+                weights = [max_new_fitness - e[0] for e in candidates]
+                index = self._select_weight(weights)
+                last_fitness, last_partition, last_sums = candidates[index]
+                if best_new_fitness < best_fitness:
+                    best_new_fitness, best_new_partition, best_new_sums = filter(lambda x: x[0] <= best_new_fitness, candidates)[0]
+                    best_fitness, best_partition = best_new_fitness, best_new_partition
+                    self.log_found(best_partition, best_fitness)
+                    self._save_partitions(last_partition, best_partition)
+                    iterations = 0
+
+                #if best_new_fitness is None:
+                #    continue
+                #last_fitness, last_partition, last_sums = best_new_fitness, best_new_partition, best_new_sums
+                #if best_fitness is None or last_fitness < best_fitness:
+                #    best_fitness, best_partition = last_fitness, last_partition
+                #    self.log_found(best_partition, best_fitness)
+                #    self._save_partitions(last_partition, best_partition)
+                #    iterations = 0
+            except KeyboardInterrupt:
+                try:
+                    print
+                    print "Current best partition has fitness {0:10.2f}".format(best_fitness)
+                    print self._str_partition(best_partition)
+                    raw_input("Press any key to continue, ^C to quit...")
+                    print
+                except KeyboardInterrupt:
+                    break
+        self._save_partitions(last_partition, best_partition)
+
+    def optimize__probabilistic_O1(self, **opt_args):
+        threshold = opt_args.get('threshold', 0.02)
+        stop_after = opt_args.get('stop_after', 100000)
+        last_partition = list(self.last_partition)
+        last_sums = self._sums(last_partition)
+        last_fitness = self._fitness_sums(last_sums)
+
+        best_partition = self.best_partition[:]
+        best_sums = self._sums(best_partition)
+        best_fitness = self._fitness(best_partition)
+
+        A = self.A
+        iterations = 0
+#        d = {}
+        while iterations < stop_after and best_fitness > threshold:
+            iterations += 1
+            try:
+                # Select index to change:
+                index = self._select_weight(last_sums)
+    
+#                print "=" * 80
+#                print self._str_partition(last_partition)
+#		d[index] = d.get(index, 0) + 1
+#                print "Selected index = {0}, {1}".format(index, d)
+#                raw_input("...")
+    
+                # Remove 1:
+                #min_index = max(index - max_offset_l, 0)
+                #max_index = max(index + max_offset_r, self.P)
+                i = index
+                ib, il = last_partition[i]
+                if ib >= il:
+                    continue
+#                print ib, il, last_partition
+#                print "==", last_fitness, last_partition, last_sums, i
+                new_partition = last_partition[:]
+                new_sums = last_sums[:]
+                found_new_best = False
+                #print "Partition: ", last_partition
+                #print "... fitness=", last_fitness
+                #print "... INDEX=", index
+                #print "... A=", A
+                #print "... sums=", last_sums
+                candidates = [(last_fitness, last_partition[:], last_sums[:])]
+                #best_new_fitness, best_new_partition, best_new_sums = None, None, None
+                for j in xrange(i - 1, -1, -1):
+                    if j < i - 1: break
+                    jb, jl = last_partition[j]
+                    k = j + 1
+                    kb, kl = new_partition[k]
+                    #assert new_partition[k][0] == new_partition[j][1]
+                    new_partition[k] = kb + 1, kl
+                    new_partition[j] = jb, jl + 1
+                    #assert new_partition[k][0] == new_partition[j][1]
+                    element = A[kb]
+                    new_sums[k] -= element
+                    new_sums[j] += element
+                    new_fitness = self._fitness_sums(new_sums)
+                    #print " LEFT j={0}, k={1}, jb:jl={2}:{3}, kb:kl={4}:{5}, e={6}, new_fitness={7}, new_partition={8}, new_sums={9}".format(j, k, jb, jl, kb, kl, element, new_fitness, new_partition, new_sums)
+                    #if best_new_fitness is None or new_fitness < best_new_fitness:
+                    #    best_new_fitness, best_new_partition, best_new_sums = new_fitness, new_partition[:], new_sums[:]
+                    candidates.append((new_fitness, new_partition[:], new_sums[:]))
+                new_partition = last_partition[:]
+                new_sums = last_sums[:]
+                for j in xrange(i + 1, self.P):
+                    if j > i + 1: break
+                    jb, jl = last_partition[j]
+                    k = j - 1
+                    kb, kl = new_partition[k]
+                    #assert new_partition[k][1] == new_partition[j][0]
+                    new_partition[k] = kb, kl - 1
+                    new_partition[j] = jb - 1, jl
+                    #assert new_partition[k][1] == new_partition[j][0]
+                    element = A[kl - 1]
+                    new_sums[k] -= element
+                    new_sums[j] += element
+                    new_fitness = self._fitness_sums(new_sums)
+                    #print " RIGHT j={0}, k={1}, jb:jl={2}:{3}, kb:kl={4}:{5}, e={6}, new_fitness={7}, new_partition={8}, new_sums={9}".format(j, k, jb, jl, kb, kl, element, new_fitness, new_partition, new_sums)
+                    #if best_new_fitness is None or new_fitness < best_new_fitness:
+                    #    best_new_fitness, best_new_partition, best_new_sums = new_fitness, new_partition[:], new_sums[:]
+                    candidates.append((new_fitness, new_partition[:], new_sums[:]))
+
+                #if raw_input("...") in list('qQ'):
+                #    print "HARAKIRI"
+                #    return
+                   
+                if not candidates:
+                    continue
+                
+                best_new_fitness = min(e[0] for e in candidates)
+
+                random.shuffle(candidates)
+                max_new_fitness = max(e[0] for e in candidates)
+                weights = [max_new_fitness - e[0] for e in candidates]
+                index = self._select_weight(weights)
+                last_fitness, last_partition, last_sums = candidates[index]
+                if best_new_fitness < best_fitness:
+                    best_new_fitness, best_new_partition, best_new_sums = filter(lambda x: x[0] <= best_new_fitness, candidates)[0]
+                    best_fitness, best_partition = best_new_fitness, best_new_partition
+                    self.log_found(best_partition, best_fitness)
+                    self._save_partitions(last_partition, best_partition)
+                    iterations = 0
+            except KeyboardInterrupt:
+                try:
+                    print
+                    print "Current best partition has fitness {0:10.2f}".format(best_fitness)
+                    print self._str_partition(best_partition)
+                    raw_input("Press any key to continue, ^C to quit...")
+                    print
+                except KeyboardInterrupt:
+                    break
+        self._save_partitions(last_partition, best_partition)
+
+    optimize__probabilistic = optimize__probabilistic_O1
+
+    def _partition2split(self, partition, A=None):
+        if A is None:
+            A = self.A
+        split = []
+        for ib, il in self.last_partition[1:]:
+            split.append(ib)
+        return split
+
+    def _split2partition(self, split, A=None):
+        if A is None:
+            A = self.A
+        ib = 0
+        partition = []
+        for il in split:
+            partition.append((ib, il))
+            ib = il
+        partition.append((ib, len(self.A)))
+        return partition
+
+    def optimize__bruteforce_O0(self, **opt_args):
+        return self._optimize__bruteforce('bruteforce_O0', **opt_args)
+
+    def optimize__bruteforce_O1(self, **opt_args):
+        return self._optimize__bruteforce('bruteforce_O1', **opt_args)
+
+    def _optimize__bruteforce(self, algorithm, **opt_args):
+        assert min(self.A) >= 0, "'{0}' algorithm can work only with non-negative arrays".format(algorithm)
+        assert self._measure_sums([0.5, 0.2, -4.5, 2.3, 0.0]) == 2.3, "'{0}' algorithm cannot work with this measure".format(algorithm)
+        #print 'starting_partition=', self.last_partition
+        #raw_input("...")
+
+        threshold = opt_args.get('threshold', 0.02)
+        last_partition = list(self.last_partition)
+        last_sums = self._sums(last_partition) #[sum(self.A[ib:il]) for ib, il in last_partition]
+        last_measure = self._measure_sums(last_sums)
+        last_fitness = self._normalized_measure(last_measure)
+        last_split = self._partition2split(self.last_partition)
+
+        #print "===", last_partition
+        #print "===", last_sums
+
+        best_partition = self.best_partition[:]
+        best_sums = self._sums(best_partition)
+        best_measure = self._measure_sums(best_sums)
+        best_fitness = self._normalized_measure(best_measure)
+
+        epsilon = 1.e-5
+        A = self.A
+        ns = len(last_split)
+        max_index = ns - 1
+        max_split = self.L
+        index = max_index
+        while best_fitness > threshold:
+            #print ':::', 0, '<', ', '.join(str(i) for i in last_split), '> :: ', index, max_index
+            cs = last_split[index]
+            max_cs = max_split - (max_index - index + 1)
+            if cs < max_cs and last_sums[index] < best_measure:
+                cs1 = last_split[index]
+                a1 = A[cs1]
+                last_split[index] += 1
+                last_sums[index] += a1
+                last_sums[index + 1] -= a1
+            else:
+                for j in xrange(index - 1, -1, -1):
+                    if last_split[j] < last_split[j + 1] - 1 and last_sums[j] < best_measure:
+                        index = j
+                        break
+                else:
+                    # end of search!
+                    break
+                cs1 = last_split[index]
+                #print "cs1=", cs1
+                a1 = A[cs1]
+                #print "a1=", a1
+                last_sums[index] += a1
+                last_split[index] += 1
+                csj = last_split[index]
+                for j in xrange(index + 1, ns):
+                    aj = A[csj]
+                    last_sums[j] = aj
+                    csj += 1
+                    last_split[j] = csj
+                last_sums[ns] = sum(A[csj:])
+                #print "csj=", csj
+                index = max_index
+
+#            csums = []
+#            ib = 0
+#            for il in last_split + [max_split]:
+#                csums.append(sum(A[ib:il]))
+#                ib = il
+#            diffs = [abs(a - b) for a, b in zip(csums, last_sums)]
+#            max_diff = max(diffs)
+#            if max_diff >= epsilon:
+#                print last_split
+#            assert max_diff < epsilon, "csums={0}, last_sums={1}, diffs={2}, max_diff={3}".format(csums, last_sums, [a-b for a, b in zip(csums, last_sums)], max_diff)
+
+            last_measure = self._measure_sums(last_sums)
+            last_fitness = self._normalized_measure(last_measure)
+            if best_fitness is None or last_measure < best_measure:
+                last_partition = self._split2partition(last_split)
+                best_measure, best_fitness, best_split = last_measure, last_fitness, last_split
+                best_partition = last_partition[:]
+                self.log_found(best_partition, best_fitness)
+                #print "Found new partition with fitness {0:10.2f}".format(best_fitness)
+                #print self._str_partition(best_partition)
+                self._save_partitions(last_partition, best_partition)
+        last_partition = self._split2partition(last_split)
+        self._save_partitions(last_partition, best_partition)
+
+    def optimize__bruteforce_r(self, **opt_args):
+        #raise PError("Not implemented")
+        assert min(self.A) >= 0, "'bruteforce_r' algorithm can work only with non-negative arrays"
+        assert self._measure_sums([0.5, 0.2, -4.5, 2.3, 0.0]) == 2.3, "'bruteforce_r' algorithm cannot work with this measure"
+        return self._optimize__bruteforce_r('bruteforce_r', **opt_args)
+
+    def _optimize__bruteforce_r(self, algorithm, **opt_args):
+        starting_partition = opt_args.get('starting_partition', self.last_partition)
+        self.last_partition = starting_partition[:]
+        partition = starting_partition
+        rec_algorithm = 'bruteforce_O0'
+        for i in xrange(self.P, self.L + 1):
+            step_name = 'step_{0}[{1}]'.format(i, self.P + i)
+            print "{0}: starting from {1}".format(step_name, partition)
+            pmanager_i = PManager(self.P, self.A[:i], db_path=self.db_path)
+            opt_args_i = opt_args.copy()
+            opt_args_i['starting_partition'] = partition
+            pmanager_i.optimize_init__bruteforce_O0(**opt_args_i)
+            pmanager_i.optimize__bruteforce_O0(starting_partition=starting_partition)
+            partition = list(pmanager_i.best_partition)
+            ib, il = partition[-1]
+            partition[-1] = ib, self.L
+            self.print_partition_fitness(partition, header=">>> {0}: ".format(step_name))
+        self.best_partition = partition[:]
+        self.last_partition = partition[:]
+            
+    #optimize_init__bruteforce = optimize_init__bruteforce_O1
+    #optimize__bruteforce = optimize__bruteforce_O1
+
+    def optimize__odd_O0(self, **opt_args):
+        assert min(self.A) >= 0, "'{0}' algorithm can work only with non-negative arrays".format(algorithm)
+        assert self._measure_sums([0.5, 0.2, -4.5, 2.3, 0.0]) == 2.3, "'{0}' algorithm cannot work with this measure".format(algorithm)
+
+        pdb = {} # partitions database
+
+        P = self.P
+        L = self.L
+        A = self.A
+
+        if self.P == 1:
+            best_partition = [(0, L)]
+            last_partition = best_partition[:]
+            self._save_partitions(last_partition, best_partition)
+            return
+
+        def offsets(ns):
+            offset_min = P - ns
+            if ns == P:
+                offset_max = offset_min + 1
+            else:
+                offset_max = L - (ns - 1)
+            return offset_min, offset_max
+
+        # Find 2-partitions:
+        ns = 2
+        pdb[ns] = {}
+        offset_min_ns, offset_max_ns = offsets(ns)
+        for offset_i in xrange(offset_min_ns, offset_max_ns):
+            lsum_i = 0
+            rsum_i = sum(A[offset_i:])
+            best_result = max(lsum_i, rsum_i)
+            split = offset_i
+            for k in xrange(offset_i, L - (ns - 1)):
+                split = k + 1
+                element_k = A[k]
+                lsum_i += element_k
+                rsum_i -= element_k
+                new_result = max(lsum_i, rsum_i)
+                #print "    k={0}, element_k={1}, lsum_i={2}, rsum_i={3}, new_result={4}, best_result={5}".format(k, element_k, lsum_i, rsum_i, new_result, best_result)
+                if new_result <= best_result:
+                    best_result = new_result
+                else:
+                    split -= 1
+                    break
+            best_partition = [(offset_i, split), (split, L)]
+            pdb[ns][offset_i] = (best_result, best_partition)
+            best_sums = tuple(sum(A[ib:il]) for ib, il in best_partition)
+#        for i in sorted(pdb[ns].keys()):
+#            m, p = pdb[ns][i]
+#            print "P={0:8d} offset_i={1:8d} m={2:10.2f} p={3}".format(ns, i, m, p)
+            
+        # Find ns-partitions:
+        for ns in xrange(3, P + 1):
+            pdb[ns] = {}
+            pdb_ns = pdb[ns]
+            pdb_ns_m1 = pdb[ns - 1]
+            offset_min_ns, offset_max_ns = offsets(ns)
+            for offset_i in xrange(offset_min_ns, offset_max_ns):
+                #L_i = L - offset_i
+                #assert len(A[offset_i:]) == L_i, "{0} {1}".format(len(A[offset_i:]), L_i)
+
+                lsum_i = 0.0
+                best_result = sum(A[offset_i:])
+                split = offset_i
+                for k in xrange(offset_i, L - (ns - 1)):
+                    split = k + 1
+                    element_k = A[k]
+                    lsum_i += element_k
+                    rsum_i_best = pdb_ns_m1[split][0]
+                    new_result = max(lsum_i, rsum_i_best)
+                    #print "    k={0}, element_k={1}, split={6}, lsum_i={2}, rsum_i_best={3}, new_result={4}, best_result={5}".format(k, element_k, lsum_i, rsum_i_best, new_result, best_result, split)
+                    if new_result <= best_result:
+                        best_result = new_result
+                        #best_k = k + 1
+                    else:
+                        split -= 1
+                        break
+                best_partition = [(offset_i, split)]
+                prev_result, prev_partition = pdb_ns_m1[split]
+
+                best_partition.extend(prev_partition)
+                pdb_ns[offset_i] = (best_result, best_partition)
+                best_sums = tuple(sum(A[ib:il]) for ib, il in best_partition)
+                #raw_input("+++")
+#            for i in sorted(pdb[ns].keys()):
+#                m, p = pdb[ns][i]
+#                print "P={0:8d} offset_i={1:8d} m={2:10.2f} p={3}".format(ns, i, m, p)
+            del pdb[ns - 1]
+            #raw_input("...")
+
+        best_result, best_partition = pdb[P][0]
+        best_partition = tuple(best_partition)
+        last_partition = best_partition[:]
+        self._save_partitions(last_partition, best_partition)
+               
+    def optimize__odd_O1(self, **opt_args):
+        #assert min(self.A) >= 0, "'{0}' algorithm can work only with non-negative arrays".format(algorithm)
+        #assert self._measure_sums([0.5, 0.2, -4.5, 2.3, 0.0]) == 2.3, "'{0}' algorithm cannot work with this measure".format(algorithm)
+
+        P = self.P
+        L = self.L
+        A = self.A
+
+        pdb = {}
+        mdb = {}
+
+        n_extents = [None]
+        k_extents = [None]
+        for p in xrange(1, P + 1):
+            k_begin_p = P - p
+            k_end_p = L - (p - 1)
+            k_extents.append((k_begin_p, k_end_p))
+        n_extents = k_extents[:-1]
+        n_extents.append((0, 1))
+
+        # Find 1-partitions:
+        p = 1
+        s = 0.0
+        pdb[p] = {}
+        mdb[p] = {}
+        pdb_p = pdb[p]
+        mdb_p = mdb[p]
+        for n_i in xrange(L - 1, -1, -1):
+            s += A[n_i]
+            mdb_p[n_i] = s
+            pdb_p[n_i] = L
+
+        # Find p-partitions:
+        for p in xrange(2, P + 1):
+            n_begin_p, n_end_p = n_extents[p]
+            k_begin_p, k_end_p = k_extents[p]
+            pdb[p], mdb[p] = {}, {}
+            pdb_p, mdb_p = pdb[p], mdb[p]
+            mdb_p_m1 = mdb[p - 1]
+            k = k_begin_p + 1
+            lsum_i = A[k - 1]
+            best_measure = max(lsum_i, mdb_p_m1[k])
+            for n_i in xrange(n_begin_p, n_end_p):
+                k_i = k + 1
+                while k_i <= k_end_p:
+                    new_lsum_i = lsum_i + A[k_i - 1]
+                    new_measure = max(new_lsum_i, mdb_p_m1[k_i])
+                    if new_measure <= best_measure:
+                        best_measure = new_measure
+                        lsum_i = new_lsum_i
+                        k_i += 1
+                    else:
+                        k = k_i - 1
+                        break
+                else:
+                    k = k_i - 1
+                prev_measure = mdb_p_m1[k]
+                mdb_p[n_i] = best_measure
+                pdb_p[n_i] = k
+                lsum_i -= A[n_i]
+                best_measure = max(lsum_i, prev_measure)
+
+        # Find p-partitions:
+        best_k = pdb[P][0]
+        prev_k = best_k
+        best_partition = [(0, prev_k)]
+        for p in xrange(P - 1, 0, -1):
+            curr_k = pdb[p][prev_k]
+            best_partition.append((prev_k, curr_k))
+            prev_k = curr_k
+        best_partition = tuple(best_partition)
+
+        # Save partitions
+        self._save_partitions(best_partition, best_partition)
+
+    def optimize__odd_O2(self, **opt_args):
+        #assert min(self.A) >= 0, "'{0}' algorithm can work only with non-negative arrays".format(algorithm)
+        #assert self._measure_sums([0.5, 0.2, -4.5, 2.3, 0.0]) == 2.3, "'{0}' algorithm cannot work with this measure".format(algorithm)
+
+        P = self.P
+        L = self.L
+        A = tuple(self.A)
+
+        pdb = {}
+        mdb = {}
+
+        n_extents = [None]
+        k_extents = [None]
+        for p in xrange(1, P + 1):
+            k_begin_p = P - p
+            k_end_p = L - (p - 1)
+            k_extents.append((k_begin_p, k_end_p))
+        n_extents = k_extents[:-1]
+        n_extents.append((0, 1))
+
+        # Find 1-partitions:
+        p = 1
+        s = 0.0
+        pdb[p] = {}
+        mdb[p] = {}
+        pdb_p = pdb[p]
+        mdb_p = mdb[p]
+        for n_i in xrange(L - 1, -1, -1):
+            s += A[n_i]
+            mdb_p[n_i] = s
+            pdb_p[n_i] = L
+
+        # Find p-partitions:
+        for p in xrange(2, P + 1):
+            n_begin_p, n_end_p = n_extents[p]
+            k_begin_p, k_end_p = k_extents[p]
+            pdb[p], mdb[p] = {}, {}
+            pdb_p, mdb_p = pdb[p], mdb[p]
+            mdb_p_m1 = mdb[p - 1]
+            k = k_begin_p + 1
+            lsum_i = A[k - 1]
+            best_measure = max(lsum_i, mdb_p_m1[k])
+            for n_i in xrange(n_begin_p, n_end_p):
+                k_i = k
+                new_lsum_i = lsum_i
+                while k_i < k_end_p:
+                    element_k_i = A[k_i]
+                    new_lsum_i += element_k_i
+                    k_i += 1
+                    new_rsum_i = mdb_p_m1[k_i]
+                    new_measure = max(new_lsum_i, new_rsum_i)
+                    if new_measure <= best_measure:
+                        best_measure = new_measure
+                    else:
+                        lsum_i = new_lsum_i - element_k_i
+                        k = k_i - 1
+                        break
+                else:
+                    k = k_i
+                mdb_p[n_i] = best_measure
+                pdb_p[n_i] = k
+                lsum_i -= A[n_i]
+                prev_measure = mdb_p_m1[k]
+                best_measure = max(lsum_i, prev_measure)
+
+        # Construction of P-partition:
+        best_k = pdb[P][0]
+        prev_k = best_k
+        best_partition = [(0, prev_k)]
+        for p in xrange(P - 1, 0, -1):
+            curr_k = pdb[p][prev_k]
+            best_partition.append((prev_k, curr_k))
+            prev_k = curr_k
+        best_partition = tuple(best_partition)
+
+        # Save partitions
+        self._save_partitions(best_partition, best_partition)
+
+    def optimize__odd_O3(self, **opt_args):
+        #assert min(self.A) >= 0, "'{0}' algorithm can work only with non-negative arrays".format(algorithm)
+        #assert self._measure_sums([0.5, 0.2, -4.5, 2.3, 0.0]) == 2.3, "'{0}' algorithm cannot work with this measure".format(algorithm)
+
+        P = self.P
+        L = self.L
+        A = tuple(self.A)
+
+        if L == P:
+            best_partition = [(ib, ib + 1) for ib in xrange(L)]
+            self._save_partitions(best_partition, best_partition)
+            return
+    
+        default_max_cache_size = 50 * ( 1024 ** 2 ) # 50M * 2 float 
+        max_cache_size = opt_args.get('max_cache_size', default_max_cache_size)
+        if max_cache_size is None or max_cache_size < 0:
+            max_cache_size = sys.maxint
+
+        sm_p_size = L - P + 1
+        max_cache_size -= sm_p_size
+
+        cache_flags = set(opt_args.get('cache_flags', ''))
+
+        if 'n' in cache_flags:
+            save_memory = False
+        elif 'l' in cache_flags:
+            save_memory = True
+        else:
+            save_memory = sm_p_size * P >= max_cache_size
+        
+
+        show_cache_stats = False
+        show_cache_graph = False
+        show_p_matrix = False
+        show_m_matrix = False
+        if save_memory:
+            p_gen = xrange(1, P + 1)
+            if 's' in cache_flags:
+                show_cache_stats = True
+            if 'g' in cache_flags:
+                show_cache_graph = True
+            if 'a' in cache_flags:
+                default_force = True
+            else:
+                default_force = False
+            sm_force_p = dict((p, default_force) for p in p_gen)
+            sm_active_p = dict((p, False) for p in p_gen)
+            sm_force_p[P] = False
+            if 'l' in cache_flags:
+                sm_force_p[P-1] = True
+            sm_tot_keys_p = dict((p, 0) for p in p_gen)
+            sm_del_keys_p = sm_tot_keys_p.copy()
+            sm_sub_del_keys_p = sm_tot_keys_p.copy()
+            sm_tot_keys = 0
+            sm_del_keys = 0
+            sm_cache_size = max_cache_size
+
+        if 'p' in cache_flags:
+            show_p_matrix = True
+        if 'm' in cache_flags:
+            show_m_matrix = True
+        if show_p_matrix or show_m_matrix:
+            def dump_matrix(m):
+                lines = []
+                fmt = '\t'.join('{{{0}:>7s}}'.format(i) for i in xrange(L + 1))
+                h = ['[{0}]'.format(i) for i in xrange(L)]
+                lines.append(fmt.format(None, *h))
+                for p in xrange(1, P + 1):
+                    m_p = m[p]
+                    row = []
+                    for n in xrange(L):
+                        element = m_p.get(n, None)
+                        if element is None:
+                            row.append('')
+                        else:
+                            row.append(str(element))
+                    lines.append(fmt.format("[{0}]".format(p), *row))
+                print '\n'.join(lines)
+       
+        pdb = {}
+        mdb = {}
+
+        n_extents = [None]
+        k_extents = [None]
+        for p in xrange(1, P + 1):
+            k_begin_p = P - p
+            k_end_p = L - (p - 1)
+            k_extents.append((k_begin_p, k_end_p))
+        n_extents = k_extents[:-1]
+        n_extents.append((0, 1))
+
+        # Find 1-partitions:
+        p = 1
+        s = 0.0
+        pdb[p] = {}
+        mdb[p] = {}
+        pdb_p = pdb[p]
+        mdb_p = mdb[p]
+        for n_i in xrange(L - 1, -1, -1):
+            s += A[n_i]
+            mdb_p[n_i] = s
+            pdb_p[n_i] = L
+
+        if save_memory:
+            sm_tot_keys_p[p] += len(pdb_p)
+
+        # Find p-partitions:
+        for p in xrange(2, P + 1):
+            n_begin_p, n_end_p = n_extents[p]
+            k_begin_p, k_end_p = k_extents[p]
+            pdb[p], mdb[p] = {}, {}
+            pdb_p, mdb_p = pdb[p], mdb[p]
+            mdb_p_m1 = mdb[p - 1]
+            k_i = k_begin_p
+            lsum_i = A[k_i]
+            k_i += 1
+            rsum_i = mdb_p_m1[k_i]
+            best_measure = max(lsum_i, rsum_i)
+            n_i = n_begin_p
+            k_i += 1
+            while k_i <= k_end_p:
+                new_lsum_i = lsum_i + A[k_i - 1]
+                new_rsum_i = mdb_p_m1[k_i]
+                new_measure = max(new_lsum_i, new_rsum_i)
+                if new_measure <= best_measure:
+                    best_measure = new_measure
+                    lsum_i = new_lsum_i
+                    k_i += 1
+                else:
+                    k = k_i - 1
+                    mdb_p[n_i] = best_measure
+                    pdb_p[n_i] = k
+                    lsum_i -= A[n_i]
+                    prev_measure = mdb_p_m1[k]
+                    best_measure = max(lsum_i, prev_measure)
+                    n_i += 1
+                    if n_i >= n_end_p:
+                        break
+            else:
+                for n in xrange(n_i, n_end_p):
+                    mdb_p[n] = best_measure
+                    pdb_p[n] = k_i - 1
+
+            if save_memory:
+                sm_tot_keys_p[p] += len(pdb_p)
+                sm_tot_keys += len(pdb_p)
+                activate = False
+                if sm_force_p[p]:
+                    activate = True
+                elif (sm_tot_keys - sm_del_keys >= sm_cache_size):
+                    activate = True
+                if activate:
+                    sm_active_p[p]=True
+                    pdb_ip = pdb_p
+                    mdb_ip = mdb_p
+                    sub_del_keys = 0
+                    for ip in xrange(p - 1, 0, -1):
+                        pdb_ip_m1 = pdb[ip]
+                        mdb_ip_m1 = mdb[ip]
+                        pdb_ip_m1_del_keys = set(pdb_ip_m1.iterkeys()).difference(pdb_ip.itervalues())
+                        if len(pdb_ip_m1_del_keys) == 0:
+                            break
+                        sm_del_keys_p[ip] += len(pdb_ip_m1_del_keys)
+                        sm_del_keys += len(pdb_ip_m1_del_keys)
+                        if ip == p - 1:
+                            sub_del_keys += len(pdb_ip_m1_del_keys)
+                        #print "p={0}, ip={1}: deleting {2}/{3} keys".format(p, ip, sm_del_keys_p[ip], sm_tot_keys_p[ip])
+                        for key in pdb_ip_m1_del_keys:
+                            del pdb_ip_m1[key]
+                            del mdb_ip_m1[key]
+                        pdb_ip = pdb_ip_m1
+                        mdb_ip = mdb_ip_m1
+                    sm_sub_del_keys_p[p] += sub_del_keys
+                    if show_cache_graph:
+                        print "CACHE REDUCTION: {0:6d}\t{1:16d}\t{2:16d}\t{3:16d}".format(p, sm_tot_keys, sm_del_keys, sm_tot_keys - sm_del_keys)
+                    
+                
+        if show_p_matrix:
+            print "P-MATRIX:"
+            dump_matrix(pdb)
+            print
+
+        if show_m_matrix:
+            print "M-MATRIX:"
+            dump_matrix(mdb)
+            print
+
+        if show_cache_stats:
+            l = []
+            for p in sorted(sm_tot_keys_p.iterkeys(), reverse=False):
+                l.append((str(p), sm_tot_keys_p[p], sm_del_keys_p[p], sm_sub_del_keys_p[p], sm_active_p[p]))
+            l.append(("TOT", sm_tot_keys, sm_del_keys, sm_del_keys, sm_active_p[p]))
+ 
+            fmt = "{active}\t{sp}\t{tot_keys:8d}\t{del_keys:8d}\t{sub_del_keys:8d}\t{fraction:.2%}"
+            num_activations = 0
+            print "CACHE STATISTICS:"
+            for sp, tot_keys, del_keys, sub_del_keys, is_active in l:
+                if tot_keys == 0:
+                    assert del_keys == 0
+                    fraction = 0.0
+                else:
+                    fraction = float(del_keys) / tot_keys
+                if is_active:
+                    active = '(*)'
+                    num_activations += 1
+                else:
+                    active = '   '
+                print fmt.format(active=active, sp=sp, tot_keys=tot_keys, del_keys=del_keys, sub_del_keys=sub_del_keys, fraction=fraction)
+            print "num_activations = {0}".format(num_activations)
+            print
+                
+        # Construction of P-partition:
+        best_k = pdb[P][0]
+        prev_k = best_k
+        best_partition = [(0, prev_k)]
+        for p in xrange(P - 1, 0, -1):
+            curr_k = pdb[p][prev_k]
+            best_partition.append((prev_k, curr_k))
+            prev_k = curr_k
+        best_partition = tuple(best_partition)
+
+        # Save partitions
+        self._save_partitions(best_partition, best_partition)
+
+
+if __name__ == '__main__':
+    L = 100
+    P = 4
+    YMIN = 0
+    YMAX = 100
+    YTYPE = int
+
+    random.seed(1000)
+
+    rootname = 'a{0}'.format(L)
+
+    array_filename = '{0}.in'.format(rootname)
+    db_filename = '{0}-{1}.db'.format(rootname, P)
+
+    dump_array = False
+    if os.path.lexists(array_filename):
+        array = array_filename
+    else:
+        array = PArray.random(L, min_value=YMIN, max_value=YMAX, value_type=YTYPE)
+        dump_array = True
+    if os.path.lexists(db_filename):
+        in_db_filename = db_filename
+    else:
+        in_db_filename = None
+    out_db_filename = db_filename
+    p = PManager(P, array, in_db_filename, out_db_filename)
+
+    p.print_partitions()
+    p.tofile(array_filename)
+    p.dump_partitions()
+
+    p.optimize('probabilistic')
+
+    #p.init_partition_first()
+    #p.optimize__exact()
+

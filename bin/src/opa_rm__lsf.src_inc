@@ -1,0 +1,65 @@
+if [[ $__OPA_RM_LL_IS_DEFINED__ == '' ]] ; then
+  __OPA_RM_LL_IS_DEFINED__='__defined__'
+
+function opa_rm_wall_clock_limit {
+  # convert wall clock limit from standard OPA format (hh:mm:ss) to
+  # resource manager format
+  typeset _hhmmss="$1"
+  typeset _num_fields=$( echo "$_hhmmss" | sed -e 's/:/ /g' | $OPA_BINDIR/wc -w )
+  typeset -i _hh=0
+  typeset -i _mm=0
+  typeset -i _ss=0
+  typeset -i _min  #lsf wcl is in minutes
+  case $_num_fields in 
+    1)
+      _ss="$1"
+      ;;
+    2)
+      _mm=$( echo "$_hhmmss" | cut -d: -f1 )
+      _ss=$( echo "$_hhmmss" | cut -d: -f2 )
+      ;;
+    3)
+      _hh=$( echo "$_hhmmss" | cut -d: -f1 )
+      _mm=$( echo "$_hhmmss" | cut -d: -f2 )
+      _ss=$( echo "$_hhmmss" | cut -d: -f3 )
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+  if [[ $_ss -ne 0 ]] ; then
+    typeset _sm=$(( $_ss / 60 ))
+    if [[ $(( $_sm * 60 )) -lt $_ss ]] ; then
+      _mm=$(( $_mm + $_sm + 1 ))
+    else
+      _mm=$(( $_mm + $_sm ))
+    fi
+  fi 
+  _min=$(( ( $_hh * 60 ) + $_mm ))
+  echo "$_min"
+}
+
+function opa_rm_mpi_tasks {
+  # unused
+  printf "$1"
+}
+
+function opa_rm_submit {
+  # submit a job command file, and sets JOBID and QUEUE of the submitted job
+  typeset _bsub_stdout
+  typeset -i _bsub_ec
+  _bsub_stdout=$(bsub < "$1" 2>&1) ; _bsub_ec=$?
+  if [[ $_bsub_ec -eq 0 ]] ; then
+    # get jobid and queue from bsub's standard output;
+    # here is an example of the bsub's standard output:
+    # Job <559807> is submitted to default queue <debug>
+    typeset _jobid _queue
+    typeset _jobid_queue_line=$( echo "$_bsub_stdout" | $OPA_BINDIR/grep '^Job <' )
+    OPA_RM_SUBMIT_JOBID=$( echo "$_jobid_queue_line" | awk 'BEGIN{FS="[<>]"}{print $2}' )
+    #OPA_RM_SUBMIT_QUEUE=$( echo "$_jobid_queue_line" | awk 'BEGIN{FS="[<>]"}{print $4}' )
+  fi
+  return $_bsub_ec
+}
+
+# end of include guard:
+fi

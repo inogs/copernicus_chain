@@ -1,0 +1,233 @@
+#!/usr/bin/env python
+
+import optparse
+import time
+import datetime
+import sys
+import os
+import glob
+
+from collections import namedtuple
+
+Info = namedtuple('Info', ('pre_qt', 'mod_qt', 'post_qt'))
+
+Stat = namedtuple('Stat', ('sum', 'num', 'min', 'max', 'ave'))
+
+class StatRegistry(object):
+    def __init__(self, sum=0.0, min=None, max=None, num=0):
+        self.num = num
+        self.sum = sum
+        self.min = min
+        self.max = max
+
+    def add(self, value):
+        self.sum += value
+        self.num += 1
+        if self.min is None or self.min > value:
+            self.min = value
+        if self.max is None or self.max < value:
+            self.max = value
+
+    def ave(self):
+        if self.num:
+            return self.sum / float(self.num)
+        else:
+            return None
+
+    def stat(self):
+        return Stat(self.sum, self.num, self.min, self.max, self.ave())
+
+
+
+def main():
+
+    help_formatter=optparse.IndentedHelpFormatter(max_help_position=38)
+    parser = optparse.OptionParser(formatter=help_formatter)
+
+    def store_date(option, opt_str, value, parser):
+        if value is not None:
+            try:
+                dt = datetime.datetime.strptime(value, "%Y%m%d")
+            except ValueError, e:
+                raise optparse.OptionValueError("option {0}: invalid date value: {1!r}: {2}".format(opt_str, value, e))
+            value = dt.date()
+        setattr(parser.values, option.dest, value)
+
+    parser.add_option("--from", "-f",
+	metavar="FROM",
+	dest="from_date",
+	nargs=1,
+	type="str",
+	action="callback",
+	callback=store_date,
+	default=None,
+	help="parse reports from date F")
+	
+    parser.add_option("--to", "-t",
+	metavar="TO",
+	dest="to_date",
+	nargs=1,
+	type="str",
+	action="callback",
+	callback=store_date,
+	default=None,
+	help="parse reports to date T")
+	
+    parser.add_option("--file", "-F",
+	metavar="FILE",
+	dest="filepatterns",
+	action="append",
+	type="str",
+	default=[],
+	help="add file pattern FILE")
+
+    parser.add_option("--dir", "-D",
+	metavar="DIR",
+	dest="dirpatterns",
+	action="append",
+	type="str",
+	default=[],
+	help="add dir pattern DIR")
+	
+    options, args = parser.parse_args()
+
+    info_d = {}
+
+    filepatterns = options.filepatterns
+    for dirpattern in options.dirpatterns:
+        filepatterns.append(os.path.join(dirpattern, '*'))
+    for arg in args:
+        if os.path.isdir(arg):
+            filepatterns.append(os.path.join(arg, '*'))
+        else:
+            filepatterns.append(arg)
+
+    if not filepatterns:
+        sys.stderr.write("ERR: no patterns; please use --file/-F or --dir/-D options\n")
+        sys.exit(1)
+
+    filenames = []
+    set_filenames = set()
+    for filepattern in filepatterns:
+        print filepattern
+        glob_filenames = glob.glob(filepattern)
+        if not glob_filenames:
+            sys.stderr.write("WRN: no such files: {0!r}\n".format(filepattern))
+            continue
+        for filename in glob_filenames:
+            if not filename in set_filenames:
+                filenames.append(filename)
+                set_filenames.add(filename)
+
+    if not filenames:
+        sys.stderr.write("ERR: 0 files selected\n")
+        sys.exit(1)
+
+    if options.from_date:
+        if options.to_date:
+            date_filter = lambda d: options.from_date <= d <= options.to_date
+        else:
+            date_filter = lambda d: options.from_date <= d
+    else:
+        if options.to_date:
+            date_filter = lambda d: d <= options.to_date
+        else:
+            date_filter = lambda d: True
+         
+    for filename in filenames:
+        with open(filename, 'rb') as f_in:
+            for line_number, line in enumerate(f_in):
+                l = [e.strip() for e in line.split()]
+                if (not l) or l[0] == 'DATE' or l[0].startswith('#'):
+                    continue
+                s_date, s_rid, status, s_submit, s_pre_start, s_pre_end, s_mod_start, s_mod_end, s_post_start, s_post_end = l[:10]
+                try:
+                    date = datetime.datetime.strptime(s_date, "%Y%m%d").date()
+                except ValueError, e:
+                    sys.stderr.write("ERR: file {0}, line #{1}: invalid date {2!r}\n".format(filename, line_number, s_date))
+                    continue
+
+                if status != '.':
+                    continue
+
+                if not date_filter(date):
+                    #print "skipping date {0}...".format(date)
+                    continue
+
+                try:
+                    pre = None
+                    mod = None
+                    post = None
+                    try:
+                        submit = float(s_submit)
+                    except ValueError, e:
+                        sys.stderr.write("ERR: file {0}, line #{1}: invalid submit_delay {2!r}\n".format(filename, line_number, s_submit))
+                        continue
+
+                    try:
+                        pre_start = float(s_pre_start)
+                    except ValueError, e:
+                        sys.stderr.write("ERR: file {0}, line #{1}: invalid pre_start_delay {2!r}\n".format(filename, line_number, s_pre_start))
+                        continue
+
+                    pre = pre_start - submit
+                 
+                    try:
+                        pre_end = float(s_pre_end)
+                    except ValueError, e:
+                        sys.stderr.write("ERR: file {0}, line #{1}: invalid pre_end_delay {2!r}\n".format(filename, line_number, s_pre_end))
+                        continue
+
+                    try:
+                        mod_start = float(s_mod_start)
+                    except ValueError, e:
+                        sys.stderr.write("ERR: file {0}, line #{1}: invalid mod_start_delay {2!r}\n".format(filename, line_number, s_mod_start))
+                        continue
+
+                    mod = mod_start - pre_end
+                 
+                    try:
+                        mod_end = float(s_mod_end)
+                    except ValueError, e:
+                        sys.stderr.write("ERR: file {0}, line #{1}: invalid mod_end_delay {2!r}\n".format(filename, line_number, s_mod_end))
+                        continue
+
+                    try:
+                        post_start = float(s_post_start)
+                    except ValueError, e:
+                        sys.stderr.write("ERR: file {0}, line #{1}: invalid post_start_delay {2!r}\n".format(filename, line_number, s_post_start))
+                        continue
+
+                    post = post_start - mod_end
+                 
+                finally:
+                    info_d[date] = Info(pre, mod, post)
+                    
+    
+    pre_qt = StatRegistry()
+    mod_qt = StatRegistry()
+    post_qt = StatRegistry()
+    qts = 'pre_qt', 'mod_qt', 'post_qt'
+    reg_d = dict((qt, StatRegistry()) for qt in qts)
+    info_fmt_h = "{0:8s} {1:10s} {2:10s} {3:10s}"
+    info_fmt_v = "{0:8s} {1:10.2f} {2:10.2f} {3:10.2f}"
+    reg_fmt_h = "{0:8s} {1:10s} {2:8s} {3:10s} {4:10s} {5:10s}"
+    reg_fmt_v = "{0:8s} {1:10.2f} {2:8d} {3:10.2f} {4:10.2f} {5:10.2f}"
+    print info_fmt_h.format('DATE', 'PRE', 'MOD', 'POST')
+    for date in sorted(info_d.iterkeys()):
+        info = info_d[date]
+        print info_fmt_v.format(date.strftime("%Y%m%d"), *info)
+        for qt in qts:
+            reg_d[qt].add(getattr(info, qt))
+            
+    print 
+    print reg_fmt_h.format('PHASE', 'SUM', 'NUM', 'MIN', 'MAX', 'AVE')
+    for qt in qts:
+        qt_stat = reg_d[qt].stat()
+        if qt_stat.num:
+            print reg_fmt_v.format(qt, *qt_stat)
+        else:
+            print "{0}: no data".format(qt)
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,817 @@
+#!/bin/ksh
+# This command submits an OPA-offline operational chain
+# for a specific rundate.
+# The JCF is created using two templates:
+# - $OPA_TPLDIR/jcf/opa_jcf.${OPA_RM}.template
+#   contains the definition of RM-specific keywords
+# - $OPA_TPLDIR/jcf/opa_jcf.body.{$opa_job_type}.template
+#   contains the code to be executed inside the batch job;
+#   it simply executes the opa step script
+# - $OPA_TPLDIR/jcf/opa_jcf.step.template
+#   contains the code to be executed for the specific step;
+#   it simply exports some variable and run the opa_wrapper.ksh
+# These templates contains @@(...) macros that are expanded
+# by this script, using values defined by command line arguments
+# or by a default (in profile).
+
+# Load common profile
+. @@(I:OPA_HOME)/bin/opa_profile.inc
+
+# Load specific profile for resource manager $OPA_RM
+. $OPA_SCRDIR/opa_rm.inc
+
+# Load list library
+. $OPA_SCRDIR/opa_lists.inc
+
+JOB_TYPE__SINGLE=single		# All the steps in a single parallel job
+JOB_TYPE__MULTIPLE=multiple	# Each step in a separate job, with dependencies;
+				#  currently supported only with LL
+JOB_TYPE__DEFAULT=default	# For LL, default->multiple; for other RM, default->single
+
+JOB_TYPES=" $JOB_TYPE__DEFAULT $JOB_TYPE__SINGLE $JOB_TYPE__MULTIPLE "
+
+function print_help {
+  typeset _enable_phases=" "
+  for index in $enable_step_phase__indices ; do
+    _enable_phases="$_enable_phases${enable_step_phase__step[index]}:${enable_step_phase__phase[index]} "
+  done
+  typeset _disable_phases=" "
+  for index in $disable_step_phase__indices ; do
+    _disable_phases="$_disable_phases${disable_step_phase__step[index]}:${disable_step_phase__phase[index]} "
+  done
+  cat <<EofCat
+Usage: $OPA_PROGNAME [options]
+[options]
+$(opa_set_default_run__print_options)
+	--help|-h				show this help
+	--wall-clock-limit|-w [[HH:]MM:]SS	set the wall clock limit
+						[DEFAULT: "$opa_wall_clock_limit"]
+	--queue|-q QUEUE			set the queue
+						[DEFAULT: "$opa_queue"]
+	--tasks|-t TASKS			set the number of MPI tasks
+						[DEFAULT: "$opa_tasks"]
+	--submit|-s				submit the JCF
+						[DEFAULT: "$opa_submit"]
+	--no-submit				do not submit the JCF
+						[DEFAULT: "$opa_submit"]
+	--job-type|-j J				set job type [${JOB_TYPES}]
+						[DEFAULT: "$opa_job_type"]
+	--job-default				set the '$JOB_TYPE__DEFAULT' job type
+	--job-single				set the '$JOB_TYPE__SINGLE' job type
+	--job-multiple				set the '$JOB_TYPE__MULTIPLE' job type
+	--keep-input|-k				do not clean input files
+						[DEFAULT: "$keep_input"]
+	--steps|-S STEPLIST			what to do
+						[DEFAULT: "$opa_steps"]
+						[AVAILABLE: "$opa_steps__available"]
+	--enable-step-phase|-d S:P0[,P1[...]]	enable phases P0[, P1[...]] for step S
+						["$_enable_phases"]
+	--disable-step-phase|-d S:P0[,P1[...]]	disable phases P0[, P1[...]] for step S
+						["$_disable_phases"]
+	--enable-data-assimilation|-d		enable data assimilation
+						["$enable_data_assimilation"]
+	--disable-data-assimilation|-D		disable data assimilation
+						["! $enable_data_assimilation"]
+	--enable-transfer-pro|-p		enable transfer of pro data
+						["$enable_transfer_pro"]
+	--disable-transfer-pro|-P		disable transfer of pro data
+						["! $enable_transfer_pro"]
+	--enable-update-tds-catalog|-x		enable update of the tds catalog
+						["$enable_update_tds_catalog"]
+	--disable-update-tds-catalog|-X		disable update of the tds catalog
+						["! $enable_update_tds_catalog"]
+	--enable-transfer-images|-i		enable transfer of images
+						["$enable_transfer_images"]
+	--disable-transfer-images|-I		disable transfer of images
+						["! $enable_transfer_images"]
+	--enable-input-timeout|-z		enable timeout on input data
+						["$enable_input_timeout"]
+	--disable-input-timeout|-Z		disable timeout on input data
+						["! $enable_input_timeout"]
+	--enable-abort-on-errors|-a		abort download in case of errors (missing files)
+						["$enable_input_abort_on_errors"]
+	--disable-abort-on-errors|-A		continue download of remaining files in case of errors
+						["! $enable_input_abort_on_errors"]
+	--try-resume				try to resume the download
+						["! $opa_force_download"]
+	--force-download			force the download of input files, even if already downloaded
+						["$opa_force_download"]
+	--without-timeout			disable timeout and abort on errors
+	--with-timeout				dummy option: timeout and abort on errors are enabled as default
+	--restart-weekday|-W			restart from weekday
+						[: "${opa_restart_weekday:-<default>}"]
+	--debug					debug mode
+						[DEFAULT: ${opa_debug_mode}]
+	--test					test submission
+	--simulate-transfer			simulate transfer
+						[DEFAULT: ${opa_simulate_transfer}]
+						[=> --disable-transfer-pro
+						    --disable-update-tds-catalog
+						    --disable-transfer-images]
+	--alpha|-a				change the alpha value for ODD partitioning
+						[DEFAULT: $opa_oddalpha}]
+EofCat
+}
+
+# parse command line arguments
+opa_steps__available="pre,model,post"
+opa_rundate="$OPA_UNDEFINED"
+opa_queue="$OPA_DEFAULT_QUEUE"
+opa_queue_par="$OPA_DEFAULT_QUEUE_PAR"
+opa_queue_ser="$OPA_DEFAULT_QUEUE_SER"
+opa_queue_qos="$OPA_DEFAULT_QOS"
+opa_wall_clock_limit="$OPA_DEFAULT_WALL_CLOCK_LIMIT"
+opa_wall_clock_limit_par="$OPA_DEFAULT_WALL_CLOCK_LIMIT_PAR"
+opa_wall_clock_limit_ser="$OPA_DEFAULT_WALL_CLOCK_LIMIT_SER"
+opa_tasks="$OPA_DEFAULT_TASKS"
+opa_multiple_jobs=true
+opa_submit=false
+opa_keep_input=true
+opa_steps="$opa_steps__available"
+opa_job_type="$JOB_TYPE__DEFAULT"
+enable_data_assimilation="$OPA_UNDEFINED"
+enable_transfer_pro="$OPA_UNDEFINED"
+enable_update_tds_catalog="$OPA_UNDEFINED"
+enable_transfer_images="$OPA_UNDEFINED"
+enable_input_timeout="$OPA_UNDEFINED"
+enable_input_abort_on_errors="$OPA_UNDEFINED"
+opa_recovery_mode="$OPA_UNDEFINED"
+opa_force_download="$OPA_FORCE_DOWNLOAD"
+
+set -A enable_step_phase__step --
+set -A enable_step_phase__phase --
+enable_step_phase__indices=' '
+typeset -i enable_step_phase__num=0
+
+set -A disable_step_phase__step --
+set -A disable_step_phase__phase --
+disable_step_phase__indices=' '
+typeset -i disable_step_phase__num=0
+
+opa_restart_weekday=""
+opa_batch=true
+opa_debug_mode=$OPA_DEBUG_MODE
+opa_simulate_transfer=$OPA_SIMULATE_TRANSFER
+opa_odd_alpha=$OPA_ODD_ALPHA
+while [[ ${#@} -ne 0 ]] ; do
+  arg="$1"
+  #echo "ARG:> '$arg'"
+  shift 1
+  case "$arg" in
+    --rundate|-r|--weekday|-w|--today|-t|--submit-day-offset|-s)
+      opa_set_default_run_options="${opa_set_default_run_options}$arg '$1' "
+      shift 1
+      ;;
+    --help|-h)
+      print_help
+      exit 0
+      ;;
+    --queue|-q)
+      opa_queue="$1"
+      shift 1
+      ;;
+    --wall-clock-limit|-w)
+      opa_wall_clock_limit="$1"
+      shift 1
+      ;;
+    --tasks|-t)
+      opa_tasks="$1"
+      shift 1
+      ;;
+    --submit|-s)
+      opa_submit=true
+      ;;
+    --no-submit|-s)
+      opa_submit=false
+      ;;
+    --job-type|-j)
+      opa_job_type="$1"
+      shift 1
+      if [[ $( echo " $JOB_TYPES " | grep -c " $opa_job_type " ) -eq 0 ]] ; then
+        echo "ERR: invalid job type '$opa_job_type'; valid types are: $JOB_TYPES" 1>&2
+        exit 1
+      fi
+      ;;
+    --job-default)
+      opa_job_type=$JOB_TYPE__DEFAULT
+      ;;
+    --job-multiple)
+      opa_job_type=$JOB_TYPE__MULTIPLE
+      ;;
+    --job-single)
+      opa_job_type=$JOB_TYPE__SINGLE
+      ;;
+    --steps|-S)
+      opa_steps="$1"
+      shift 1
+      ;;
+    --keep-input|--keep|-k)
+      opa_keep_input=true
+      ;;
+    --clean-input|--clean|-c)
+      opa_keep_input=false
+      ;;
+    --enable-step-phase?(s)|-d)
+      if [[ $(echo "$1" | grep -c :) -ne 0 ]] ; then
+        step=$(echo "$1" | $OPA_BINDIR/cut -d: -f1)
+        phases=$(echo "$1" | $OPA_BINDIR/cut -d: -f2-)
+        shift 1
+      else
+        step="$1"
+        phases="$2"
+      fi
+      for phase in $(echo "$phases" | sed -e 's/[, ][, ]*/ /g') ; do
+        echo "WRN: [${enable_step_phase__num}] : DISABLING ${step}::${phase}"
+        enable_step_phase__step[enable_step_phase__num]="$step"
+        enable_step_phase__phase[enable_step_phase__num]="$phase"
+        enable_step_phase__indices="${enable_step_phase__indices}${enable_step_phase__num} "
+        enable_step_phase__num=$(( $enable_step_phase__num + 1 ))
+      done
+      ;;
+    --disable-step-phase?(s)|-d)
+      if [[ $(echo "$1" | grep -c :) -ne 0 ]] ; then
+        step=$(echo "$1" | $OPA_BINDIR/cut -d: -f1)
+        phases=$(echo "$1" | $OPA_BINDIR/cut -d: -f2-)
+        shift 1
+      else
+        step="$1"
+        phases="$2"
+      fi
+      for phase in $(echo "$phases" | sed -e 's/[, ][, ]*/ /g') ; do
+        echo "WRN: [${disable_step_phase__num}] : DISABLING ${step}::${phase}"
+        disable_step_phase__step[disable_step_phase__num]="$step"
+        disable_step_phase__phase[disable_step_phase__num]="$phase"
+        disable_step_phase__indices="${disable_step_phase__indices}${disable_step_phase__num} "
+        disable_step_phase__num=$(( $disable_step_phase__num + 1 ))
+      done
+      ;;
+    --enable-data-assimilation|-d)
+      enable_data_assimilation=true
+      ;;
+    --disable-data-assimilation|-D)
+      enable_data_assimilation=false
+      ;;
+    --enable-transfer-pro|-p)
+      enable_transfer_pro=true
+      ;;
+    --disable-transfer-pro|-P)
+      enable_transfer_pro=false
+      ;;
+    --enable-update-tds-catalog|-x)
+      enable_update_tds_catalog=true
+      ;;
+    --disable-update-tds-catalog|-X)
+      enable_update_tds_catalog=false
+      ;;
+    --enable-transfer-images|-i)
+      enable_transfer_images=true
+      ;;
+    --disable-transfer-images|-I)
+      enable_transfer_images=false
+      ;;
+    --enable-input-timeout|-z)
+      enable_input_timeout=true
+      ;;
+    --disable-input-timeout|-Z)
+      enable_input_timeout=false
+      ;;
+    --enable-abort-on-errors|-a)
+      enable_input_abort_on_errors=true
+      ;;
+    --disable-abort-on-errors|-A)
+      enable_input_abort_on_errors=false
+      ;;
+    --without-timeout)
+      enable_input_timeout=false
+      enable_input_abort_on_errors=false
+      ;;
+    --with-timeout)
+      ;;
+    --restart-weekday|-W)
+      opa_restart_weekday=$(opa_translate_weekday $1)
+      shift 1
+      ;;
+    --alpha)
+      opa_odd_alpha="$1"
+      shift 1
+      ;;
+    --try-resume)
+      opa_force_download=false
+      ;;
+    --force-download)
+      opa_force_download=true
+      ;;
+    --test)
+      subargs=" "
+      for subarg in "$@" ; do
+        subargs="${subargs}'$subarg' "
+      done
+      eval "set -- --disable-transfer-pro --disable-update-tds-catalog --disable-transfer-images $subargs"
+      ;;
+    --debug)
+      opa_debug_mode=true
+      ;;
+    --recovery)
+      opa_recovery_mode=true
+      ;;
+    --simulate-transfer)
+      opa_simulate_transfer=true
+      ;;
+    *)
+      echo "ERROR: wrong command line option <$arg>" 1>&2
+      exit 2
+      ;;
+  esac
+done
+
+opa_prex "opa_set_default_run $opa_set_default_run_options"
+opa_prex "opa_set_run $OPA_DEFAULT_RUNDATE"
+
+#echo "OPA_LOGFILE=$OPA_LOGFILE"
+#opa_log_to_file 0 "OPA_LOGFILE=$OPA_LOGFILE"
+#read a
+
+
+domain_suff=$(opa_defdomain "$opa_tasks")
+
+
+opa_steps=$( echo "$opa_steps" | sed -e 's/,/ /g' )
+
+RT_OPA_RESTART_WEEKDAY="${opa_restart_weekday}"
+
+# apply defaults:
+if [[ $enable_data_assimilation == "$OPA_UNDEFINED" ]] ; then
+  enable_data_assimilation="$OPA_DA_ENABLE"
+fi
+if [[ $enable_transfer_pro == "$OPA_UNDEFINED" ]] ; then
+  enable_transfer_pro="$OPA_TRANSFER_PRO"
+fi
+if [[ $enable_update_tds_catalog == "$OPA_UNDEFINED" ]] ; then
+  enable_update_tds_catalog="$OPA_UPDATE_TDS_CATALOG"
+fi
+if [[ $enable_transfer_images == "$OPA_UNDEFINED" ]] ; then
+  enable_transfer_images="$OPA_TRANSFER_IMAGES"
+fi
+if [[ $enable_input_timeout == "$OPA_UNDEFINED" ]] ; then
+  enable_input_timeout="$OPA_INPUT_TIMEOUT_ENABLED"
+fi
+if [[ $enable_input_abort_on_errors == "$OPA_UNDEFINED" ]] ; then
+  enable_input_abort_on_errors="$OPA_INPUT_ABORT_ON_ERRORS"
+fi
+if [[ $opa_recovery_mode == "$OPA_UNDEFINED" ]] ; then
+  opa_recovery_mode="$OPA_RECOVERY_MODE"
+fi
+
+# check number of tasks:
+typeset -i num_missing_odd_files=0
+for ij in i j ; do
+  odd_file="$OPA_ETCDIR/static-data/DOMAIN/$OPA_DOMAIN/domdec.txt"
+  if [[ ! -f "$odd_file" ]] ; then
+    opa_log_to_file 1 "ERR: missing file '$odd_file'"
+    num_missing_odd_files=$(( $num_missing_odd_files + 1 ))
+  fi
+done
+if [[ $num_missing_odd_files -ne 0 ]] ; then
+  opa_log_to_file 0 "ERR: [${opa_tasks}] is not allowed as number of tasks" 1>&2
+  exit 2
+fi
+
+## rundate definition
+#if [ "$opa_rundate" != "$OPA_UNDEFINED" ] ; then
+#  opa_set_run "$opa_rundate"
+#else
+#  opa_set_run
+#fi
+
+opa_rm_tasks="$(opa_rm_mpi_tasks $opa_tasks)"
+#echo "MPI TASKS: $opa_tasks -> $opa_rm_tasks"
+#read aaa
+
+# default job type
+case "$opa_job_type" in
+  $JOB_TYPE__DEFAULT)
+    case "$OPA_RM" in
+      ll)
+        opa_job_type="$JOB_TYPE__MULTIPLE"
+        ;;
+      *)
+        opa_job_type="$JOB_TYPE__SINGLE"
+        ;;
+    esac
+    ;;
+  $JOB_TYPE__MULTIPLE)
+    case "$OPA_RM" in
+      ll|pbs|slurm)
+        # all fine!
+        ;;
+      *)
+        echo "ERR: job type '$JOB_TYPE__MULTIPLE' is not available for scheduler '$OPA_RM'" 1>&1
+        exit 1
+        ;;
+    esac
+    ;;
+esac
+
+# start
+opa_start
+
+opa_jcf_list=" "
+opa_job_name="opa_$OPA_VERSION"
+
+# new job command file and runid
+# Each job command file in the same $OPA_RUNLOGDIR has
+# a different, incremental RUN IDentifier ($OPA_RUNID)
+
+opa_runid=$(opa_new_runid)
+echo "OPA_RUNID: $opa_runid"
+
+#echo "OPA_RUNJOBID_FILE: $(opa_runjobid_file $opa_runid)"
+#opa_runjobid_filename=$(opa_runjobid_file "$opa_runid")
+opa_jcf_base=opa.${I_OPA_HOSTNAME}.${opa_runid}.jcf_${OPA_RM}
+opa_step_script_base=opa.${I_OPA_HOSTNAME}.${opa_runid}.step
+opa_job_eo_file="$OPA_RUNLOGDIR/opa.${I_OPA_HOSTNAME}.${opa_runid}.eo"
+opa_rm_eo_file="$OPA_RUNLOGDIR/opa.${I_OPA_HOSTNAME}.${opa_runid}.${OPA_RM_EO_FILENAME_PART}eo_${OPA_RM}"
+
+# convert wall clock limit 
+opa_wall_clock_limit=$( opa_rm_wall_clock_limit "$opa_wall_clock_limit" )
+
+# If queue is not defined, comment queue requirement line in JCF
+if [ $opa_queue = "$OPA_UNDEFINED" ] ; then
+  if [[ "$OPA_DEFAULT_QUEUE" != '' && "$OPA_DEFAULT_QUEUE" != "$OPA_UNDEFINED" ]] ; then
+    opa_queue=$OPA_DEFAULT_QUEUE
+  fi
+fi
+
+#echo "$opa_queue $OPA_DEFAULT_QUEUE"
+#read aaa
+
+# If queue is not defined, comment queue requirement line in JCF
+if [ $opa_queue = "$OPA_UNDEFINED" ] ; then
+  opa_queue_comment='#QUEUE IS NOT USED '
+else
+  opa_queue_comment=''
+fi
+
+prev_step="$OPA_UNDEFINED"
+function sed_tpl {
+  if [[ $prev_step = "$OPA_UNDEFINED" ]] ; then
+    opa_dependency_comment='#DEPENDENCY ARE NOT USED '
+    opa_dependency=''
+   else
+    opa_dependency_comment=''
+    case "$OPA_RM" in
+      ll)
+        opa_dependency="( $prev_step == 0 )"
+        ;;
+      lsf)
+        echo "ERROR: dependency don't work correctly with LFS!"
+        exit 1
+        ;;
+      pbs|slurm)
+        opa_dependency_comment='#DEPENDENCY IS OUTSIDE THE SCRIPT '
+        ;;
+      *)
+        opa_dependency="..."
+        ;;
+    esac
+   fi
+   sed	-e "s%@@(S:OPA_HOME)%${I_OPA_HOME}%g"						\
+	-e "s%@@(S:OPA_HOSTNAME)%${I_OPA_HOSTNAME}%g"					\
+	-e "s%@@(S:OPA_RUNDATE)%${OPA_RUNDATE}%g"					\
+	-e "s%@@(S:OPA_RUNLOGDIR)%${OPA_RUNLOGDIR}%g"					\
+	-e "s%@@(S:OPA_MAIL_ADDRESS)%${OPA_MAIL_ADDRESS}%g"				\
+	-e "s%@@(S:OPA_NOTIFY_ADDRESS)%${OPA_NOTIFY_ADDRESSES}%g"			\
+	-e "s%@@(S:OPA_WALL_CLOCK_LIMIT)%${opa_wall_clock_limit}%g"			\
+	-e "s%@@(S:OPA_WALL_CLOCK_LIMIT_PAR)%${opa_wall_clock_limit_par}%g"		\
+	-e "s%@@(S:OPA_WALL_CLOCK_LIMIT_SER)%${opa_wall_clock_limit_ser}%g"		\
+	-e "s%@@(S:OPA_TASKS)%${opa_tasks}%g"						\
+	-e "s%@@(S:OPA_RM_MPI_TASKS)%${opa_rm_tasks}%g"					\
+	-e "s%@@(S:OPA_QUEUE)%${opa_queue}%g"						\
+	-e "s%@@(S:OPA_QUEUE_PAR)%${opa_queue_par}%g"					\
+	-e "s%@@(S:OPA_QUEUE_SER)%${opa_queue_ser}%g"					\
+	-e "s%@@(S:OPA_QUEUE_QOS)%${opa_queue_qos}%g"					\
+	-e "s%@@(S:OPA_QUEUE_COMMENT)%${opa_queue_comment}%g"				\
+	-e "s%@@(S:OPA_DEPENDENCY)%${opa_dependency}%g"					\
+	-e "s%@@(S:OPA_DEPENDENCY_COMMENT)%${opa_dependency_comment}%g"			\
+	-e "s%@@(S:OPA_BINDIR)%${OPA_BINDIR}%g"						\
+	-e "s%@@(S:OPA_SCRDIR)%${OPA_SCRDIR}%g"						\
+	-e "s%@@(S:OPA_RM)%${OPA_RM}%g"							\
+	-e "s%@@(S:OPA_RUNID)%${opa_runid}%g"						\
+	-e "s%@@(S:OPA_KEEP_INPUT)%${opa_keep_input}%g"					\
+	-e "s%@@(S:OPA_STEP)%${opa_step}%g"						\
+	-e "s%@@(S:OPA_STEP_NAME)%${opa_step}%g"					\
+	-e "s%@@(S:OPA_JOB_NAME)%${opa_job_name}%g"					\
+	-e "s%@@(S:OPA_BATCH)%${opa_batch}%g"						\
+	-e "s%@@(S:OPA_DA_ENABLE)%${enable_data_assimilation}%g"			\
+	-e "s%@@(S:OPA_FORCE_DOWNLOAD)%${opa_force_download}%g"				\
+	-e "s%@@(S:OPA_TRANSFER_PRO)%${enable_transfer_pro}%g"				\
+	-e "s%@@(S:OPA_UPDATE_TDS_CATALOG)%${enable_update_tds_catalog}%g"		\
+	-e "s%@@(S:OPA_TRANSFER_IMAGES)%${enable_transfer_images}%g"			\
+	-e "s%@@(S:OPA_ENABLE_PRE_PHASES)%${enable_pre_phases}%g"			\
+	-e "s%@@(S:OPA_ENABLE_MODEL_PHASES)%${enable_model_phases}%g"			\
+	-e "s%@@(S:OPA_ENABLE_POST_PHASES)%${enable_post_phases}%g"			\
+	-e "s%@@(S:OPA_DISABLE_PRE_PHASES)%${disable_pre_phases}%g"			\
+	-e "s%@@(S:OPA_DISABLE_MODEL_PHASES)%${disable_model_phases}%g"			\
+	-e "s%@@(S:OPA_DISABLE_POST_PHASES)%${disable_post_phases}%g"			\
+	-e "s%@@(S:OPA_RESTART_WEEKDAY)%${OPA_RESTART_WEEKDAY}%g"			\
+	-e "s%@@(S:OPA_INPUT_TIMEOUT_ENABLED)%${enable_input_timeout}%g"		\
+	-e "s%@@(S:OPA_INPUT_ABORT_ON_ERRORS)%${enable_input_abort_on_errors}%g"	\
+	-e "s%@@(S:OPA_STEP_SCRIPT_BASE)%${opa_step_script_base}%g"			\
+	-e "s%@@(S:OPA_JOB_EO_FILE)%${opa_job_eo_file}%g"				\
+	-e "s%@@(S:OPA_RM_EO_FILE)%${opa_rm_eo_file}%g"					\
+	-e "s%@@(S:OPA_DEBUG_MODE)%${opa_debug_mode}%g"					\
+	-e "s%@@(S:OPA_SIMULATE_TRANSFER)%${opa_simulate_transfer}%g"			\
+	-e "s%@@(S:OPA_RECOVERY_MODE)%${opa_recovery_mode}%g"				\
+	-e "s%@@(S:OPA_ODD_ALPHA)%${opa_odd_alpha}%g"					\
+	-e "s%@@(S:OPA_STEPS)%${opa_steps}%g"
+}
+
+### I n i t :
+
+opa_jcf="${opa_jcf_base}.${opa_job_type}"
+opa_jcf_list="$opa_jcf_list$opa_jcf "
+# job command file creation
+opa_log 1 "Creating JCF [${opa_jcf}]..."
+opa_log 2 "JCF is [${OPA_RUNLOGDIR}/${opa_jcf}]"
+cat $OPA_TPLDIR/jcf/opa_jcf.head.${OPA_RM}.template | sed_tpl >> $OPA_RUNLOGDIR/$opa_jcf || {
+  errors=$(( $errors + 1 ))
+}
+
+disable_pre_phases=''
+disable_model_phases=''
+disable_post_phases=''
+
+enable_pre_phases=''
+enable_model_phases=''
+enable_post_phases=''
+
+opa_single_step=''
+opa_separator=''
+for opa_step in $opa_steps ; do
+  opa_single_step="$opa_single_step$opa_separator$opa_step"
+  opa_separator='_'
+done
+
+### R m - H e a d :
+echo "opa_steps=$opa_steps"
+case $opa_job_type in
+  $JOB_TYPE__SINGLE)
+    opa_type=parallel
+    echo "### Adding steps $opa_steps"
+    opa_step="$opa_single_step"
+    cat $OPA_TPLDIR/jcf/opa_jcf.${opa_type}.${OPA_RM}.template | sed_tpl >> $OPA_RUNLOGDIR/$opa_jcf || {
+      errors=$(( $errors + 1 ))
+    }
+    ;;
+  $JOB_TYPE__MULTIPLE)
+    case "$OPA_RM" in
+      ll)
+        for opa_step in $opa_steps ; do
+          case "$opa_step" in
+            pre|post)
+              opa_type=serial
+              ;;
+            model)
+              opa_type=parallel
+              ;;
+            *)
+              echo "ERR: step [${opa_step}] is not defined" 1>&2
+              exit 1
+              ;;
+          esac
+          opa_step_script="${opa_step_script_base}.$opa_step"
+          enable_phases=' '
+          for index in $enable_step_phase__indices ; do
+            if [[ "$opa_step" == "${enable_step_phase__step[index]}" ]] ; then
+              enable_phases="${enable_phases}${enable_step_phase__phase[index]} "
+            fi
+          done
+          disable_phases=' '
+          for index in $disable_step_phase__indices ; do
+            if [[ "$opa_step" == "${disable_step_phase__step[index]}" ]] ; then
+              disable_phases="${disable_phases}${disable_step_phase__phase[index]} "
+            fi
+          done
+          # trimming is needed, because opa_profile sets the default value if the variable is empty; no spaces are allowed
+          enable_phases=$(list_trim "$enable_phases")
+          disable_phases=$(list_trim "$disable_phases")
+          #echo "DBG: enable_${opa_step}_phases=<${enable_phases}>"
+          #echo "DBG: disable_${opa_step}_phases=<${disable_phases}>"
+          case "$opa_step" in
+            pre)
+              enable_pre_phases="$enable_phases"
+              disable_pre_phases="$disable_phases"
+              ;;
+            model)
+              enable_model_phases="$enable_phases"
+              disable_model_phases="$disable_phases"
+              ;;
+            post)
+              enable_post_phases="$enable_phases"
+              disable_post_phases="$disable_phases"
+              ;;
+          esac
+          #echo "opa_job_type=<${opa_job_type}>"
+          echo "### Adding step $opa_step"
+          cat $OPA_TPLDIR/jcf/opa_jcf.${opa_type}.${OPA_RM}.template | sed_tpl >> $OPA_RUNLOGDIR/$opa_jcf || {
+            errors=$(( $errors + 1 ))
+          }
+          prev_step="$opa_step"
+        done
+        ;;
+      pbs|slurm)
+# QUA è da METTERE TUTTA LA PARTE DI PBS MULTIPLE
+        for opa_step in $opa_steps ; do
+          case "$opa_step" in
+            pre|post)
+              opa_type=serial
+              ;;
+            model)
+              opa_type=parallel
+              ;;
+            *)
+              echo "ERR: step [${opa_step}] is not defined" 1>&2
+              exit 1
+              ;;
+          esac
+          opa_step_script="${opa_step_script_base}.$opa_step"
+          enable_phases=' '
+          for index in $enable_step_phase__indices ; do
+            if [[ "$opa_step" == "${enable_step_phase__step[index]}" ]] ; then
+              enable_phases="${enable_phases}${enable_step_phase__phase[index]} "
+            fi
+          done
+          disable_phases=' '
+          for index in $disable_step_phase__indices ; do
+            if [[ "$opa_step" == "${disable_step_phase__step[index]}" ]] ; then
+              disable_phases="${disable_phases}${disable_step_phase__phase[index]} "
+            fi
+          done
+          # trimming is needed, because opa_profile sets the default value if the variable is empty; no spaces are allowed
+          enable_phases=$(list_trim "$enable_phases")
+          disable_phases=$(list_trim "$disable_phases")
+          #echo "DBG: enable_${opa_step}_phases=<${enable_phases}>"
+          #echo "DBG: disable_${opa_step}_phases=<${disable_phases}>"
+          case "$opa_step" in
+            pre)
+              enable_pre_phases="$enable_phases"
+              disable_pre_phases="$disable_phases"
+              ;;
+            model)
+              enable_model_phases="$enable_phases"
+              disable_model_phases="$disable_phases"
+              ;;
+            post)
+              enable_post_phases="$enable_phases"
+              disable_post_phases="$disable_phases"
+              ;;
+          esac
+          #echo "opa_job_type=<${opa_job_type}>"
+
+          echo "### Adding step $opa_step (${opa_type}.${OPA_RM})"
+
+          opa_job_name="opa_$OPA_VERSION.$opa_step"
+
+          cat $OPA_TPLDIR/jcf/opa_jcf.head.${OPA_RM}.template | sed_tpl >> $OPA_RUNLOGDIR/$opa_jcf.$opa_step || {
+            errors=$(( $errors + 1 ))
+          }
+
+          cat $OPA_TPLDIR/jcf/opa_jcf.${opa_type}.${OPA_RM}.template | sed_tpl >> $OPA_RUNLOGDIR/$opa_jcf.$opa_step || {
+            errors=$(( $errors + 1 ))
+          }
+
+#           cat $OPA_TPLDIR/jcf/opa_jcf.tail.${OPA_RM}.template | sed_tpl >> $OPA_RUNLOGDIR/$opa_jcf.$opa_step || {
+#             errors=$(( $errors + 1 ))
+#           }
+
+#           cat $OPA_TPLDIR/jcf/opa_jcf.tail.${OPA_RM}.template | sed_tpl >> $OPA_RUNLOGDIR/$opa_jcf.$opa_step || {
+#             errors=$(( $errors + 1 ))
+#           }
+          for tpl_name in opa_jcf.tail.${OPA_RM} opa_jcf.body.head opa_jcf.body.${opa_job_type} opa_jcf.body.tail ; do
+            tpl_file="$OPA_TPLDIR/jcf/${tpl_name}.template"
+            echo "### adding tpl $tpl_file"
+            if [[ ! -f "$tpl_file" ]] ; then
+              echo "ERR: missing file '$tpl_file'" 1>&2
+              exit 1
+            fi
+            cat "$tpl_file" | sed_tpl >> $OPA_RUNLOGDIR/$opa_jcf.$opa_step || {
+            errors=$(( $errors + 1 ))
+            }
+          done
+
+#           cat $OPA_TPLDIR/jcf/opa_jcf.step.template | sed_tpl >> $OPA_RUNLOGDIR/$opa_jcf.$opa_step || {
+#             errors=$(( $errors + 1 ))
+#           }
+          prev_step="$opa_step"
+        done
+        ;;
+    esac
+    ;;
+esac
+
+
+### S t e p - s c r i p t s :
+for opa_step in $opa_steps ; do
+  opa_step_script="${opa_step_script_base}.$opa_step"
+  cat $OPA_TPLDIR/jcf/opa_jcf.step.template | sed_tpl >> $OPA_RUNLOGDIR/$opa_step_script || {
+    errors=$(( $errors + 1 ))
+  }
+  opa_prex "chmod 744 $OPA_RUNLOGDIR/$opa_step_script"
+done
+
+### B o d y :
+opa_step_script_filename="${opa_step_script_base}.\${OPA_STEP}"
+for tpl_name in opa_jcf.tail.${OPA_RM} opa_jcf.body.head opa_jcf.body.${opa_job_type} opa_jcf.body.tail ; do
+  tpl_file="$OPA_TPLDIR/jcf/${tpl_name}.template"
+  echo "### adding tpl $tpl_file"
+  if [[ ! -f "$tpl_file" ]] ; then
+    echo "ERR: missing file '$tpl_file'" 1>&2
+    exit 1
+  fi
+  cat "$tpl_file" | sed_tpl >> $OPA_RUNLOGDIR/$opa_jcf || {
+    errors=$(( $errors + 1 ))
+  }
+done
+
+# Check if some @@(...) macro is left unexpanded in JCF
+if [[ $( $OPA_BINDIR/grep -c '@@' $OPA_RUNLOGDIR/$opa_jcf ) -ne 0 ]] ; then
+  opa_log_to_file 0 "ERROR: unexpanded macros in JCF [${opa_jcf}]" 
+  opa_exit 1
+fi
+
+# Log JCF creation exit status
+for opa_jcf in $opa_jcf_list ; do
+  if [[ -f $OPA_RUNLOGDIR/$opa_jcf && -s $OPA_RUNLOGDIR/$opa_jcf ]] ; then
+    opa_log 0 "JCF [${opa_jcf}] has been created"
+  else
+    opa_log_to_file 0 "ERROR: JCF [${opa_jcf}] has NOT been created"
+  fi
+done
+
+esternal_dependency=""
+case $opa_job_type in
+  $JOB_TYPE__MULTIPLE)
+    case "$OPA_RM" in
+       pbs)
+         esternal_dependency="-W depend=afterok:"
+         opa_jcf_list=""
+         for opa_step in $opa_steps ; do
+           opa_jcf_list="$opa_jcf_list $opa_jcf.$opa_step"
+         done
+         ;;
+       slurm)
+         esternal_dependency="--dependency=afterok:"
+         opa_jcf_list=""
+         for opa_step in $opa_steps ; do
+           opa_jcf_list="$opa_jcf_list $opa_jcf.$opa_step"
+         done
+         ;;
+    esac
+    ;;
+esac
+
+# job command file submission
+if $opa_submit ; then
+  typeset -i submit_errors=0
+  #echo "opa_jcf_list=<${opa_jcf_list}>"
+  pbsjob="xx"
+  OPA_RM_SUBMIT_JOBID=0
+  for opa_jcf in $opa_jcf_list ; do
+    opa_log_to_file 1 "Submitting JCF [${opa_jcf}]..."
+    if [[ $pbsjob == "xx" ]];then
+      dep=" "
+    else
+     case "$OPA_RM" in
+	pbs)
+         dep="$esternal_dependency$pbsjob "
+         ;;
+       slurm)
+         dep="$esternal_dependency$OPA_RM_SUBMIT_JOBID "
+         ;;
+     esac
+    fi
+    pbsjob=$(opa_rm_submit "$dep $OPA_RUNLOGDIR/$opa_jcf") ; ec=$?
+    errors=$(( $errors + $ec ))
+    OPA_RM_SUBMIT_JOBID=$( echo -n "$pbsjob" | cut -d ' ' -f4 )
+    opa_log_to_file 0 "JCF [${opa_jcf}] has been submitted [$(opa_exitcode $ec)]"
+    if [[ $ec -eq 0 ]] ; then
+      #opa_log 1 "   QUEUE: $OPA_RM_SUBMIT_QUEUE"
+      opa_log_to_file 1 "   JOBID: $OPA_RM_SUBMIT_JOBID"
+      #echo "${opa_jcf}:$OPA_RM_SUBMIT_JOBID" >> "${opa_jobids_file}"
+      opa_add_jobid "$opa_jcf" "$OPA_RM_SUBMIT_JOBID" "$opa_runid"
+    else
+      submit_errors=$(( $submit_errors + 1 ))
+    fi
+  done
+  if [[ $submit_errors -eq 0 ]] ; then
+    opa_log_to_file 0 "Chain has been submitted [$(opa_exitcode $submit_errors)]"
+  else
+    opa_log_to_file 0 "Chain has *NOT* been submitted [$(opa_exitcode $submit_errors)]"
+  fi
+  errors=$(( $errors + $submit_errors ))
+fi
+
+opa_exit "$errors"
+
+
+

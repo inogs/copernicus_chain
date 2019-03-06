@@ -1,0 +1,55 @@
+#!/bin/ksh
+# This script transfers the images to the OGS server
+# phase C5: put on INGV server
+
+# Load common profile
+. @@(I:OPA_HOME)/bin/opa_profile.inc
+
+# Rundate definition
+opa_set_run
+
+# start
+opa_start
+
+typeset -i errors=0
+typeset _logfile="$OPA_RUNLOGDIR/opa.${I_OPA_HOSTNAME}.${OPA_RUNID}.opa_put.out"
+typeset _logfile2="$OPA_RUNLOGDIR/opa.${I_OPA_HOSTNAME}.${OPA_RUNID}.opa_put_phase_2.out"
+
+CONFIG=@@(I:OPA_HOME)/etc/nc-config/.cmems.ncconfig
+RESPONSE_DIR=${OPA_WRKDIR}/POSTPROC/PRODUCTS/RESPONSE
+opa_mkdir $RESPONSE_DIR
+WED_SAT_DATE=$( date -d " $OPA_RUNDATE  +1 days " +%Y%m%d )
+
+opa_log 0 "postprocess_C5 begin"
+
+# Deliver products to CMCC
+#opa_log 0 "delivering to CMCC DU"
+#opa_prex "@@(I:OPA_HOME)/bin/opa_put.ksh -y NUTR --disable-gzip 1> $_logfile 2>&1"            || errors=$(( $errors + 1 ))
+#opa_prex "@@(I:OPA_HOME)/bin/opa_put.ksh -y BIOL --disable-gzip 1>> $_logfile 2>&1"            || errors=$(( $errors + 1 ))
+#opa_prex "@@(I:OPA_HOME)/bin/opa_put.ksh -y CARB --disable-gzip 1>> $_logfile 2>&1"            || errors=$(( $errors + 1 ))
+#opa_prex "@@(I:OPA_HOME)/bin/opa_put.ksh -y PFTC --disable-gzip 1>> $_logfile 2>&1"            || errors=$(( $errors + 1 ))
+#opa_prex "@@(I:OPA_HOME)/bin/opa_put.ksh -y NUTR --disable-gzip -b 1>> $_logfile 2>&1"            || errors=$(( $errors + 1 ))
+#opa_prex "@@(I:OPA_HOME)/bin/opa_put.ksh -y BIOL --disable-gzip -b 1>> $_logfile 2>&1"            || errors=$(( $errors + 1 ))
+#opa_prex "@@(I:OPA_HOME)/bin/opa_put.ksh -y CARB --disable-gzip -b 1>> $_logfile 2>&1"            || errors=$(( $errors + 1 ))
+#opa_prex "@@(I:OPA_HOME)/bin/opa_put.ksh -y PFTC --disable-gzip -b 1>> $_logfile 2>&1"            || errors=$(( $errors + 1 ))
+
+
+# Deliver products to CMEMS
+
+$OPA_BINDIR/check_upload_by_other_chain.sh  -d $WED_SAT_DATE -l $RESPONSE_DIR -f $CONFIG -b $OPA_BINDIR
+if [ $? == 0  ] ; then
+   opa_log 0 " No upload to CMEMS DU"
+else
+   opa_log 0 "delivering to CMEMS DU"
+   opa_prex "@@(I:OPA_HOME)/bin/opa_put_phase_2.ksh -y NUTR 1> $_logfile2 2>&1"             || errors=$(( $errors + 1 ))
+   opa_prex "@@(I:OPA_HOME)/bin/opa_put_phase_2.ksh -y BIOL 1>> $_logfile2 2>&1"            || errors=$(( $errors + 1 ))
+   opa_prex "@@(I:OPA_HOME)/bin/opa_put_phase_2.ksh -y CARB 1>> $_logfile2 2>&1"            || errors=$(( $errors + 1 ))
+   opa_prex "@@(I:OPA_HOME)/bin/opa_put_phase_2.ksh -y PFTC 1>> $_logfile2 2>&1"            || errors=$(( $errors + 1 ))
+fi
+
+opa_log 0 "postprocess_C5 done [$(opa_exitcode $ec)]"
+
+opa_exit "$errors"
+
+
+

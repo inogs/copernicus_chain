@@ -1,0 +1,42 @@
+#!/bin/ksh
+
+# Load common profile
+. @@(I:OPA_HOME)/bin/opa_profile.inc
+
+# Rundate definition
+opa_set_run
+
+# start
+opa_start
+
+# Get name of ECMWF wind input files
+opa_set_input_files__opaoper_a
+opa_set_input_files__opaoper_f
+
+typeset -i errors=0
+
+### set up of input files in $OPA_WRKDIR/OPAOPER
+
+$OPA_SCRDIR/opa_input_stagein.ksh || errors=$(( $errors + 1 ))
+
+# ### create links for analyses
+# $OPA_SCRDIR/opa_link_analyses.ksh || errors=$(( $errors + 1 ))
+
+# ### create links for analyses
+# $OPA_SCRDIR/opa_link_forecast.ksh || errors=$(( $errors + 1 ))
+
+# ### split forecast
+# $OPA_SCRDIR/opa_split_forecast.ksh || errors=$(( $errors + 1 ))
+
+if [[ $errors -gt 0 ]] ; then
+  opa_log 0 "WRN: $errors errors during phase A1"
+fi
+
+echo "DBG: LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
+
+### check input files:
+typeset -i exit_code=0
+$OPA_SCRDIR/opa_check_input_files.ksh || exit_code=$?
+
+opa_report "bio_chain-tl-start_production" "0" "true"
+opa_exit "$exit_code"
