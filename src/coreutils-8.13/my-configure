@@ -1,0 +1,5 @@
+. $OPA_HOME/src/ENV/$OPA_HOSTNAME
+cp src/tail.c.modif src/tail.c
+./configure --prefix=$OPA_HOME/HOST/$OPA_HOSTNAME
+make
+make install

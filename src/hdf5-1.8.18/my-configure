@@ -1,0 +1,7 @@
+. $OPA_HOME/src/ENV/$OPA_HOSTNAME
+./configure --prefix=$OPA_HOME/HOST/$OPA_HOSTNAME --enable-shared --enable-parallel --enable-fortran --enable-fortran2003 --enable-gpfs --disable-libtool-lock --with-szlib=$OPA_HOME/HOST/$OPA_HOSTNAME --with-zlib=$OPA_HOME/HOST/$OPA_HOSTNAME CC=mpiicc FC=mpiifort
+#cp pio_engine.c perform/pio_engine.c
+#cp sio_engine.c perform/sio_engine.c
+make clean
+make
+make install

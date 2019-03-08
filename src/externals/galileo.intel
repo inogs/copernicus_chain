@@ -1,0 +1,16 @@
+module purge
+module load autoload
+module load intel/pe-xe-2018--binary
+module load intelmpi/2018--binary
+module load mkl/2018--binary
+module load cmake/3.12.0
+export OPA_HOME=/galileo/home/usera07ogs/a07ogs00/OPA/V5C-dev
+export OPA_HOSTNAME=galileo
+export NETCDF_LIB=$OPA_HOME/HOST/$OPA_HOSTNAME/lib
+export NETCDF_INC=$OPA_HOME/HOST/$OPA_HOSTNAME/include
+export NETCDFF_LIB=$OPA_HOME/HOST/$OPA_HOSTNAME/lib
+export NETCDFF_INC=$OPA_HOME/HOST/$OPA_HOSTNAME/include
+export PNETCDF_LIB=$OPA_HOME/HOST/$OPA_HOSTNAME/lib
+export PNETCDF_INC=$OPA_HOME/HOST/$OPA_HOSTNAME/include
+export PETSC_LIB=$OPA_HOME/HOST/$OPA_HOSTNAME/lib
+export PETSC_INC=$OPA_HOME/HOST/$OPA_HOSTNAME/include
