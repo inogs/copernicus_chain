@@ -1,0 +1,12 @@
+errors=0
+for opa_step in @@(S:OPA_STEPS) ; do
+  command=@@(S:OPA_RUNLOGDIR)/@@(S:OPA_STEP_SCRIPT_BASE).$opa_step
+  echo ">>> $command"
+  $command ; ec=$?
+  if [[ $ec -ne 0 ]] ; then
+    echo "ERR: command "$command" exited with status [${ec}]" 1>&2
+    errors=$(( $errors + 1 ))
+    break
+  fi
+done
+exit_code=$errors

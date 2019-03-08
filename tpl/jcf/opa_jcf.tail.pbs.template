@@ -1,0 +1,5 @@
+export RM_PROCS=$(@@(S:OPA_BINDIR)/cat "$PBS_NODEFILE" | @@(S:OPA_BINDIR)/tr '\n' ' ')
+export RM_NODES=$(@@(S:OPA_BINDIR)/cat "$PBS_NODEFILE" | @@(S:OPA_BINDIR)/sort -u | @@(S:OPA_BINDIR)/tr '\n' ' ')
+export RM_NUM_PROCS=$( echo "$RM_PROCS" | @@(S:OPA_BINDIR)/wc -w )
+export RM_NUM_NODES=$( echo "$RM_NODES" | @@(S:OPA_BINDIR)/wc -w )
+export RM_JOBID="$PBS_JOBID"

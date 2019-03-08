@@ -1,0 +1,11 @@
+{ ### start redirection of output/error to @@(S:OPA_JOB_EO_FILE)
+export RT_OPA_RUNDATE="@@(S:OPA_RUNDATE)"
+export RT_OPA_BATCH="@@(S:OPA_BATCH)"
+export RT_OPA_RUNID="@@(S:OPA_RUNID)"
+
+olj_command="@@(S:OPA_SCRDIR)/opa_log_job.ksh begin"
+echo ">>> command '$olj_command' starting..."
+eval $olj_command ; olj_ec=$?
+echo "<<< command '$olj_command' completed [${olj_ec}]"
+
+exit_code=0

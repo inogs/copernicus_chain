@@ -1,0 +1,3 @@
+command=@@(S:OPA_RUNLOGDIR)/@@(S:OPA_STEP_SCRIPT_BASE).${OPA_RUNTIME_STEP}
+echo ">>> $command"
+$command ; exit_code=$?

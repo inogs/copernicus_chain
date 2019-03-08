@@ -1,0 +1,5 @@
+#export RM_PROCS=$(@@(S:OPA_BINDIR)/cat "$SLURM_JOB_NODELIST" | @@(S:OPA_BINDIR)/tr '\n' ' ')
+#export RM_NODES=$(@@(S:OPA_BINDIR)/cat "$SLURM_JOB_NODELIST" | @@(S:OPA_BINDIR)/sort -u | @@(S:OPA_BINDIR)/tr '\n' ' ')
+export RM_NUM_PROCS=$SLURM_NTASKS
+export RM_NUM_NODES=$SLURM_JOB_NUM_NODES
+export RM_JOBID="$SLURM_JOBID"

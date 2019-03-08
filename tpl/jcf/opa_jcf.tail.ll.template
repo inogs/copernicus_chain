@@ -1,0 +1,5 @@
+export RM_PROCS="$LOADL_PROCESSOR_LIST"
+export RM_NODES=$( echo "$RM_PROCS" | tr ' ' '\n' | grep -v '^[ \t]*$' | @@(S:OPA_BINDIR)/sort -u )
+export RM_NUM_PROCS=$( echo "$RM_PROCS" | @@(S:OPA_BINDIR)/wc -w )
+export RM_NUM_NODES=$( echo "$RM_NODES" | @@(S:OPA_BINDIR)/wc -w )
+export RM_JOBID="$LOADL_STEP_ID"

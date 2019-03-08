@@ -1,0 +1,8 @@
+#
+#PBS -l select=@@(S:OPA_RM_MPI_TASKS)
+#PBS -l walltime=@@(S:OPA_WALL_CLOCK_LIMIT_PAR)
+@@(S:OPA_QUEUE_COMMENT)#PBS -q @@(S:OPA_QUEUE_PAR)
+@@(S:OPA_DEPENDENCY_COMMENT)#PBS -W dependency=@@(S:OPA_DEPENDENCY)
+#PBS -v OPA_RUNTIME_STEP=@@(S:OPA_STEP)
+#PBS -A OGS_prod
+#PBS -W group_list=OGS_prod

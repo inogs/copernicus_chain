@@ -1,0 +1,8 @@
+#!/bin/ksh
+# 	*** definition of SLURM keywords ***
+#SBATCH --job-name=@@(S:OPA_JOB_NAME)
+#SBATCH --mail-user=@@(S:OPA_NOTIFY_ADDRESS)
+#SBATCH --mail-type=BEGIN,END,FAIL
+#
+#SBATCH -o @@(S:OPA_RM_EO_FILE)
+#

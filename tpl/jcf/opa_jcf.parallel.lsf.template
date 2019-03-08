@@ -1,0 +1,40 @@
+#!/bin/ksh
+#       *** definition of LSF keywords ***
+#BSUB -J OPA_off
+#BSUB -i /dev/null
+#BSUB -o @@(S:OPA_RUNLOGDIR)/opa.@@(S:OPA_HOSTNAME).@@(S:OPA_RUNID).wrapper.%J.out_@@(S:OPA_RM)
+#BSUB -e @@(S:OPA_RUNLOGDIR)/opa.@@(S:OPA_HOSTNAME).@@(S:OPA_RUNID).wrapper.%J.out_@@(S:OPA_RM)
+#BSUB -u @@(S:OPA_NOTIFY_ADDRESS)
+#BSUB -L /bin/ksh
+#BSUB -W @@(S:OPA_WALL_CLOCK_LIMIT)
+#BSUB -n @@(S:OPA_TASKS)
+@@(S:OPA_QUEUE_COMMENT)#BSUB -q @@(S:OPA_QUEUE)
+
+# Get RM_NODES, RM_NUM_NODES, RM_PROCS and RM_NUM_PROCS from LSB_MCPU_HOSTS:
+# LSB_MCPU_HOSTS="node1 2 node2 2 node3 1"
+_awk_source='
+        BEGIN{
+          nodes=" ";
+          procs=" ";
+          num_nodes=0;
+          num_procs=0
+        }
+        {
+          for(i=1; i<=NF; i+=2) {
+            nodes=nodes $i " ";
+            num_nodes+=1;
+            n=i+1;
+            num_procs += $n;
+            for(j=1; j<=$n; ++j){
+              procs=procs $i " "
+            }
+          }
+        }
+        END{
+          print "RM_NODES=\"" nodes "\""
+          print "RM_NUM_NODES=\"" num_nodes "\""
+          print "RM_PROCS=\"" procs "\""
+          print "RM_NUM_PROCS=\"" num_procs "\""
+        }'
+eval $( echo "$LSB_MCPU_HOSTS" | awk "$_awk_source" )
+

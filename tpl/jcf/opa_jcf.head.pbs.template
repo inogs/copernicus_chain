@@ -1,0 +1,10 @@
+#!/bin/ksh
+# 	*** definition of PBS keywords ***
+#PBS -N @@(S:OPA_JOB_NAME)
+#PBS -M @@(S:OPA_NOTIFY_ADDRESS)
+#PBS -m abe
+#PBS -S /bin/ksh
+#
+#PBS -o @@(S:OPA_RM_EO_FILE)
+#PBS -j oe
+#

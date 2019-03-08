@@ -1,0 +1,17 @@
+#
+# @ step_name = @@(S:OPA_STEP_NAME)
+# @ job_type = parallel
+# @ network.MPI = sn_all,,us,,instances=2
+# @ wall_clock_limit = @@(S:OPA_WALL_CLOCK_LIMIT)
+# @ total_tasks = @@(S:OPA_TASKS)
+# @ blocking = unlimited
+@@(S:OPA_QUEUE_COMMENT)# @ class = @@(S:OPA_QUEUE)
+@@(S:OPA_DEPENDENCY_COMMENT)# @ dependency = @@(S:OPA_DEPENDENCY)
+# @ arguments = 
+## @ requirements =
+# @ rset = rset_mcm_affinity
+# @ mcm_affinity_options = mcm_distribute mcm_mem_pref mcm_sni_none
+# @ task_affinity = core(1)
+# @ resources = ConsumableMemory(1500mb)
+# @ environment = OPA_RUNTIME_STEP=@@(S:OPA_STEP)
+# @ queue

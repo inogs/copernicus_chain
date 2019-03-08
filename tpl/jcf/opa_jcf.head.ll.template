@@ -1,0 +1,12 @@
+#!/bin/ksh
+# 	*** definition of LoadLeveler keywords ***
+# @ job_name = @@(S:OPA_JOB_NAME)
+# @ input = /dev/null
+# @ output = @@(S:OPA_RM_EO_FILE)
+# @ error = @@(S:OPA_RM_EO_FILE)
+# @ notify_user = @@(S:OPA_NOTIFY_ADDRESS)
+# @ notification = always
+# @ checkpoint = no
+# @ restart = yes
+# @ shell = /bin/ksh
+#
