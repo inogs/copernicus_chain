@@ -1263,9 +1263,11 @@ function opa_setup_template {
 	-e "s%@@(T:OPA_GRADS_HOME)%${OPA_GRADS_HOME}%g"		\
 	"$_source" > "$_target"
   typeset _check_pattern='@@(T:[a-zA-Z_0-9]*)'
-  if [[ $($OPA_BINDIR/grep -c "$_check_pattern" "$_target") -ne 0 ]] ; then
+  # if [[ $($OPA_BINDIR/grep -c "$_check_pattern" "$_target") -ne 0 ]] ; then
+  if [[ $(grep -c "$_check_pattern" "$_target") -ne 0 ]] ; then
     opa_log 0 "ERR: unexpanded macros in '$_source':"
-    opa_prex "$OPA_BINDIR/grep '$_check_pattern' '$_target'"
+  # opa_prex "$OPA_BINDIR/grep '$_check_pattern' '$_target'"
+    opa_prex "grep '$_check_pattern' '$_target'"
     return 1
   fi
   return 0
