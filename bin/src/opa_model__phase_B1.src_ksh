@@ -66,16 +66,13 @@ cat <<EofDbg
 @@@ end_timesteps=$end_timesteps
 EofDbg
 
-#restart_rundate=$( $OPA_BINDIR/date --utc --date="$OPA_RUNDATE 00:00:00 7 days ago" +'%Y%m%d' )
 restart_rundate=$($OPA_BINDIR/date --utc --date="$OPA_RUNDATE 00:00:00 7 days ago" +'%Y%m%d')
 restart_rundate_yy=$( $OPA_BINDIR/date --utc --date="$restart_rundate" +'%y%m%d' )
 restart_rundate_yyyy=$( $OPA_BINDIR/date --utc +'%Y%m%d-%H:%M:%S' --date="$restart_rundate 00:00:00" )
 echo "GFM:DBG:RESTART:$restart_rundate_yyyy"
 ### Copy of restart files:
 restart_arc_dir="$OPA_ARCDIR_ROOT/$OPA_RESTART_RUNDATE/MODEL"
-restart_da_dir="$OPA_WRKDIR/DA/POSTPROC_DA/RESTARTS"
 echo "restart_arc_dir=$restart_arc_dir"
-echo "restart_da_dir=$restart_da_dir"
 
 function opa_get_restarts {
   typeset    _restart_rundate_yyyy="$1"
@@ -131,12 +128,6 @@ function opa_get_restarts {
     fi
   fi
   opa_get_restarts "$restart_rundate_yyyy" "$wrkdir/RESTARTS" "$restart_arc_dir" "RST"; _restart_from_da=$? 
-#  opa_get_restarts "$restart_rundate_yyyy" "$wrkdir/AVE_FREQ_1/" "$restart_arc_dir" "BKP"
-  if [[ $_restart_from_arc -eq 0 ]] ; then
-    opa_log 0 "Restarting from archive (without Data Assimilation)"
-  else
-    opa_log 1 "ERR: Cannot restart from archive :  missing files"
-  fi
 
 
 ### Instantiation of namelist templates:
@@ -166,10 +157,6 @@ echo "DBG:GFM:$OPA_TASKS---$domain_suff"
 opa_cp "$domain_dir/$OPA_DOMAIN/domdec.txt $wrkdir/domdec.txt" || {
   errors=$(( $errors + 1 ))
 }
-#opa_cp "$domain_dir/$OPA_ODD_ALPHA/Dom_Dec_jpj.ascii.${domain_suff} $wrkdir/Dom_Dec_jpj.ascii" || {
-#  errors=$(( $errors + 1 ))
-#}
-
 
 
 
