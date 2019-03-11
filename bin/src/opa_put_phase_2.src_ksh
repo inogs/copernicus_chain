@@ -17,7 +17,7 @@ Usage: $OPA_PROGNAME [options]
         --max-tries                             max tries per file
                                                 ["$_MAX_TRIES"]
         --type|-y                               mandatory from V2C onwards; specifies the type
-                                                of files to send ("BIOL","NUTR","CARB","PFTC")
+                                                of files to send ("BIOL","NUTR","CARB","PFTC","CO2F")
 EofCat
 }
 
@@ -80,12 +80,14 @@ elif [[ "$_TYPE" == "NUTR" ]]; then
   type="nut"
 elif [[ "$_TYPE" == "PFTC" ]]; then
   type="pft"
+elif [[ "$_TYPE" == "CO2F" ]]; then
+  type="co2"
 else
-  opa_log 0 "ERR: wrong type in opa_put (must be NUTR,PFTC,CARB,or BIOL)"
+  opa_log 0 "ERR: wrong type in opa_put (must be NUTR,PFTC,CARB,BIOL or CO2F)"
   opa_exit 1
 fi
 
-dataset=sv03-med-ogs-${type}-an-fc-d
+dataset=med-ogs-${type}-an-fc-d_201904
 FILES_TO_SEND="*${_TYPE}*.nc"
 
 #DNT file definitions
