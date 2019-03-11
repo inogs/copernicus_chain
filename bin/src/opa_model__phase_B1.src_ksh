@@ -175,6 +175,7 @@ opa_cp "$domain_dir/$OPA_DOMAIN/domdec.txt $wrkdir/domdec.txt" || {
 
 
 opa_stage_in	"$wrkdir"						\
+                "$OPA_ETCDIR/static-data/MODEL/bfmmask.nc"      \
 		"$OPA_ETCDIR/static-data/MED24_125/bounmask.nc"	\
 		"$OPA_ETCDIR/static-data/MED24_125/meshmask.nc"	|| {
   errors=$(( $errors + $? ))
@@ -260,6 +261,15 @@ for FILE in `ls $VAR*.nc` ; do
 done
 }
 
+function datelist_MB {
+VAR=$1
+ls ${VAR}*nc | wc -l
+for FILE in `ls $VAR*nc`; do
+    echo \'${FILE}\'
+done
+}
+
+
 function datelistsat {
 VAR=$1
 for FILE in `ls $VAR | cut -c 1-8` ; do
@@ -269,8 +279,9 @@ done
 }
 
 cd $wrkdir
-opa_prex_or_die "datelist BC/TIN_          > RiversTimes" || errors=$(( $errors + 1 ))
-opa_prex_or_die  "datelist BC/GIB_          >    GibTimes" || errors=$(( $errors + 1 ))
+opa_prex_or_die  "datelist_MB BC/TIN_       > files_namelist_riv.dat" || errors=$(( $errors + 1 ))
+opa_prex_or_die  "datelist_MB BC/GIB_       > files_namelist_gib.dat" || errors=$(( $errors + 1 ))
+opa_prex_or_die  "datelist_MB BC/OPE_       > files_namelist_dar.dat" || errors=$(( $errors + 1 ))
 opa_prex_or_die  "datelist BC/ATM_          >    AtmTimes" || errors=$(( $errors + 1 ))
 opa_prex_or_die  "datelist BC/CO2_          > carbonTimes" || errors=$(( $errors + 1 ))
 
