@@ -143,23 +143,18 @@ function opa_get_restarts {
 nml_dir="$OPA_TPLDIR/namelists"
 
 opa_stage_in	"$wrkdir"						\
-                "$nml_dir/BenBac.nml"					\
-                "$nml_dir/BenOrganism.nml"				\
-                "$nml_dir/BenOxygen.nml"				\
-                "$nml_dir/BenthicNutrientReturn.nml"			\
-                "$nml_dir/Bioturbation.nml"				\
-                "$nml_dir/FilterFeeder.nml"				\
-                "$nml_dir/MesoZoo.nml"					\
-                "$nml_dir/MicroZoo.nml"					\
+                "$nml_dir/Benthic_Environment.nml"                      \
+                "$nml_dir/BFM_General.nml"                              \
+                "$nml_dir/Carbonate_Dynamics.nml"                       \
+                "$nml_dir/Pelagic_Ecology.nml"                          \
+                "$nml_dir/Pelagic_Environment.nml"                      \
+                "$nml_dir/Standalone.nml"                               \
+                "$nml_dir/boundaries.nml"                               \
+                "$nml_dir/dar.nml"                                      \
+                "$nml_dir/gib.nml"                                      \
+                "$nml_dir/riv.nml"                                      \
                 "$nml_dir/namelist.init"				\
                 "$nml_dir/namelist.passivetrc"				\
-                "$nml_dir/PelBac.nml"					\
-                "$nml_dir/PelChem.nml"					\
-                "$nml_dir/PelGlobal.nml"				\
-                "$nml_dir/Phyto.nml"					\
-                "$nml_dir/Settling.nml"					\
-                "$nml_dir/CO2.nml"					\
-                "$nml_dir/WindOxReaeration_3.nml"                       \
                 "$nml_dir/var_3d_nml"			|| {
   errors=$(( $errors + $? ))
 }
@@ -268,7 +263,7 @@ done
 function datelistsat {
 VAR=$1
 for FILE in `ls $VAR | cut -c 1-8` ; do
-   echo ${FILE}-01:00:00
+   echo ${FILE}-12:00:00
 done
 
 }
