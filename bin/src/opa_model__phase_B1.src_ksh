@@ -177,7 +177,12 @@ opa_prex "cd $wrkdir"
 aux_files=' '
 
 opa_stage_in	"$wrkdir/BC/" \
-                  "$OPA_ETCDIR/static-data/MODEL/BC/CO2_yyyy0630-00:00:00.nc" \
+                  "$OPA_ETCDIR/static-data/MODEL/BC/OPE_yyyy0630-00:00:00.nc" \
+                  "$OPA_ETCDIR/static-data/MODEL/BC/CO2_20150702-12:00:00.nc" \
+                  "$OPA_ETCDIR/static-data/MODEL/BC/CO2_20160702-12:00:00.nc" \
+                  "$OPA_ETCDIR/static-data/MODEL/BC/CO2_20170702-12:00:00.nc" \
+                  "$OPA_ETCDIR/static-data/MODEL/BC/CO2_20180702-12:00:00.nc" \
+                  "$OPA_ETCDIR/static-data/MODEL/BC/CO2_20190702-12:00:00.nc" \
                   "$OPA_ETCDIR/static-data/MODEL/BC/ATM_yyyy0630-00:00:00.nc" \
                   "$OPA_ETCDIR/static-data/MODEL/BC/GIB_yyyy0215-12:00:00.nc" \
                   "$OPA_ETCDIR/static-data/MODEL/BC/GIB_yyyy0515-12:00:00.nc" \
