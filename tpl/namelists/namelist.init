@@ -58,7 +58,7 @@
 
 &DA_setup
     DA_Nprocs = 22,
-    satfile_suffix = "_d-OC_CNR-L3-CHL-MedOC4AD4_MULTI_1KM-MED-DT-v02.nc"
+    satfile_suffix = "_d-OC_CNR-L3-CHL-MedOC4AD4_MULTI_1KM-MED-NRT-v02.nc"
     satvarname     = "CHL"
     AssimilationLevels = 36
 /
