@@ -101,9 +101,8 @@ OPA_VARDIR=$I_OPA_HOME/var					# Directory for OPA_VARDIR/out : standard output 
 OPA_BASE_WRKDIR="@@(I:OPA_WORKDIR)"                             # Directory for Workdir, depends on the module
 OPA_BASE_ARCDIR="@@(I:OPA_WORKDIR)"				# Directory for Arcdir, depends on the module
 OPA_VENV_1=$OPA_HOSTDIR/venvs/venv1				# Directory for maps virtualenv
-OPA_VENV_2=$OPA_HOSTDIR/venvs/venv2				# Directory for co2caller virtualenv
 OPA_BITSEA=$OPA_HOSTDIR/bit.sea					# Directory for bit.sea
-OPA_CO2CALLER=$OPA_HOSTDIR/co2_caller				# Directory for co2caller
+OPA_POSTPROCDIR=$OPA_HOSTDIR/postproc                           # Directory for postproc
 OPA_TMPDIR=$OPA_VARDIR/tmp					# Directory for:
 OPA_NAME='opa_chain'						# This is the name of the last dir in $I_OPA_HOME
 
@@ -331,7 +330,7 @@ for i in $OPA_VARIABLE_INDICES ; do
   OPA_VARIABLES="${OPA_VARIABLES}${OPA_VARIABLE[i]} "
 done
 
-OPA_OUTPUT_VARIABLES='B1c B1n B1p N1p N3n N4n N5s N6r O2o P1c P1l P1n P1p P1s P2c P2l P2n P2p P3c P3l P3n P3p P4c P4l P4n P4p R1c R1n R1p R1s R2c R6c R6n R6p R6s R7c Z3c Z3n Z3p Z4c Z4n Z4p Z5c Z5n Z5p Z6c Z6n Z6p O3c O3h O4n'
+OPA_OUTPUT_VARIABLES='B1c B1n B1p N1p N3n N4n N5s N6r O2o P1c P1l P1n P1p P1s P2c P2l P2n P2p P3c P3l P3n P3p P4c P4l P4n P4p R1c R1n R1p R2c R6c R6n R6p R6s R3c Z3c Z3n Z3p Z4c Z4n Z4p Z5c Z5n Z5p Z6c Z6n Z6p O3c O3h O4n O5c'
 
 
 
@@ -581,7 +580,7 @@ function opa_set_run {
       esac
       OPA_DA_ENABLE=false
       ;;
-    4|2C|3C|4C)
+    4|2C|3C|4C|5C)
       OPA_TRANSFER_IMAGES=false
       ;;
     *)
