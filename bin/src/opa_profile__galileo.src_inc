@@ -63,8 +63,6 @@ opa_batch_prex "module load autoload"
 opa_batch_prex "module load intelmpi/2018--binary"
 opa_batch_prex "module load mkl/2018--binary"
 opa_batch_prex "module load python/2.7.12"
-opa_batch_prex "module load scipy/0.19.1--python--2.7.12"
-opa_batch_prex "module load mpi4py/3.0.0--intelmpi--2018--binary"
 
 #opa_batch_prex "module list"
 opa_batch_prex "ulimit -s unlimited"
