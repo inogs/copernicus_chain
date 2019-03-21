@@ -239,7 +239,7 @@ function opa_download {
       done < "$_download_config"
       typeset _lfile="$_ldir/$(basename $_rfile)"
       #opa_prex "$OPA_BINDIR/wget --continue --waitretry='3' --tries='10' --progress='dot:mega' --http-user='$_user' --http-passwd='$_pass' --output-document='$_lfile' 'http://$_host/$_rfile'" ; _ec=$?
-      opa_prex "$OPA_BINDIR/wget --continue --waitretry='3' --tries='10' --progress='dot:mega' --ftp-user='$_user' --ftp-password='$_pass' --output-document='$_lfile' '$_host/$_rfile'" ; _ec=$?
+      opa_prex "wget --continue --waitretry='3' --tries='10' --progress='dot:mega' --ftp-user='$_user' --ftp-password='$_pass' --output-document='$_lfile' '$_host:$_rfile'" ; _ec=$?
       ;;
     *)
       echo "INTERNAL ERROR: invalid protocol ${_download_protocol}" 1>&2

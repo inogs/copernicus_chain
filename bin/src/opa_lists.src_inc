@@ -8,7 +8,7 @@ EMPTY_LIST=' '
 function list_has_item {
   typeset _items="$1"
   typeset _item="$2"
-  if [[ $(echo " $_items " | $OPA_BINDIR/grep -c " $_item ") -eq 0 ]] ; then
+  if [[ $(echo " $_items " | grep -c " $_item ") -eq 0 ]] ; then
     return 1
   else
     return 0
