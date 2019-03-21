@@ -134,8 +134,8 @@ for file in `ls ${PROD_DIR}/${FILES_TO_SEND}` ; do
 
 #launche the rolling_archive.py to check what files have to be deleted
     basename=`basename $file`
-    to_remove_file=$( python $BINDIR/rolling_archive.py -p $basename -d $RUNDATE -g $_TYPE -a $ARCHIVE_DIR )
-    echo "python $BINDIR/rolling_archive.py -p $basename -d $RUNDATE -g $_TYPE -a $ARCHIVE_DIR"
+    to_remove_file=$( python $OPA_POSTPROCDIR/prodotti/rolling_archive.py -p $basename -d $RUNDATE -g $_TYPE -a $ARCHIVE_DIR )
+    echo "python $OPA_POSTPROCDIR/prodotti/rolling_archive.py -p $basename -d $RUNDATE -g $_TYPE -a $ARCHIVE_DIR"
     echo "rolling_archive result: $to_remove_file"
     if [[ ${to_remove_file} != "None" ]] ; then
        DELETE_STR="<file FileName=\"${to_remove_file}\" > <KeyWord>Delete</KeyWord> </file>"
