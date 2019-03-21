@@ -45,6 +45,7 @@ else
    opa_prex "@@(I:OPA_HOME)/bin/opa_put_phase_2.ksh -y BIOL 1>> $_logfile2 2>&1"            || errors=$(( $errors + 1 ))
    opa_prex "@@(I:OPA_HOME)/bin/opa_put_phase_2.ksh -y CARB 1>> $_logfile2 2>&1"            || errors=$(( $errors + 1 ))
    opa_prex "@@(I:OPA_HOME)/bin/opa_put_phase_2.ksh -y PFTC 1>> $_logfile2 2>&1"            || errors=$(( $errors + 1 ))
+   opa_prex "@@(I:OPA_HOME)/bin/opa_put_phase_2.ksh -y CO2F 1>> $_logfile2 2>&1"            || errors=$(( $errors + 1 ))
 fi
 
 opa_log 0 "postprocess_C5 done [$(opa_exitcode $ec)]"
