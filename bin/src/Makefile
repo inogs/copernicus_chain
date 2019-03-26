@@ -15,7 +15,6 @@ SCRIPTS=	cvs_check.ksh					\
 		opa_model.ksh					\
 		opa_model__phase_B1.ksh				\
 		opa_model__phase_B2.ksh				\
-		opa_model__phase_B3.ksh				\
 		opa_model_wrapper.ksh				\
 		opa_mon.ksh					\
 		opa_mpi.inc					\
