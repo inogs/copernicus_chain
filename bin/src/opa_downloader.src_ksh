@@ -38,7 +38,7 @@ opa_mkdir $OPA_LOGDIR/daily
 JSON_FILE=$OPA_LOGDIR/daily/wmo.json
 opa_prex "./downloader/harvesters_info/maos_query.sh > $JSON_FILE"
 if [ $? -eq 0 ] ; then
-   export WMO_FILE=/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ONLINE/FLOAT_LOVBIO/wmo.txt
+   export WMO_FILE=/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ONLINE/FLOAT_BIO/wmo.txt
    opa_prex "python downloader/harvesters_info/json2table.py -j $JSON_FILE -o $WMO_FILE"
 fi
 
@@ -64,12 +64,12 @@ WEEKLY_DIR_24=/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ONLINE/SAT/
 
 opa_prex "cd Sat"
 opa_prex "python sat_check.py -i $ORIGDIR -o $CHECK_BASEDIR -c $CLIM_FILE -m SAT1km_mesh -s $DIR_SUBMASK -w ${CHECK_BASEDIR}/STATISTICS "
-opa_prex " python interpolator.py -i $CHECKDIR -o $DAILY_DIR_24 -m Mesh24 -M $MASKFILE"
+opa_prex " python interpolator.py -i $CHECKDIR -o $DAILY_DIR_24 -m Mesh24 -M $MASKFILE --inmesh SAT1km_mesh"
 
 if [[ $WEEKDAY -eq 3 ]]; then
 opa_prex "python aveSat.py -i $CHECKDIR -o $WEEKLY_DIR1km -m SAT1km_mesh -t weekly_tuesday -d $WEEKLYDATES "
 
-opa_prex "python  interpolator.py -i $WEEKLY_DIR1km -o $WEEKLY_DIR_24 -m Mesh24 -M $MASKFILE"
+opa_prex "python  interpolator.py -i $WEEKLY_DIR1km -o $WEEKLY_DIR_24 -m Mesh24 -M $MASKFILE --inmesh SAT1km_mesh " 
  OPA_START_DATE=$($OPA_BINDIR/date --date="8 days ago" +%Y%m%d)
  opa_mkdir "$I_OPA_HOME/inpdir/WEEKLY"
  opa_cp "/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ONLINE/SAT/MULTISENSOR/1Km/NRT/WEEKLY_2_24/${OPA_START_DATE}_d-OC_CNR-L3-CHL-MedOC4AD4_MULTI_1KM-MED-NRT-v02.nc $I_OPA_HOME/inpdir/WEEKLY"
@@ -81,7 +81,7 @@ fi
 GSS_DIRS="
 ONLINE/SAT/MULTISENSOR/1Km/NRT/WEEKLY_2_24/
 ONLINE/SAT/MULTISENSOR/1Km/NRT/DAILY/CHECKED_24/
-ONLINE/FLOAT_LOVBIO/
+ONLINE/FLOAT_BIO/
 ONLINE/COPERNICUS/
 "
      for DIR in $GSS_DIRS ; do
@@ -103,19 +103,19 @@ WEEKLY_DIR_24=/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ONLINE/SAT/
 #opa_prex "cd Sat"
 opa_prex "python sat_check.py -i $ORIGDIR -o $CHECK_BASEDIR -c $CLIM_FILE -m SAT1km_mesh -s $DIR_SUBMASK -w ${CHECK_BASEDIR}/STATISTICS "
 #opa_prex "python sat_check.py -i $ORIGDIR -o $CHECKDIR -c $CLIM_FILE -m SAT1km_mesh"
-opa_prex " python interpolator.py -i $CHECKDIR -o $DAILY_DIR_24 -m Mesh24 -M $MASKFILE"
+opa_prex " python interpolator.py -i $CHECKDIR -o $DAILY_DIR_24 -m Mesh24 -M $MASKFILE --inmesh SAT1km_mesh "
 
 if [[ $WEEKDAY -eq 3 ]]; then
 opa_prex "python aveSat.py -i $CHECKDIR -o $WEEKLY_DIR1km -m SAT1km_mesh -t weekly_tuesday -d $WEEKLYDATES "
-opa_prex "python interpolator.py -i $WEEKLY_DIR1km -o $WEEKLY_DIR_24 -m Mesh24 -M $MASKFILE"
+opa_prex "python interpolator.py -i $WEEKLY_DIR1km -o $WEEKLY_DIR_24 -m Mesh24 -M $MASKFILE --inmesh SAT1km_mesh "
 
 fi
 
 ################   6. Update of Float Index  ############################
 
-GSS_RAW_INDEX=/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ONLINE/FLOAT_LOVBIO/Float_Index.0.txt
-GSS_SEL_INDEX=/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ONLINE/FLOAT_LOVBIO/Float_Index.txt
-INPDIR__INDEX=$I_OPA_HOME/inpdir/ONLINE/FLOAT_LOVBIO/Float_Index.txt
+GSS_RAW_INDEX=/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ONLINE/FLOAT_BIO/Float_Index.0.txt
+GSS_SEL_INDEX=/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ONLINE/FLOAT_BIO/Float_Index.txt
+INPDIR__INDEX=$I_OPA_HOME/inpdir/ONLINE/FLOAT_BIO/Float_Index.txt
 
 opa_prex "cd $OPA_BITSEA"
 opa_prex "python Float/dump_index.py 1>> $OPA_LOGDIR/daily/$DATE.log 2>&1"  # dumps GSS_RAW_INDEX
@@ -134,46 +134,4 @@ opa_prex "sed -e \" "s/${GSS_TIMERAWDATA}/${BACKSLASH_INPDIR}/g\"" ${GSS_SEL_IND
 #LOV=$I_OPA_HOME/inpdir/ONLINE/FLOAT_LOVBIO/
 #opa_prex "python Float/dump_index.py --coriolis $CORIOLIS --lov $LOV  1>> $OPA_LOGDIR/daily/$DATE.log 2>&1"
 
-
-
-
-
 opa_exit "$errors"
-################           THE END          ##########################################
-
-ClimFile=/gss/gss_work/DRES_OGS_BiGe/Observations/CLIMATOLOGY/SAT/CCI02/SatClimatology.nc
-SatMesh=SatOrigMesh
-ORIGMODIS=/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ONLINE/SAT/MODIS/DAILY/ORIG/
-CHECKMODIS=/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ONLINE/SAT/MODIS/DAILY/CHECKED/
-ORIGMULTI=/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ONLINE/SAT/MULTISENSOR/NRT/DAILY/ORIG/
-CHECKMULTI=/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ONLINE/SAT/MULTISENSOR/NRT/DAILY/CHECKED/
-opa_prex "cd Sat"
-opa_prex "python sat_check.py -i $ORIGMODIS -o $CHECKMODIS -c $ClimFile -m $SatMesh 1>> $OPA_LOGDIR/daily/$DATE.log 2>&1"
-opa_prex "python sat_check.py -i $ORIGMULTI -o $CHECKMULTI -c $ClimFile -m $SatMesh 1>> $OPA_LOGDIR/daily/$DATE.log 2>&1"
-
-WEEKLYMODIS=/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ONLINE/SAT/MODIS/WEEKLY/
-WEEKLYMULTI=/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ONLINE/SAT/MULTISENSOR/NRT/WEEKLY/
-
-GSS_DIRS="
-ONLINE/SAT/MULTISENSOR/1Km/NRT/WEEKLY_2_24/
-ONLINE/SAT/MULTISENSOR/1Km/NRT/DAILY/CHECKED_24/
-ONLINE/FLOAT_LOVBIO/
-"
-
-
-if [[ $WEEKDAY -eq 3 ]]; then
-   opa_prex "python aveSat16.py -i $CHECKMODIS -o $WEEKLYMODIS 1>> $OPA_LOGDIR/daily/$DATE.log 2>&1"
-   opa_prex "python aveSat16.py -i $CHECKMULTI -o $WEEKLYMULTI 1>> $OPA_LOGDIR/daily/$DATE.log 2>&1"
-   if [[ "$I_OPA_HOSTNAME" = "galileo" || "$I_OPA_HOSTNAME" = "marconi" ]] ; then
-      OPA_START_DATE=$($OPA_BINDIR/date --date="8 days ago" +%Y%m%d)
-      opa_mkdir "$I_OPA_HOME/inpdir/WEEKLY"
-       opa_cp "/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ONLINE/SAT/MULTISENSOR/NRT/WEEKLY/${OPA_START_DATE}_d-OC_CNR-L4-CHL-MedOC4_SAM_7KM-MED-REP-v02.nc $I_OPA_HOME/inpdir/WEEKLY"
-      
-     for DIR in $GSS_DIRS ; do 
-         opa_mkdir "$I_OPA_HOME/inpdir/$DIR"
-         opa_prex "rsync -rv /gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/${DIR} $I_OPA_HOME/inpdir/${DIR}"
-      done
-   fi
-else
-   print "Sorry, no aveSat16.py today" >> $OPA_LOGDIR/daily/$DATE.log
-fi
