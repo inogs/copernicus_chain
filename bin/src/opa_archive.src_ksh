@@ -339,10 +339,17 @@ if has_dataset POSTPROC ; then
   opa_mkdir "$OPA_ARCDIR/POSTPROC/AVE_FREQ_1/PRODUCTS"
   opa_mkdir "$OPA_ARCDIR/POSTPROC/AVE_FREQ_1/ARCHIVE"
   opa_mkdir "$OPA_ARCDIR/POSTPROC/AVE_FREQ_2"
+  opa_mkdir "$OPA_ARCDIR/POSTPROC/AVE_FREQ_1/STATISTICS/STAT_PROFILES"
+  opa_mkdir "$OPA_ARCDIR/POSTPROC/AVE_FREQ_1/STATISTICS/INTEGRALS"
+  opa_mkdir "$OPA_ARCDIR/POSTPROC/AVE_FREQ_1/STATISTICS/INTEGRALS/PPN"
 
   stage_out --output-subdir "POSTPROC/AVE_FREQ_1/PRODUCTS/" "POSTPROC/PRODUCTS/*nc"                                 || par_errors=$(( $par_errors + 1 ))
   stage_out --output-subdir "POSTPROC/AVE_FREQ_1/PRODUCTS/" "POSTPROC/PRODUCTS/*xml"                                || par_errors=$(( $par_errors + 1 ))
   stage_out --output-subdir "POSTPROC/AVE_FREQ_1/ARCHIVE/"  "POSTPROC/COMPRESSED_FOR_ARCHIVE/AVE_FREQ_1/*.gz"       || par_errors=$(( $par_errors + 1 ))
+  stage_out --output-subdir "POSTPROC/AVE_FREQ_1/STATISTICS/INTEGRALS/"      "POSTPROC/AVE_FREQ_1/INTEGRALS/*nc"           || par_errors=$(( $par_errors + 1 ))
+  stage_out --output-subdir "POSTPROC/AVE_FREQ_1/STATISTICS/STAT_PROFILES/"  "POSTPROC/AVE_FREQ_1/STAT_PROFILES/*nc"       || par_errors=$(( $par_errors + 1 ))
+  stage_out --output-subdir "POSTPROC/AVE_FREQ_1/STATISTICS/INTEGRALS/PPN/"  "POSTPROC/AVE_FREQ_1/INTEGRALS/PPN/*nc"       || par_errors=$(( $par_errors + 1 ))
+
   if $OPA_DA_ENABLE ; then
      stage_out --output-subdir "POSTPROC/AVE_FREQ_2"        "POSTPROC/COMPRESSED_FOR_ARCHIVE/AVE_FREQ_2/*.gz"       || par_errors=$(( $par_errors + 1 ))
   fi 
