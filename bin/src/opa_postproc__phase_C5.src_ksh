@@ -15,10 +15,10 @@ typeset -i errors=0
 typeset _logfile="$OPA_RUNLOGDIR/opa.${I_OPA_HOSTNAME}.${OPA_RUNID}.opa_put.out"
 typeset _logfile2="$OPA_RUNLOGDIR/opa.${I_OPA_HOSTNAME}.${OPA_RUNID}.opa_put_phase_2.out"
 
-CONFIG=@@(I:OPA_HOME)/etc/nc-config/.cmems.ncconfig
-RESPONSE_DIR=${OPA_WRKDIR}/POSTPROC/PRODUCTS/RESPONSE
-opa_mkdir $RESPONSE_DIR
-WED_SAT_DATE=$( date -d " $OPA_RUNDATE  +1 days " +%Y%m%d )
+#CONFIG=@@(I:OPA_HOME)/etc/nc-config/.cmems.ncconfig
+#RESPONSE_DIR=${OPA_WRKDIR}/POSTPROC/PRODUCTS/RESPONSE
+#opa_mkdir $RESPONSE_DIR
+#WED_SAT_DATE=$( date -d " $OPA_RUNDATE  +1 days " +%Y%m%d )
 
 opa_log 0 "postprocess_C5 begin"
 
@@ -35,8 +35,11 @@ opa_log 0 "postprocess_C5 begin"
 
 
 # Deliver products to CMEMS
-
-$OPA_BINDIR/check_upload_by_other_chain.sh  -d $WED_SAT_DATE -l $RESPONSE_DIR -f $CONFIG -b $OPA_BINDIR
+OPA_POSTPROC=$OPA_WRKDIR/POSTPROC
+PRODUCTS_DIR=$OPA_POSTPROC/PRODUCTS
+TMPFILE=$PRODUCTS_DIR/tmp.log
+$OPA_POSTPROCDIR/prodotti/check_daily_products_in_DU.sh -p $PRODUCTS_DIR -b $OPA_BINDIR -t $TMPFILE
+#$OPA_BINDIR/check_upload_by_other_chain.sh  -d $WED_SAT_DATE -l $RESPONSE_DIR -f $CONFIG -b $OPA_BINDIR
 if [ $? == 0  ] ; then
    opa_log 0 " No upload to CMEMS DU"
 else
