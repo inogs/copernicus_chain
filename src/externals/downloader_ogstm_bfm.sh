@@ -4,7 +4,7 @@
   BFM_version=bfmv5   #  BFMv2 or bfmv5
   BFM_RELEASE=ogs_release-5.0
 
- OGSTM_BRANCH=release-4.0
+ OGSTM_BRANCH=release-4.1
  VAR3D_BRANCH=release-3.3
 
 SVN_USER=svnogs01  # user on https://hpc-forge.cineca.it/
@@ -21,12 +21,22 @@ cd $OGSTM_HOME
 git clone https://gitlab.hpc.cineca.it/OGS/ogstm.git
 cd ogstm
 git checkout -b $OGSTM_BRANCH $OGSTM_BRANCH
-#a07ogs00 7fod74ECg
+#credenziali a07ogs00
 
 cd $OGSTM_HOME
 git clone https://gitlab.hpc.cineca.it/OGS/3DVar.git
 cd 3DVar
 git checkout -b $VAR3D_BRANCH $VAR3D_BRANCH
-#a07ogs00 7fod74ECg
+#credenziali a07ogs00
 
 cp ${OPA_HOSTNAME}.intel ogstm/compilers/machine_modules
+
+
+git clone https://gitlab.hpc.cineca.it/OGS/bitsea.git
+# commit 105d5b79e77
+#credenziali a07ogs00
+
+git clone https://gitlab.hpc.cineca.it/OGS/postproc.git
+git checkout -b chainV5C origin/chainV5C
+# commit 23a5674d241db
+#credenziali a07ogs00
