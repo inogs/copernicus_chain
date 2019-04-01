@@ -9,11 +9,6 @@
 <var name="O2o" ></var>
 <var name="N5s" ></var>
 
-<var name="B1c" ></var>
-<var name="B1n" ></var>
-<var name="B1p" ></var>
-
-<var name="O3h" ></var>
 <var name="O3c" ></var>
 <var name="DIC" ></var>
 <var name="ALK" ></var>
@@ -52,6 +47,7 @@
 <var2D>
 <vars_for_All>
 <native>
+<var name="CO2airflux" ></var>
 </native>
 </vars_for_All>
 </var2D>
