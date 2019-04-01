@@ -62,11 +62,11 @@ opa_stage_in "$OPA_POSTPROC"  \
        TMPS=$OPA_WRKDIR/POSTPROC/TMPS
      opa_mkdir "$OUTDIR"
      opa_mkdir "$TMPS"
-     cd $OPA_POSTPROCDIR
+     opa_prex  " cd $OPA_POSTPROCDIR"
      opa_prex_or_die "mpirun -np 68 python aveScan.py -l ave*.nc -i $MODELDIR/AVE_FREQ_1 -a $MODELDIR/AVE_FREQ_1 -f N1p -d $OPA_POSTPROC/VarDescriptor_1.xml -o $OUTDIR -t $TMPS -s "
     
 
-
+opa_prex "cd $OPA_POSTPROC"
 if $hot_start ; then
    opa_analyses_dates  $OPA_RUNDATE | head -1 > timelist.a
 
