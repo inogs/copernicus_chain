@@ -1323,7 +1323,7 @@ function set_spec_data {
 
 function opa_check_da {
   typeset _restart_rundate=$($OPA_BINDIR/date --utc --date="$OPA_RUNDATE 00:00:00 7 days ago" +'%Y%m%d')
-  typeset _restart_rundate_yyyy=$( $OPA_BINDIR/date --utc +'%Y%m%d-%H:%M:%S' --date="$_restart_rundate 01:00:00" )
+  typeset _restart_rundate_yyyy=$( $OPA_BINDIR/date --utc +'%Y%m%d-%H:%M:%S' --date="$_restart_rundate 12:00:00" )
   typeset _restart_dir="$OPA_WRKDIR/MODEL/DA__FREQ_1"
   typeset _type_file="RST"
 
@@ -1331,7 +1331,7 @@ function opa_check_da {
   typeset    _output_var
   typeset -i _num_missing=0
 
-  _prefix="RST"
+  _prefix="RST_after"
   _suffix="nc"
   _variables="$OPA_DA_VARIABLES"
 
