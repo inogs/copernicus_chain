@@ -149,18 +149,6 @@ opa_stage_in	"$wrkdir"						\
   errors=$(( $errors + $? ))
 }
 
-opa_prex "module unload numpy"
-opa_prex "source $OPA_VENV_1/bin/activate"
-PYTHONPATH=${PYTHONPATH}:$OPA_BITSEA
-
-opa_mkdir "$wrkdir/DeltaT"
-opa_stage_in "$wrkdir/DeltaT" "$OPA_ETCDIR/static-data/MED24_141/meshmask.nc"  
-opa_prex_or_die "mpirun -np 18 python $OPA_BITSEA/preproc/delta_t_from_uvw.py -i $wrkdir/FORCINGS/ -o $wrkdir/DeltaT -m  $wrkdir/DeltaT/meshmask.nc "
-opa_prex_or_die "python $OPA_BITSEA/preproc/decision_deltat.py -i $wrkdir/DeltaT "
-
-NAMELIST_INIT=$( python $OPA_BITSEA/preproc/decision_deltat.py -i $wrkdir/DeltaT )
-
-opa_cp "$nml_dir/${NAMELIST_INIT} $wrkdir/namelist.init"
 
 domain_suff=$(opa_defdomain $OPA_TASKS)
 echo "DBG:GFM:$OPA_TASKS---$domain_suff"
@@ -251,6 +239,20 @@ for I in `ls $OPA_WRKDIR/OPAOPER/* ` ; do
     filename=${F:7:1}20${F:0:6}-00:00:00.nc
     opa_prex_or_die "ln -fs $I $wrkdir/FORCINGS/$filename" || errors=$(( $errors + 1 ))
 done
+
+opa_prex "module unload numpy"
+opa_prex "source $OPA_VENV_1/bin/activate"
+PYTHONPATH=${PYTHONPATH}:$OPA_BITSEA
+
+opa_mkdir "$wrkdir/DeltaT"
+opa_stage_in "$wrkdir/DeltaT" "$OPA_ETCDIR/static-data/MED24_141/meshmask.nc"
+opa_prex_or_die "mpirun -np 18 python $OPA_BITSEA/preproc/delta_t_from_uvw.py -i $wrkdir/FORCINGS/ -o $wrkdir/DeltaT -m  $wrkdir/DeltaT/meshmask.nc "
+opa_prex_or_die "python $OPA_BITSEA/preproc/decision_deltat.py -i $wrkdir/DeltaT "
+
+NAMELIST_INIT=$( python $OPA_BITSEA/preproc/decision_deltat.py -i $wrkdir/DeltaT )
+
+opa_cp "$nml_dir/${NAMELIST_INIT} $wrkdir/namelist.init"
+
 
 #opa_prex "ln -fs $OPA_WRKDIR/INTERP/FORCINGS/* $wrkdir/FORCINGS/" || errors=$(( $errors + 1 ))
 opa_prex_or_die "ln -fs $OPA_WRKDIR/DA/SATELLITE      -t $wrkdir" || errors=$(( $errors + 1 ))
