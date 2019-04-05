@@ -144,12 +144,23 @@ opa_stage_in	"$wrkdir"						\
                 "$nml_dir/dar.nml"                                      \
                 "$nml_dir/gib.nml"                                      \
                 "$nml_dir/riv.nml"                                      \
-                "$nml_dir/namelist.init"				\
                 "$nml_dir/namelist.passivetrc"				\
                 "$nml_dir/var_3d_nml"			|| {
   errors=$(( $errors + $? ))
 }
 
+opa_prex "module unload numpy"
+opa_prex "source $OPA_VENV_1/bin/activate"
+PYTHONPATH=${PYTHONPATH}:$OPA_BITSEA
+
+opa_mkdir "$wrkdir/DeltaT"
+opa_stage_in "$wrkdir/DeltaT" "$OPA_ETCDIR/static-data/MED24_141/meshmask.nc"  
+opa_prex_or_die "mpirun -np 18 python $OPA_BITSEA/preproc/delta_t_from_uvw.py -i $wrkdir/FORCINGS/ -o $wrkdir/DeltaT -m  $wrkdir/DeltaT/meshmask.nc "
+opa_prex_or_die "python $OPA_BITSEA/preproc/decision_deltat.py -i $wrkdir/DeltaT "
+
+NAMELIST_INIT=$( python $OPA_BITSEA/preproc/decision_deltat.py -i $wrkdir/DeltaT )
+
+opa_cp "$nml_dir/${NAMELIST_INIT} $wrkdir/namelist.init"
 
 domain_suff=$(opa_defdomain $OPA_TASKS)
 echo "DBG:GFM:$OPA_TASKS---$domain_suff"
