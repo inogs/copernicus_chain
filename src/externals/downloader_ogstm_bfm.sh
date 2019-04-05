@@ -33,7 +33,7 @@ cp ${OPA_HOSTNAME}.intel ogstm/compilers/machine_modules
 
 
 git clone https://gitlab.hpc.cineca.it/OGS/bitsea.git
-# commit 105d5b79e77
+# commit fa9c1061
 #credenziali a07ogs00
 
 git clone https://gitlab.hpc.cineca.it/OGS/postproc.git
