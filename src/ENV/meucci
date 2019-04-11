@@ -1,2 +1,2 @@
-module load autoload intelmpi/2018--binary
+module load autoload intelmpi/2017--binary
 
