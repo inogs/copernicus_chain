@@ -75,7 +75,6 @@ SCRIPTS=	cvs_check.ksh					\
 		opa_test_lists.ksh				\
 		opa_dates.inc					\
 		opa_test_dates.ksh				\
-		opa_domain_decomposition.ksh			\
 		opa_is_login_node.ksh				\
 		opa_downloader.ksh				\
 		opa_check_remote_cron.ksh			\
