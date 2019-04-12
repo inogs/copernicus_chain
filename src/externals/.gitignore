@@ -1,4 +1,6 @@
 *
 !builder_ogstm_bfm.sh
 !downloader_ogstm_bfm.sh
-!galileo.intel 
+!galileo.intel
+!meucci.intel
+!.gitignore 

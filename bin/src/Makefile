@@ -38,7 +38,7 @@ SCRIPTS=	cvs_check.ksh					\
 		opa_preproc__phase_A4.ksh			\
 		opa_profile.inc					\
 		opa_profile__galileo.inc			\
-		opa_profile__marconi.inc			\
+		opa_profile__meucci.inc				\
 		opa_rm.inc					\
 		opa_rm__pbs.inc					\
                 opa_rm__slurm.inc				\

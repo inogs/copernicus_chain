@@ -1,0 +1,81 @@
+if [[ $__OPA_PROFILE_galileo_IS_DEFINED__ == '' ]] ; then
+  __OPA_PROFILE_galileo_IS_DEFINED__='__defined__'
+
+# Load environment for pbs, modules:
+#. /etc/profile.d/pbs.sh
+. /etc/profile.d/modules.sh
+
+#OPA_BASE_DIR_scratch="/gpfs/scratch/userogs/$USER/OPA"
+#OPA_BASE_DIR_scratch="/gpfs/work/OGS_prod/OPA"
+
+#OPA_BASE_DIR_meteo="/gpfs/work/OGS_prod/OPA"
+
+#OPA_BASE_WRKDIR="$OPA_BASE_DIR_scratch"
+
+#OPA_BASE_ARCDIR="$OPA_BASE_DIR_meteo"
+
+#OPA_GRADS_HOME="/cineca/prod/tools/grads/1.8/binary"
+OPA_GRADS_HOME="$OPA_HOSTDIR"
+OPA_GRADS_GADDIR="${OPA_GRADS_HOME}/etc/grads/data"
+
+OPA_HOST_PRIMARY_LOGIN_NODE='r047c01s02.meucci.cineca.it'
+OPA_HOST_SECONDARY_LOGIN_NODE='r048c01s02.meucci.cineca.it'
+
+OPA_HOST_PRIMARY_HOSTNAME='r047c01s02'
+OPA_HOST_SECONDARY_HOSTNAME='r048c01s02'
+
+#nominal coordinates (if backup)
+if $I_OPA_BACKUP ; then
+  OPA_NOMINAL_HOME='/galileo/home/usera07ogs/a07ogs00/OPA/V5C'
+  OPA_NOMINAL_LOGIN='login.galileo.cineca.it'
+fi
+
+#For crontab check
+OPA_HOST_CRON_CHECK="login01.galileo.cineca.it login02.galileo.cineca.it"
+
+NODENAME=$(hostname)                    # nome del nodo
+NODE=$( echo "$NODENAME"| cut -d: -f1 ) # prima parte del nome del nodo
+
+OPA_HOST_LOGIN_NODES="$OPA_HOST_PRIMARY_LOGIN_NODE $OPA_HOST_SECONDARY_LOGIN_NODE"
+_opa_pro_dir=/shared/project/data/userogs/ogstsf79/BFM-MED
+OPA_HOST_PRO_UHD_LIST="${USER}:${OPA_HOST_PRIMARY_LOGIN_NODE}:$_opa_pro_dir ${USER}:${OPA_HOST_SECONDARY_LOGIN_NODE}:$_opa_pro_dir ${USER}:devel.fec.cineca.it:$_opa_pro_dir"
+#OPA_HOST_PRO_UHD_LIST="${USER}:devel.fec.cineca.it:/gpfsFE/web/meteo/ogs/BFM-MED"
+OPA_HOST_PRO_FTP_LIST="${I_OPA_HOME}/etc/nc-config/.meteo.ncconfig:/"
+
+OPA_CORES_PER_NODE=32
+OPA_DOMAIN=20nodes-meu					#Folder to take for domain (depends on number of used nodes)
+
+OPA_DEFAULT_WALL_CLOCK_LIMIT=06:00:00			# Default wall clock limit [[hh:]mm:]ss
+OPA_DEFAULT_WALL_CLOCK_LIMIT_SER=04:00:00			# Default wall clock limit [[hh:]mm:]ss
+OPA_DEFAULT_WALL_CLOCK_LIMIT_PAR=03:30:00			# Default wall clock limit [[hh:]mm:]ss
+OPA_DEFAULT_TASKS=640					# Default tasks' number WARNING: 1 node is not enough
+OPA_DEFAULT_QUEUE="meu_meteo_prod"					# Default queue
+OPA_DEFAULT_QUEUE_PAR="meu_meteo_prod"					# Default queue par
+#OPA_DEFAULT_QUEUE_SER="serial"					# Default queue ser
+OPA_DEFAULT_QUEUE_SER="meu_meteo_prod"					# Default queue ser
+OPA_DEFAULT_QOS="meu_qos_meteoogs"
+OPA_DEFAULT_MEM="115gb"
+opa_batch_prex ". /cineca/prod/opt/environment/module/3.2.10/none/init/ksh"
+#opa_batch_prex "module list"
+opa_batch_prex "module purge"
+#opa_batch_prex "module load profile/advanced"
+opa_batch_prex "module load autoload"
+opa_batch_prex "module load intelmpi/2017--binary"
+opa_batch_prex "module load mkl/2017--binary"
+opa_batch_prex "module load python/2.7.12"
+#opa_batch_prex "module load scipy/0.18.1--python--2.7.12"
+#opa_batch_prex "module load mpi4py/2.0.0--python--2.7.12"
+
+#opa_batch_prex "module list"
+opa_batch_prex "ulimit -s unlimited"
+
+export PYTHONPATH=@@(I:OPA_HOME)/HOST/meucci/lib/python2.7/site-packages:$PYTHONPATH
+
+function opa_is_login_node {
+#   ksh /cineca/scripts/ha_login.select ; return $?
+    return 0
+}
+
+
+# end of include guard:
+fi
