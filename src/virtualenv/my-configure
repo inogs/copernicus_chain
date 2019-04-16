@@ -23,7 +23,7 @@ case $OPA_HOSTNAME in
       ;;
     meucci)
       module load autoload intelmpi/2017--binary #netcdf/4.4.1--intelmpi--2017--binary
-      module load python/2.7.12 numpy/1.11.2--python--2.7.12
+      module load python/2.7.12 #numpy/1.11.2--python--2.7.12
       export HDF5_DIR=$OPA_HOME/HOST/$OPA_HOSTNAME
       export NETCDF4_DIR=$OPA_HOME/HOST/$OPA_HOSTNAME
       ;;
@@ -39,7 +39,7 @@ virtualenv $VENV_PATH
 
 source $VENV_PATH/bin/activate
 pip install --upgrade pip
-CFLAGS+="-L/cineca/prod/opt/compilers/intel/pe-xe-2018/binary/lib/intel64 -lsvml -limf -lirc" CC=mpiicc pip install netcdf4 --global-option=build_ext
+CFLAGS+="-L/cineca/prod/opt/compilers/intel/pe-xe-2017/binary/lib/intel64 -lsvml -limf -lirc" CC=mpiicc pip install netcdf4 --global-option=build_ext
 pip install ipython
 pip install mpi4py
 pip install python-dateutil
