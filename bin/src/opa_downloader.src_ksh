@@ -13,13 +13,31 @@ case $I_OPA_HOSTNAME in
       PYTHONPATH=" "
       opa_prex "module purge"
       opa_prex "module load autoload intelmpi netcdf/4.4.1--intel--pe-xe-2017--binary python/2.7.9 numpy/1.9.1--python--2.7.9 scipy/0.15.1--python--2.7.9 matplotlib/1.4.3--python--2.7.9"
+      ONLINE_REPO=/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ONLINE
+        CLIM_FILE=/gss/gss_work/DRES_OGS_BiGe/Observations/CLIMATOLOGY/SAT/CCI_1km/SatClimatology.nc
+      DIR_SUBMASK=/gss/gss_work/DRES_OGS_BiGe/Observations/CLIMATOLOGY/SAT/CCI_1km/SUBMASKsat
+      SYNCRONIZE_INPDIR=1      
       ;;
     marconi)
       PYTHONPATH=" "
       opa_prex "module purge"
       opa_prex "module load autoload intelmpi python/2.7.12 numpy/1.11.2--python--2.7.12 scipy/0.18.1--python--2.7.12"
       PYTHONPATH=$PYTHONPATH:/cineca/prod/opt/compilers/python/2.7.12/none/lib/python2.7/site-packages/
+      ONLINE_REPO=/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ONLINE
+        CLIM_FILE=/gss/gss_work/DRES_OGS_BiGe/Observations/CLIMATOLOGY/SAT/CCI_1km/SatClimatology.nc
+      DIR_SUBMASK=/gss/gss_work/DRES_OGS_BiGe/Observations/CLIMATOLOGY/SAT/CCI_1km/SUBMASKsat
+      SYNCRONIZE_INPDIR=1      
       ;;
+    meucci)
+      PYTHONPATH=" "
+      opa_prex "module purge"
+      opa_prex "module load autoload intelmpi python/2.7.12" # numpy/1.11.2--python--2.7.12"
+      PYTHONPATH=$PYTHONPATH:/cineca/prod/opt/compilers/python/2.7.12/none/lib/python2.7/site-packages/
+      ONLINE_REPO=$I_OPA_HOME/inpdir/ONLINE/
+        CLIM_FILE=$I_OPA_HOME/inpdir/CLIMATOLOGY/SAT/CCI_1km/SatClimatology.nc
+      DIR_SUBMASK=$I_OPA_HOME/inpdir/CLIMATOLOGY/SAT/CCI_1km/SUBMASKsat
+      SYNCRONIZE_INPDIR=0
+      ;;      
     *)
       opa_prex "module load python"
       ;;
@@ -38,29 +56,28 @@ opa_mkdir $OPA_LOGDIR/daily
 JSON_FILE=$OPA_LOGDIR/daily/wmo.json
 opa_prex "./downloader/harvesters_info/maos_query.sh > $JSON_FILE"
 if [ $? -eq 0 ] ; then
-   export WMO_FILE=/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ONLINE/FLOAT_BIO/wmo.txt
+   export WMO_FILE=${ONLINE_REPO}/FLOAT_BIO/wmo.txt
    opa_prex "python downloader/harvesters_info/json2table.py -j $JSON_FILE -o $WMO_FILE"
 fi
 
 ################   2. Update of original datasets  ##################################
 
-opa_prex "python downloader/downloader.py -l $OPA_LOGDIR/daily/$DATE.log -a $OPA_NOTIFY_ADDRESSES"
+opa_prex "python downloader/downloader.py -l $OPA_LOGDIR/daily/$DATE.log -a $OPA_NOTIFY_ADDRESSES -d ${ONLINE_REPO}"
 
 ################   3. Update of SAT NRT derived datasets  ############################
 
-CLIM_FILE=/gss/gss_work/DRES_OGS_BiGe/Observations/CLIMATOLOGY/SAT/CCI_1km/SatClimatology.nc
 MASKFILE=${OPA_ETCDIR}/static-data/MED24_125/meshmask.nc
 
 # Check 1km NRT
-ORIGDIR=/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ONLINE/SAT/MULTISENSOR/1Km/NRT/DAILY/ORIG/
-CHECKDIR=/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ONLINE/SAT/MULTISENSOR/1Km/NRT/DAILY/CHECKED
-CHECK_BASEDIR=/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ONLINE/SAT/MULTISENSOR/1Km/NRT/DAILY/
-DIR_SUBMASK=/gss/gss_work/DRES_OGS_BiGe/Observations/CLIMATOLOGY/SAT/CCI_1km/SUBMASKsat
+ORIGDIR=${ONLINE_REPO}/SAT/MULTISENSOR/1Km/NRT/DAILY/ORIG/
+CHECKDIR=${ONLINE_REPO}/SAT/MULTISENSOR/1Km/NRT/DAILY/CHECKED
+CHECK_BASEDIR=${ONLINE_REPO}/SAT/MULTISENSOR/1Km/NRT/DAILY/
 
-WEEKLY_DIR1km=/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ONLINE/SAT/MULTISENSOR/1Km/NRT/WEEKLY_2_1km/
-  WEEKLYDATES=/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ONLINE/SAT/MULTISENSOR/1Km/NRT/WEEKLY_2_AVEDATES
-WEEKLY_DIR_24=/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ONLINE/SAT/MULTISENSOR/1Km/NRT/WEEKLY_2_24/
- DAILY_DIR_24=/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ONLINE/SAT/MULTISENSOR/1Km/NRT/DAILY/CHECKED_24
+
+WEEKLY_DIR1km=${ONLINE_REPO}/SAT/MULTISENSOR/1Km/NRT/WEEKLY_2_1km/
+  WEEKLYDATES=${ONLINE_REPO}/SAT/MULTISENSOR/1Km/NRT/WEEKLY_2_AVEDATES
+WEEKLY_DIR_24=${ONLINE_REPO}/SAT/MULTISENSOR/1Km/NRT/WEEKLY_2_24/
+ DAILY_DIR_24=${ONLINE_REPO}/SAT/MULTISENSOR/1Km/NRT/DAILY/CHECKED_24
 
 opa_prex "cd Sat"
 opa_prex "python sat_check.py -i $ORIGDIR -o $CHECK_BASEDIR -c $CLIM_FILE -m SAT1km_mesh -s $DIR_SUBMASK -w ${CHECK_BASEDIR}/STATISTICS "
@@ -72,37 +89,37 @@ opa_prex "python aveSat.py -i $CHECKDIR -o $WEEKLY_DIR1km -m SAT1km_mesh -t week
 opa_prex "python  interpolator.py -i $WEEKLY_DIR1km -o $WEEKLY_DIR_24 -m Mesh24 -M $MASKFILE --inmesh SAT1km_mesh " 
  OPA_START_DATE=$($OPA_BINDIR/date --date="8 days ago" +%Y%m%d)
  opa_mkdir "$I_OPA_HOME/inpdir/WEEKLY"
- opa_cp "/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ONLINE/SAT/MULTISENSOR/1Km/NRT/WEEKLY_2_24/${OPA_START_DATE}_d-OC_CNR-L3-CHL-MedOC4AD4_MULTI_1KM-MED-NRT-v02.nc $I_OPA_HOME/inpdir/WEEKLY"
+ opa_cp "${ONLINE_REPO}/SAT/MULTISENSOR/1Km/NRT/WEEKLY_2_24/${OPA_START_DATE}_d-OC_CNR-L3-CHL-MedOC4AD4_MULTI_1KM-MED-NRT-v02.nc $I_OPA_HOME/inpdir/WEEKLY"
 
 fi
 
 ################   4. Update of inpdir/ONLINE from gss  ############################
 
-GSS_DIRS="
-ONLINE/SAT/MULTISENSOR/1Km/NRT/WEEKLY_2_24/
-ONLINE/SAT/MULTISENSOR/1Km/NRT/DAILY/CHECKED_24/
-ONLINE/FLOAT_BIO/
-ONLINE/COPERNICUS/
-"
-     for DIR in $GSS_DIRS ; do
-         opa_mkdir "$I_OPA_HOME/inpdir/$DIR"
-         opa_prex "rsync -rv /gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/${DIR} $I_OPA_HOME/inpdir/${DIR}"
-      done
-
+if [ $SYNCRONIZE_INPDIR -eq 1 ] ; then
+	GSS_DIRS="
+	ONLINE/SAT/MULTISENSOR/1Km/NRT/WEEKLY_2_24/
+	ONLINE/SAT/MULTISENSOR/1Km/NRT/DAILY/CHECKED_24/
+	ONLINE/FLOAT_BIO/
+	ONLINE/COPERNICUS/
+	"
+	     for DIR in $GSS_DIRS ; do
+	         opa_mkdir "$I_OPA_HOME/inpdir/$DIR"
+	         opa_prex "rsync -rv /gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/${DIR} $I_OPA_HOME/inpdir/${DIR}"
+	      done
+fi
 
 ################   5. Update of SAT DT derived datasets  ############################
 
-ORIGDIR=/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ONLINE/SAT/MULTISENSOR/1Km/DT/DAILY/ORIG/
-CHECKDIR=/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ONLINE/SAT/MULTISENSOR/1Km/DT/DAILY/CHECKED
-CHECK_BASEDIR=/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ONLINE/SAT/MULTISENSOR/1Km/DT/DAILY/
-WEEKLY_DIR1km=/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ONLINE/SAT/MULTISENSOR/1Km/DT/WEEKLY_2_1km/
-  WEEKLYDATES=/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ONLINE/SAT/MULTISENSOR/1Km/DT/WEEKLY_2_AVEDATES
-WEEKLY_DIR_24=/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ONLINE/SAT/MULTISENSOR/1Km/DT/WEEKLY_2_24/
- DAILY_DIR_24=/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ONLINE/SAT/MULTISENSOR/1Km/DT/DAILY/CHECKED_24
+ORIGDIR=${ONLINE_REPO}/SAT/MULTISENSOR/1Km/DT/DAILY/ORIG/
+CHECKDIR=${ONLINE_REPO}/SAT/MULTISENSOR/1Km/DT/DAILY/CHECKED
+CHECK_BASEDIR=${ONLINE_REPO}/SAT/MULTISENSOR/1Km/DT/DAILY/
+WEEKLY_DIR1km=${ONLINE_REPO}/SAT/MULTISENSOR/1Km/DT/WEEKLY_2_1km/
+  WEEKLYDATES=${ONLINE_REPO}/SAT/MULTISENSOR/1Km/DT/WEEKLY_2_AVEDATES
+WEEKLY_DIR_24=${ONLINE_REPO}/SAT/MULTISENSOR/1Km/DT/WEEKLY_2_24/
+ DAILY_DIR_24=${ONLINE_REPO}/SAT/MULTISENSOR/1Km/DT/DAILY/CHECKED_24
 
-#opa_prex "cd Sat"
+
 opa_prex "python sat_check.py -i $ORIGDIR -o $CHECK_BASEDIR -c $CLIM_FILE -m SAT1km_mesh -s $DIR_SUBMASK -w ${CHECK_BASEDIR}/STATISTICS "
-#opa_prex "python sat_check.py -i $ORIGDIR -o $CHECKDIR -c $CLIM_FILE -m SAT1km_mesh"
 opa_prex " python interpolator.py -i $CHECKDIR -o $DAILY_DIR_24 -m Mesh24 -M $MASKFILE --inmesh SAT1km_mesh "
 
 if [[ $WEEKDAY -eq 3 ]]; then
@@ -113,25 +130,22 @@ fi
 
 ################   6. Update of Float Index  ############################
 
-GSS_RAW_INDEX=/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ONLINE/FLOAT_BIO/Float_Index.0.txt
-GSS_SEL_INDEX=/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ONLINE/FLOAT_BIO/Float_Index.txt
+GSS_RAW_INDEX=${ONLINE_REPO}/FLOAT_BIO/Float_Index.0.txt
+GSS_SEL_INDEX=${ONLINE_REPO}/FLOAT_BIO/Float_Index.txt
 INPDIR__INDEX=$I_OPA_HOME/inpdir/ONLINE/FLOAT_BIO/Float_Index.txt
 
 opa_prex "cd $OPA_BITSEA"
-opa_prex "python Float/dump_index.py 1>> $OPA_LOGDIR/daily/$DATE.log 2>&1"  # dumps GSS_RAW_INDEX
+opa_prex "python Float/dump_index.py --coriolis ${ONLINE_REPO}/FLOAT_BIO --lov ${ONLINE_REPO}/FLOAT_LOVBIO 1>> $OPA_LOGDIR/daily/$DATE.log 2>&1"  # dumps GSS_RAW_INDEX
 opa_prex "python Float/check_time_pos.py -i ${GSS_RAW_INDEX} -o ${GSS_SEL_INDEX} 1>> $OPA_LOGDIR/daily/$DATE.log 2>&1 " #dumps GSS_SEL_INDEX
 
-#6.3 TODO remove bad floats
+#6.3 remove bad floats
 #6.4 genearate inpdir Float_Indexer.txt
 
+if [ $SYNCRONIZE_INPDIR -eq 1 ] ; then
 BACKSLASH_INPDIR=`echo $I_OPA_HOME/inpdir/ | sed -e "s/\//\\\\\\\\\\\\//g" `
 GSS_TIMERAWDATA=`echo /gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ | sed -e "s/\//\\\\\\\\\\\\//g" `
 
 opa_prex "sed -e \" "s/${GSS_TIMERAWDATA}/${BACKSLASH_INPDIR}/g\"" ${GSS_SEL_INDEX} > ${INPDIR__INDEX}   "
-#opa_prex "sed -e "s/\/gss\/gss_work\/DRES_OGS_BiGe\/Observations\/TIME_RAW_DATA\//${BACKSLASH_INPDIR}/g" ${GSS_SEL_INDEX} > ${INPDIR__INDEX}   "
-
-#CORIOLIS=/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ONLINE/FLOAT_BIO/
-#LOV=$I_OPA_HOME/inpdir/ONLINE/FLOAT_LOVBIO/
-#opa_prex "python Float/dump_index.py --coriolis $CORIOLIS --lov $LOV  1>> $OPA_LOGDIR/daily/$DATE.log 2>&1"
+fi
 
 opa_exit "$errors"
