@@ -29,9 +29,6 @@ cd 3DVar
 git checkout -b $VAR3D_BRANCH $VAR3D_BRANCH
 #credenziali a07ogs00
 
-cp ${OPA_HOSTNAME}.intel ogstm/compilers/machine_modules
-
-
 git clone https://gitlab.hpc.cineca.it/OGS/bitsea.git
 # commit fa9c1061
 #credenziali a07ogs00
@@ -40,3 +37,5 @@ git clone https://gitlab.hpc.cineca.it/OGS/postproc.git
 git checkout -b chainV5C origin/chainV5C
 # commit 23a5674d241db
 #credenziali a07ogs00
+
+cp ${OPA_HOSTNAME}.intel ogstm/compilers/machine_modules
