@@ -13,6 +13,12 @@ function opa_mpi_run {
      opa_prex "time mpiexec.hydra -np $MPI_RANKS $_args"
      #opa_prex "time mpiexec.hydra -np $MPI_RANKS -genv I_MPI_FABRICS=shm:ofa -genv I_MPI_DYNAMIC_CONNECTION  0 $_args"
      ;;
+  meucci)
+     MPI_RANKS=$(wc -l $OPA_WRKDIR/MODEL/domdec.txt | awk '{print $1 }')
+     export I_MPI_FABRICS=shm:tcp
+     opa_prex "time mpirun -np $MPI_RANKS -iface ens6 $_args"
+     #opa_prex "time srun -n $MPI_RANKS --export=ALL $_args"
+     ;;
   *)
      opa_prex "time mpiexec.hydra -genv I_MPI_DYNAMIC_CONNECTION  0 $_args"
      ;;

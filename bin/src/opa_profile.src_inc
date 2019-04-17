@@ -79,7 +79,7 @@ case "$I_OPA_HOSTNAME" in
     OPA_RM=pbs
     OPA_MPI=openmpi
     ;;
-  pico|galileo|marconi)
+  pico|galileo|marconi|meucci)
     OPA_RM=slurm
     OPA_MPI=intelmpi
     ;;
