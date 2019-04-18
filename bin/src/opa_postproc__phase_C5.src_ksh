@@ -38,8 +38,8 @@ opa_log 0 "postprocess_C5 begin"
 OPA_POSTPROC=$OPA_WRKDIR/POSTPROC
 PRODUCTS_DIR=$OPA_POSTPROC/PRODUCTS
 TMPFILE=$PRODUCTS_DIR/tmp.log
-$OPA_POSTPROCDIR/prodotti/check_daily_products_in_DU.sh -p $PRODUCTS_DIR -b $OPA_BINDIR -t $TMPFILE
-#$OPA_BINDIR/check_upload_by_other_chain.sh  -d $WED_SAT_DATE -l $RESPONSE_DIR -f $CONFIG -b $OPA_BINDIR
+opa_prex_with_output "$OPA_POSTPROCDIR/prodotti/check_daily_products_in_DU.sh -p $PRODUCTS_DIR -b $OPA_BINDIR -t $TMPFILE"
+
 if [ $? == 0  ] ; then
    opa_log 0 " No upload to CMEMS DU"
 else
