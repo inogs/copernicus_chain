@@ -121,6 +121,30 @@ opa_mkdir "$ZIPPED_DIR/PHYS/"
      opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/var_aggregator.py -l ave*N1p.nc -i $MODELDIR/AVE_FREQ_2  -d VarDescriptor_2.xml  -t $MODELDIR/AVE_FREQ_2  -c $CHLSUP_DIR -m $MASK_FILE"
      opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/archive/compress.py -i $MODELDIR/AVE_FREQ_2   -o $ZIPPED_DIR/AVE_FREQ_2 -l ave.*.nc"
 
+# monthly products
+
+DAY=$( date --date="$OPA_RUNDATE" +%d )
+if [[ $DAY > 10 ]] && [[ $DAY < 15 ]] ; then
+ARCHIVE_DIR=$I_OPA_HOME/archive
+
+   ZIPPED_DIR=$OPA_POSTPROC/MONTHLY/ZIPPED
+ UNZIPPED_DIR=$OPA_POSTPROC/MONTHLY/UNZIPPED
+  MONTHLY_DIR=$OPA_POSTPROC/MONTHLY/AVE
+ MONTHLY_PROD=$OPA_POSTPROC/MONTHLY/PRODUCTS
+
+opa_mkdir "$OPA_POSTPROC/MONTHLY/"
+opa_mkdir "$ZIPPED_DIR"
+opa_mkdir "$UNZIPPED_DIR"
+opa_mkdir "$MONTHLY_DIR"
+opa_mkdir "$MONTHLY_PROD"
+
+opa_prex_or_die "python $OPA_BITSEA/validation/online/archive_monthly_extractor.py -a $ARCHIVE_DIR -o $ZIPPED_DIR "
+opa_prex_or_die "mpirun -np 20 python $OPA_POSTPROCDIR/archive/uncompress.py -i $ZIPPED_DIR -o $UNZIPPED_DIR -l *gz "
+opa_prex_or_die "mpirun -np 10 python $OPA_BITSEA/validation/online/monthly_averager.py -i $UNZIPPED_DIR -o $MONTHLY_DIR -m $MASKFILE"
+opa_prex_or_die "basename $( ls $MONTHLY_DIR/ave*N1p.nc ) |  cut -c 5-12 > timelist_monthly.txt "
+opa_prex_or_die "mpirun -np 1 python ${OPA_POSTPROCDIR}/prodotti/prodotti_copernicus.py -i $MONTHLY_DIR -o $MONTHLY_PROD -t timelist_monthly.txt -d an -m $MASKFILE --tr monthly -b $BULLETIN_DATE "
+
+fi
 
      
 #### MAP GENERATION #####

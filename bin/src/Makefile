@@ -59,6 +59,7 @@ SCRIPTS=	cvs_check.ksh					\
 		opa_split_file.ksh				\
 		merge_parts.py					\
 		opa_put_phase_2.ksh				\
+                opa_put_phase_2_monthly.ksh                     \
 		opa_report.ksh					\
 		opa_parse_reports.ksh				\
 		opa_parse_reports.py				\
