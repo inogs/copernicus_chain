@@ -15,6 +15,7 @@ typeset -i errors=0
 typeset _logfile="$OPA_RUNLOGDIR/opa.${I_OPA_HOSTNAME}.${OPA_RUNID}.opa_put.out"
 typeset _logfile2="$OPA_RUNLOGDIR/opa.${I_OPA_HOSTNAME}.${OPA_RUNID}.opa_put_phase_2.out"
 
+echo "START" > $_logfile2
 #CONFIG=@@(I:OPA_HOME)/etc/nc-config/.cmems.ncconfig
 #RESPONSE_DIR=${OPA_WRKDIR}/POSTPROC/PRODUCTS/RESPONSE
 #opa_mkdir $RESPONSE_DIR
@@ -43,12 +44,15 @@ if [ $? == 0  ] ; then
    opa_log 0 " No upload to CMEMS DU"
 else
    opa_log 0 "delivering to CMEMS DU"
-   opa_prex "@@(I:OPA_HOME)/bin/opa_put_phase_2.ksh -y NUTR 1> $_logfile2 2>&1"             || errors=$(( $errors + 1 ))
+   opa_prex "@@(I:OPA_HOME)/bin/opa_put_phase_2.ksh -y NUTR 1>> $_logfile2 2>&1"            || errors=$(( $errors + 1 ))
    opa_prex "@@(I:OPA_HOME)/bin/opa_put_phase_2.ksh -y BIOL 1>> $_logfile2 2>&1"            || errors=$(( $errors + 1 ))
    opa_prex "@@(I:OPA_HOME)/bin/opa_put_phase_2.ksh -y CARB 1>> $_logfile2 2>&1"            || errors=$(( $errors + 1 ))
    opa_prex "@@(I:OPA_HOME)/bin/opa_put_phase_2.ksh -y PFTC 1>> $_logfile2 2>&1"            || errors=$(( $errors + 1 ))
    opa_prex "@@(I:OPA_HOME)/bin/opa_put_phase_2.ksh -y CO2F 1>> $_logfile2 2>&1"            || errors=$(( $errors + 1 ))
 fi
+
+DAY=$( date --date="$OPA_RUNDATE" +%d )
+if [[ $DAY > 10 ]] && [[ $DAY < 15 ]] ; then
 
 # Deliver monthly products to CMEMS
 PRODUCTS_DIR=$OPA_WRKDIR/POSTPROC/MONTHLY/PRODUCTS
@@ -59,14 +63,14 @@ if [ $? == 0  ] ; then
    opa_log 0 " No monthly upload to CMEMS DU"
 else
    opa_log 0 "delivering monthly to CMEMS DU"
-   opa_prex "@@(I:OPA_HOME)/bin/opa_put_phase_2_monthly.ksh -y NUTR 1> $_logfile2 2>&1"             || errors=$(( $errors + 1 ))
+   opa_prex "@@(I:OPA_HOME)/bin/opa_put_phase_2_monthly.ksh -y NUTR 1>> $_logfile2 2>&1"            || errors=$(( $errors + 1 ))
    opa_prex "@@(I:OPA_HOME)/bin/opa_put_phase_2_monthly.ksh -y BIOL 1>> $_logfile2 2>&1"            || errors=$(( $errors + 1 ))
    opa_prex "@@(I:OPA_HOME)/bin/opa_put_phase_2_monthly.ksh -y CARB 1>> $_logfile2 2>&1"            || errors=$(( $errors + 1 ))
    opa_prex "@@(I:OPA_HOME)/bin/opa_put_phase_2_monthly.ksh -y PFTC 1>> $_logfile2 2>&1"            || errors=$(( $errors + 1 ))
    opa_prex "@@(I:OPA_HOME)/bin/opa_put_phase_2_monthly.ksh -y CO2F 1>> $_logfile2 2>&1"            || errors=$(( $errors + 1 ))
 fi
 
-
+fi
 
 opa_log 0 "postprocess_C5 done [$(opa_exitcode $ec)]"
 
