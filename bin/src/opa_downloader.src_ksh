@@ -13,7 +13,7 @@ case $I_OPA_HOSTNAME in
       PYTHONPATH=" "
       opa_prex "module purge"
       opa_prex "module load autoload intelmpi netcdf/4.4.1--intel--pe-xe-2017--binary python/2.7.9 numpy/1.9.1--python--2.7.9 scipy/0.15.1--python--2.7.9 matplotlib/1.4.3--python--2.7.9"
-      ONLINE_REPO=/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ONLINE
+      ONLINE_REPO=/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ONLINE_V5C
         CLIM_FILE=/gss/gss_work/DRES_OGS_BiGe/Observations/CLIMATOLOGY/SAT/CCI_1km/SatClimatology.nc
       DIR_SUBMASK=/gss/gss_work/DRES_OGS_BiGe/Observations/CLIMATOLOGY/SAT/CCI_1km/SUBMASKsat
       SYNCRONIZE_INPDIR=1      
@@ -43,6 +43,7 @@ case $I_OPA_HOSTNAME in
       ;;
     esac
 
+export ONLINE_REPO
 opa_prex "source $OPA_VENV_1/bin/activate"
 opa_prex "cd $OPA_BITSEA"
 export PYTHONPATH=$OPA_BITSEA:${PYTHONPATH}
@@ -62,9 +63,39 @@ fi
 
 ################   2. Update of original datasets  ##################################
 
-opa_prex "python downloader/downloader.py -l $OPA_LOGDIR/daily/$DATE.log -a $OPA_NOTIFY_ADDRESSES -d ${ONLINE_REPO}"
+opa_prex "python downloader/downloader.py -l $OPA_LOGDIR/daily/$DATE.log -a $OPA_NOTIFY_ADDRESSES -d ${ONLINE_REPO} -v 3"
 
-################   3. Update of SAT NRT derived datasets  ############################
+################   3. Update of Float Indexes and superfloat  ############################
+
+
+opa_prex "cd $OPA_BITSEA"
+
+DATASET=${ONLINE_REPO}/FLOAT_BIO
+GSS_RAW_INDEX=${DATASET}/Float_Index.0.txt
+GSS_SEL_INDEX=${DATASET}/Float_Index.txt
+
+opa_prex "python Float/dump_index.py -i ${DATASET} -f ${GSS_SEL_INDEX} -o ${GSS_RAW_INDEX} --type coriolis  1>> $OPA_LOGDIR/daily/$DATE.log 2>&1"
+opa_prex "python Float/check_time_pos.py -i ${GSS_RAW_INDEX} -o ${GSS_SEL_INDEX}                            1>> $OPA_LOGDIR/daily/$DATE.log 2>&1" 
+
+DATASET=${ONLINE_REPO}/FLOAT_LOVBIO
+GSS_RAW_INDEX=${DATASET}/Float_Index.0.txt
+GSS_SEL_INDEX=${DATASET}/Float_Index.txt
+opa_prex "python Float/dump_index.py -i ${DATASET} -f ${GSS_SEL_INDEX} -o ${GSS_RAW_INDEX} --type lov  1>> $OPA_LOGDIR/daily/$DATE.log 2>&1"
+opa_prex "python Float/check_time_pos.py -i ${GSS_RAW_INDEX} -o ${GSS_SEL_INDEX}                       1>> $OPA_LOGDIR/daily/$DATE.log 2>&1"
+
+DATASET=${ONLINE_REPO}/SUPERFLOAT
+GSS_RAW_INDEX=${DATASET}/Float_Index.0.txt
+GSS_SEL_INDEX=${DATASET}/Float_Index.txt
+OFFSET_DAYS=-7
+DATESTART=$( opa_date_day_offset $OPA_TODAY $OFFSET_DAYS )
+opa_prex "python Float/superfloat_chla.py    -s $DATESTART -e $OPA_TODAY -o $DATASET "
+opa_prex "python Float/superfloat_nitrate.py -s $DATESTART -e $OPA_TODAY -o $DATASET "
+opa_prex "python Float/superfloat_oxygen.py  -s $DATESTART -e $OPA_TODAY -o $DATASET "
+
+opa_prex "python Float/dump_index.py -i ${DATASET} -f ${GSS_SEL_INDEX} -o ${GSS_RAW_INDEX} --type lov  1>> $OPA_LOGDIR/daily/$DATE.log 2>&1"
+opa_prex "python Float/check_time_pos.py -i ${GSS_RAW_INDEX} -o ${GSS_SEL_INDEX}                       1>> $OPA_LOGDIR/daily/$DATE.log 2>&1"
+
+################   4. Update of SAT NRT derived datasets  ############################
 
 MASKFILE=${OPA_ETCDIR}/static-data/MED24_125/meshmask.nc
 
@@ -93,22 +124,25 @@ opa_prex "python  interpolator.py -i $WEEKLY_DIR1km -o $WEEKLY_DIR_24 -m Mesh24 
 
 fi
 
-################   4. Update of inpdir/ONLINE from gss  ############################
+################   5. Update of inpdir/ONLINE from gss  ############################
 
 if [ $SYNCRONIZE_INPDIR -eq 1 ] ; then
 	GSS_DIRS="
-	ONLINE/SAT/MULTISENSOR/1Km/NRT/WEEKLY_2_24/
-	ONLINE/SAT/MULTISENSOR/1Km/NRT/DAILY/CHECKED_24/
-	ONLINE/FLOAT_BIO/
-	ONLINE/COPERNICUS/
+	SAT/MULTISENSOR/1Km/NRT/WEEKLY_2_24/
+	SAT/MULTISENSOR/1Km/NRT/DAILY/CHECKED_24/
+	FLOAT_BIO/
+        FLOAT_LOVBIO/
+	COPERNICUS/
+        SUPERFLOAT/
+
 	"
 	     for DIR in $GSS_DIRS ; do
-	         opa_mkdir "$I_OPA_HOME/inpdir/$DIR"
-	         opa_prex "rsync -rv /gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/${DIR} $I_OPA_HOME/inpdir/${DIR}"
+	         opa_mkdir "$I_OPA_HOME/inpdir/ONLINE/$DIR"
+                 opa_prex "rsync -rv ${ONLINE_REPO}/${DIR} $I_OPA_HOME/inpdir/ONLINE/${DIR}"
 	      done
 fi
 
-################   5. Update of SAT DT derived datasets  ############################
+################   6. Update of SAT DT derived datasets  ############################
 
 ORIGDIR=${ONLINE_REPO}/SAT/MULTISENSOR/1Km/DT/DAILY/ORIG/
 CHECKDIR=${ONLINE_REPO}/SAT/MULTISENSOR/1Km/DT/DAILY/CHECKED
@@ -126,26 +160,6 @@ if [[ $WEEKDAY -eq 3 ]]; then
 opa_prex "python aveSat.py -i $CHECKDIR -o $WEEKLY_DIR1km -m SAT1km_mesh -t weekly_tuesday -d $WEEKLYDATES "
 opa_prex "python interpolator.py -i $WEEKLY_DIR1km -o $WEEKLY_DIR_24 -m Mesh24 -M $MASKFILE --inmesh SAT1km_mesh "
 
-fi
-
-################   6. Update of Float Index  ############################
-
-GSS_RAW_INDEX=${ONLINE_REPO}/FLOAT_BIO/Float_Index.0.txt
-GSS_SEL_INDEX=${ONLINE_REPO}/FLOAT_BIO/Float_Index.txt
-INPDIR__INDEX=$I_OPA_HOME/inpdir/ONLINE/FLOAT_BIO/Float_Index.txt
-
-opa_prex "cd $OPA_BITSEA"
-opa_prex "python Float/dump_index.py --coriolis ${ONLINE_REPO}/FLOAT_BIO --lov ${ONLINE_REPO}/FLOAT_LOVBIO 1>> $OPA_LOGDIR/daily/$DATE.log 2>&1"  # dumps GSS_RAW_INDEX
-opa_prex "python Float/check_time_pos.py -i ${GSS_RAW_INDEX} -o ${GSS_SEL_INDEX} 1>> $OPA_LOGDIR/daily/$DATE.log 2>&1 " #dumps GSS_SEL_INDEX
-
-#6.3 remove bad floats
-#6.4 genearate inpdir Float_Indexer.txt
-
-if [ $SYNCRONIZE_INPDIR -eq 1 ] ; then
-BACKSLASH_INPDIR=`echo $I_OPA_HOME/inpdir/ | sed -e "s/\//\\\\\\\\\\\\//g" `
-GSS_TIMERAWDATA=`echo /gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ | sed -e "s/\//\\\\\\\\\\\\//g" `
-
-opa_prex "sed -e \" "s/${GSS_TIMERAWDATA}/${BACKSLASH_INPDIR}/g\"" ${GSS_SEL_INDEX} > ${INPDIR__INDEX}   "
 fi
 
 opa_exit "$errors"
