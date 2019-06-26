@@ -182,6 +182,10 @@ opa_stage_in	"$wrkdir/BC/" \
                   "$OPA_ETCDIR/static-data/MODEL/BC/CO2_20170702-12:00:00.nc" \
                   "$OPA_ETCDIR/static-data/MODEL/BC/CO2_20180702-12:00:00.nc" \
                   "$OPA_ETCDIR/static-data/MODEL/BC/CO2_20190702-12:00:00.nc" \
+                  "$OPA_ETCDIR/static-data/MODEL/BC/CO2_20200702-12:00:00.nc" \
+                  "$OPA_ETCDIR/static-data/MODEL/BC/CO2_20210702-12:00:00.nc" \
+                  "$OPA_ETCDIR/static-data/MODEL/BC/CO2_20220702-12:00:00.nc" \
+                  "$OPA_ETCDIR/static-data/MODEL/BC/CO2_20230702-12:00:00.nc" \
                   "$OPA_ETCDIR/static-data/MODEL/BC/ATM_yyyy0630-00:00:00.nc" \
                   "$OPA_ETCDIR/static-data/MODEL/BC/GIB_yyyy0215-12:00:00.nc" \
                   "$OPA_ETCDIR/static-data/MODEL/BC/GIB_yyyy0515-12:00:00.nc" \
