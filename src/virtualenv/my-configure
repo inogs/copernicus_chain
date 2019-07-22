@@ -15,6 +15,7 @@ case $OPA_HOSTNAME in
       module load python/2.7.12
       export HDF5_DIR=$OPA_HOME/HOST/$OPA_HOSTNAME
       export NETCDF4_DIR=$OPA_HOME/HOST/$OPA_HOSTNAME
+      export GEOS_DIR=$OPA_HOME/HOST/$OPA_HOSTNAME
       ;;
     marconi)
       module load autoload 
@@ -26,6 +27,7 @@ case $OPA_HOSTNAME in
       module load python/2.7.12 #numpy/1.11.2--python--2.7.12
       export HDF5_DIR=$OPA_HOME/HOST/$OPA_HOSTNAME
       export NETCDF4_DIR=$OPA_HOME/HOST/$OPA_HOSTNAME
+      export GEOS_DIR=$OPA_HOME/HOST/$OPA_HOSTNAME
       ;;
     *)
       module load python
@@ -46,5 +48,6 @@ pip install python-dateutil
 pip install scipy
 pip install seawater
 pip install matplotlib
+pip install git+https://github.com/matplotlib/basemap.git
 #installare Pillow per concludere la configurazione di venv1
 
