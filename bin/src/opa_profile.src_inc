@@ -55,9 +55,9 @@ OPA_OGS_REMOTE_HOST='poseidon.inogs.it'
 OPA_OGS_REMOTE_USER='opaopech'
 OPA_OGS_REMOTE_DIR='/home/opaopech/MERSEA/'
 
-OPA_START_HOUR_UTC="07:30:00"					# UTC time for chain submission
+OPA_START_HOUR_UTC="04:00:00"					# UTC time for chain submission
 OPA_GET_ADVANCE_MIN="90"					# minutes for advance execution of opa_get
-OPA_GET_TARGET_TIME="07:30:00"
+OPA_GET_TARGET_TIME="04:00:00"
 OPA_TEST=false
 OPA_DOWNLOAD_HOUR_UTC="03:00:00"
 

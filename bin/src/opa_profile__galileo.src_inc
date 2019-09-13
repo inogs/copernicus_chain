@@ -18,8 +18,8 @@ if [[ $__OPA_PROFILE_galileo_IS_DEFINED__ == '' ]] ; then
 OPA_GRADS_HOME="$OPA_HOSTDIR"
 OPA_GRADS_GADDIR="${OPA_GRADS_HOME}/etc/grads/data"
 
-OPA_HOST_PRIMARY_LOGIN_NODE='node165.galileo.cineca.it'
-OPA_HOST_SECONDARY_LOGIN_NODE='node166.galileo.cineca.it'
+OPA_HOST_PRIMARY_LOGIN_NODE='r033c01s03.galileo.cineca.it'
+OPA_HOST_SECONDARY_LOGIN_NODE='r033c01s05.galileo.cineca.it'
 
 OPA_HOST_PRIMARY_HOSTNAME='node165'
 OPA_HOST_SECONDARY_HOSTNAME='node166'
@@ -46,7 +46,7 @@ OPA_CORES_PER_NODE=36
 OPA_DOMAIN=20nodes-bdw                                  #Folder to take for domain (depends on number of used nodes)
 
 OPA_DEFAULT_WALL_CLOCK_LIMIT=06:00:00			# Default wall clock limit [[hh:]mm:]ss
-OPA_DEFAULT_WALL_CLOCK_LIMIT_SER=04:00:00			# Default wall clock limit [[hh:]mm:]ss
+OPA_DEFAULT_WALL_CLOCK_LIMIT_SER=06:00:00			# Default wall clock limit [[hh:]mm:]ss
 OPA_DEFAULT_WALL_CLOCK_LIMIT_PAR=06:00:00			# Default wall clock limit [[hh:]mm:]ss
 OPA_DEFAULT_TASKS=720					# Default tasks' number WARNING: 1 node is not enough
 OPA_DEFAULT_QUEUE="gll_meteo_prod"                                      # Default queue
