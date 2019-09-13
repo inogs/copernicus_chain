@@ -8,5 +8,5 @@
 00 01 * * * @@(C:OPA_SCRDIR)/opa_check_remote_cron.ksh >> @@(C:OPA_VARDIR)/log/$(hostname).$(date +\%Y\%m\%d).opa_setup_crontab.out 2>&1
 
    # Report:
-@@(C:OPA_CRON_COMMENT)00 10 @@(C:OPA_CRON_REPORT_DAY) * * @@(C:OPA_SCRDIR)/opa_is_login_node.ksh && @@(C:OPA_SCRDIR)/opa_report.ksh --notify 1> @@(C:OPA_VARDIR)/log/$(hostname).$(date +\%Y\%m\%d).opa_report.out 2>&1
-@@(C:OPA_CRON_COMMENT)00 10 @@(C:OPA_CRON_PART_REPORT_DAY) * * @@(C:OPA_SCRDIR)/opa_is_login_node.ksh && @@(C:OPA_SCRDIR)/opa_report.ksh --notify 1> @@(C:OPA_VARDIR)/log/$(hostname).$(date +\%Y\%m\%d).opa_report.out 2>&1
+#@@(C:OPA_CRON_COMMENT)00 10 @@(C:OPA_CRON_REPORT_DAY) * * @@(C:OPA_SCRDIR)/opa_is_login_node.ksh && @@(C:OPA_SCRDIR)/opa_report.ksh --notify 1> @@(C:OPA_VARDIR)/log/$(hostname).$(date +\%Y\%m\%d).opa_report.out 2>&1
+#@@(C:OPA_CRON_COMMENT)00 10 @@(C:OPA_CRON_PART_REPORT_DAY) * * @@(C:OPA_SCRDIR)/opa_is_login_node.ksh && @@(C:OPA_SCRDIR)/opa_report.ksh --notify 1> @@(C:OPA_VARDIR)/log/$(hostname).$(date +\%Y\%m\%d).opa_report.out 2>&1

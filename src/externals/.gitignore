@@ -3,4 +3,5 @@
 !downloader_ogstm_bfm.sh
 !galileo.intel
 !meucci.intel
-!.gitignore 
+!.gitignore
+!README.md 
