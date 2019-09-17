@@ -95,8 +95,8 @@ opa_prex "python Float/superfloat_par.py     -s $DATESTART -e $OPA_TODAY -o $DAT
 opa_prex "python Float/superfloat_bbp700.py  -s $DATESTART -e $OPA_TODAY -o $DATASET "
 opa_prex "python Float/superfloat_ph.py      -s $DATESTART -e $OPA_TODAY -o $DATASET "
 
-opa_prex "python Float/dump_index.py -i ${DATASET} -f ${GSS_SEL_INDEX} -o ${GSS_RAW_INDEX} --type lov  1>> $OPA_LOGDIR/daily/$DATE.log 2>&1"
-opa_prex "python Float/check_time_pos.py -i ${GSS_RAW_INDEX} -o ${GSS_SEL_INDEX}                       1>> $OPA_LOGDIR/daily/$DATE.log 2>&1"
+opa_prex "python Float/dump_index.py -i ${DATASET} -f ${GSS_SEL_INDEX} -o ${GSS_RAW_INDEX} --type superfloat  1>> $OPA_LOGDIR/daily/$DATE.log 2>&1"
+opa_prex "python Float/check_time_pos.py -i ${GSS_RAW_INDEX} -o ${GSS_SEL_INDEX}                              1>> $OPA_LOGDIR/daily/$DATE.log 2>&1"
 
 ################   4. Update of SAT NRT derived datasets  ############################
 
