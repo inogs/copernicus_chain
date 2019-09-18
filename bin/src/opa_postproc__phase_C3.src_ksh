@@ -47,7 +47,6 @@ IMG_DIR__ACT=${ONLINE_VALIDATION_DIR}/ACTUAL/matchup_outputs
 
 export MASKFILE=${OPA_WRKDIR}/MODEL/meshmask.nc
 export ROOT_DIR=$OPA_BITSEA
-export PYTHONPATH=${PYTHONPATH}:$OPA_BITSEA
 
 if $OPA_DA_ENABLE ; then
 
@@ -59,43 +58,19 @@ opa_mkdir ${ONLINE_VALIDATION_DIR}/ACTUAL/matchup_outputs
 opa_mkdir ${ONLINE_VALIDATION_DIR}/matchup_outputs
 
 
+# step 3 -- aggregate variables to have chl and all variables (physical and biological) on the same ave files
+
+opa_prex "source $OPA_VENV_1/bin/activate"
+export PYTHONPATH=${PYTHONPATH}:$OPA_BITSEA
+
 opa_prex_or_die "python archive_extractor.py --type analysis -st ${STARTTIME_a} -et ${END__TIME_a}  -a ${ARCHIVE_DIR}  -o ${ONLINE_VALIDATION_DIR}/PREVIOUS "
 opa_prex_or_die "python archive_extractor.py --type forecast -st ${STARTTIME_s} -et ${STARTTIME_s}  -a ${ARCHIVE_DIR}  -o ${ONLINE_VALIDATION_DIR}/PREVIOUS "
 opa_prex_or_die "python archive_extractor.py --type forecast -st ${STARTTIME_f} -et ${END__TIME_f}  -a ${ARCHIVE_DIR}  -o ${ONLINE_VALIDATION_DIR}/PREVIOUS "
 
 
-# step 3 -- aggregate variables to have chl and all variables (physical and biological) on the same ave files
-  case $I_OPA_HOSTNAME in
-    pico)
-      opa_prex "module purge"
-      opa_prex " module load profile/advanced autoload intel/cs-xe-2015--binary python/2.7.9 numpy/1.9.2--python--2.7.9 matplotlib/1.4.3--python--2.7.9 scipy/0.15.1--python--2.7.9"
-      ;;
-    galileo)
-      opa_prex "module purge"
-      opa_prex "module load autoload profile/advanced intel/cs-xe-2015--binary mkl/11.2--binary python/2.7.9 numpy/1.9.1--python--2.7.9 scipy/0.15.1--python--2.7.9 matplotlib/1.4.3--python--2.7.9"
-      ;;
-    marconi)
-      opa_prex "module purge"
-      opa_prex "module load autoload intel/pe-xe-2017--binary python/2.7.12 numpy/1.11.2--python--2.7.12 scipy/0.18.1--python--2.7.12"
-      ;;
-    *)
-      opa_prex "module load python"
-      ;;
-    esac
-
-opa_prex "source $OPA_VENV_1/bin/activate"
-
-
 opa_prex "cd $OPA_BITSEA/validation/online"
 
 
-#if [ "$I_OPA_HOSTNAME" = "galileo" ] ; then
-#  SAT_WEEKLY_DIR=$I_OPA_HOME/inpdir/WEEKLY/
-#  SAT_DAILY_DIR=/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ONLINE/SAT/MODIS/DAILY/CHECKED/
-#else
-#  SAT_WEEKLY_DIR=/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ONLINE/SAT/MULTISENSOR/1Km/NRT/WEEKLY_2_24/
-#  SAT_DAILY_DIR=/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ONLINE/SAT/MULTISENSOR/1Km/NRT/DAILY/CHECKED_24/
-#fi
 export ONLINE_REPO=${I_OPA_HOME}/inpdir/ONLINE
 
 SAT_WEEKLY_DIR=${ONLINE_REPO}/SAT/MULTISENSOR/1Km/NRT/WEEKLY_2_24/
@@ -108,7 +83,7 @@ TMP_DIR__ACT=$OPA_WRKDIR/MODEL/AVE_FREQ_1/
 f0_name=${ONLINE_VALIDATION_DIR}/Validation_f0_${PREVIOUS_TUE_RUNDIR}_on_weekly_Sat.${STARTTIME_s}.nc
 opa_prex_or_die "python SatValidation.py -d ${STARTTIME_s} -f $TMP_DIR_PREV -s ${SAT_WEEKLY_DIR} -o $f0_name -m $MASKFILE " # MISFIT   
 
-for fc_day in 1 2; do
+for fc_day in 0 1 2; do
    DAY=$(date -d "$STARTTIME_s + $fc_day days"  +%Y%m%d )
    f_name=${ONLINE_VALIDATION_DIR}/Validation_f${fc_day}_${PREVIOUS_TUE_RUNDIR}_on_daily_Sat.${DAY}.nc
    opa_prex_or_die "python SatValidation.py  -d $DAY -f $TMP_DIR_PREV -s ${SAT_DAILY_DIR} -o ${f_name}  -m $MASKFILE"     # ERROR  
@@ -120,32 +95,35 @@ done
 a0_name=${ONLINE_VALIDATION_DIR}/Validation_a0_${OPA_RUNDATE}_on_weekly_Sat.${STARTTIME_s}.nc
 opa_prex_or_die "python SatValidation.py -d ${STARTTIME_s} -f $TMP_DIR__ACT -s ${SAT_WEEKLY_DIR} -o $a0_name  -m $MASKFILE "  # MISFIT   
 
-for ac_day in 1 2; do
+for ac_day in  1 2; do
    DAY=$(date -d "$STARTTIME_s + $ac_day days"  +%Y%m%d )
    a_name=${ONLINE_VALIDATION_DIR}/Validation_a${ac_day}_${OPA_RUNDATE}_on_daily_Sat.${DAY}.nc
    opa_prex_or_die "python SatValidation.py  -d $DAY -f $TMP_DIR__ACT -s ${SAT_DAILY_DIR} -o ${a_name}  -m $MASKFILE "     # ERROR  
 done
 
 
-OLD_ARCHIVE=Archive_sat_validation_V2C.tar
-PREVIOUS_ARCH=${ONLINE_VALIDATION_DIR}/V2C
-opa_mkdir $PREVIOUS_ARCH
 
-opa_stage_in "${ONLINE_VALIDATION_DIR}" "${OPA_ETCDIR}/static-data/POSTPROC/${OLD_ARCHIVE}" 
-opa_prex "tar -xf ${ONLINE_VALIDATION_DIR}/${OLD_ARCHIVE} -C  ${PREVIOUS_ARCH}"
+opa_prex "cp ${ONLINE_VALIDATION_DIR}/Validation_*nc $I_OPA_HOME/inpdir/VALIDATION/SAT" 
+opa_prex "python sat_plotter.py  -i $I_OPA_HOME/inpdir/VALIDATION/SAT -o ${ONLINE_VALIDATION_DIR}   -d $OPA_RUNDATE " 
 
-opa_prex "python sat_plotter.py -o ${ONLINE_VALIDATION_DIR} -p $PREVIOUS_ARCH -v ${ONLINE_VALIDATION_DIR} -a $OPA_ARCDIR_ROOT -d $OPA_RUNDATE " 
+
 
 # step 4 -- generation of matchups, png and NetCDF
-#Matchup analysis
+#Matchup analysis on previous
 opa_prex "python float_extractor.py -st ${STARTTIME_a} -et ${END__TIME_a} -i $TMP_DIR_PREV -b $PROFILERDIRP  -o $IMG_DIR_PREV -m $MASKFILE"
-#Matchup forecasts
+opa_prex "cp $PROFILERDIRP/PROFILES/*nc $I_OPA_HOME/inpdir/VALIDATION/FLOAT/PROFILATORE/PROFILES" # updating inpdir
+opa_prex "cp $PROFILERDIRP/PUNTI/*dat   $I_OPA_HOME/inpdir/VALIDATION/FLOAT/PROFILATORE/PUNTI"
+#Matchup forecasts on previous
 opa_prex "python float_extractor.py -st ${STARTTIME_f} -et ${END__TIME_f} -i $TMP_DIR_PREV -b $PROFILERDIRP  -o $IMG_DIR_PREV -m $MASKFILE"
-# Matchup actual
+# Matchup analysis on actual
 opa_prex "python float_extractor.py -st ${STARTTIME_f} -et ${END__TIME_f} -i $TMP_DIR__ACT -b $PROFILERDIRA  -o $IMG_DIR__ACT -m $MASKFILE"
+opa_prex "cp $PROFILERDIRA/PROFILES/*nc $I_OPA_HOME/inpdir/VALIDATION/FLOAT/PROFILATORE/PROFILES" # updating inpdir
+opa_prex "cp $PROFILERDIRA/PUNTI/*dat   $I_OPA_HOME/inpdir/VALIDATION/FLOAT/PROFILATORE/PUNTI"
+
 
 opa_prex "tar -cf  ${ONLINE_VALIDATION_DIR}/matchup_outputs/analysis_forecast.tar ${IMG_DIR_PREV}/* "
 opa_prex "tar -cf  ${ONLINE_VALIDATION_DIR}/matchup_outputs/only_analysis.tar     ${IMG_DIR__ACT}/* "
+
 
 opa_prex " python profileplotter_3.py -p $IMG_DIR_PREV -a $IMG_DIR__ACT -o  ${ONLINE_VALIDATION_DIR}/matchup_outputs  -f  ${ONLINE_VALIDATION_DIR}/BioFloats_Descriptor.xml "
 
@@ -177,16 +155,12 @@ done
 #NRT_biofloat_out_name=${ONLINE_VALIDATION_DIR}/ANALYSIS_PROFILES_1week/NRT_validation_${OPA_RUNDATE}_on_week_floats.${STARTTIME_s}.nc
 NRT_biofloat_out_name=${ONLINE_VALIDATION_DIR}/ANALYSIS_PROFILES_1week/BioFloat_Weekly_validation_${STARTTIME_s}.nc
 opa_prex "python biofloats_ms.py -d $STARTTIME_s -m $MASKFILE -b ${ONLINE_VALIDATION_DIR}/ANALYSIS_PROFILES_1week/PROFILATORE -o ${NRT_biofloat_out_name} "
+opa_prex "cp ${NRT_biofloat_out_name} $I_OPA_HOME/inpdir/VALIDATION/FLOAT/WEEKLY " # updating inpdir 
 
-OLD_ARCHIVE=Archive_biofloats_ms_validation_V2.tar
-PREVIOUS_ARCH=${ONLINE_VALIDATION_DIR}/V2C_biofloats
-opa_mkdir $PREVIOUS_ARCH
 opa_mkdir ${ONLINE_VALIDATION_DIR}/biofloat_ms
+ 
 
-opa_stage_in "${ONLINE_VALIDATION_DIR}" "${OPA_ETCDIR}/static-data/POSTPROC/${OLD_ARCHIVE}"
-opa_prex "tar -xf ${ONLINE_VALIDATION_DIR}/${OLD_ARCHIVE} -C  ${PREVIOUS_ARCH}"
-
-opa_prex "python biofloats_ms_plotter.py  -o ${ONLINE_VALIDATION_DIR}/biofloat_ms -p $PREVIOUS_ARCH -v ${ONLINE_VALIDATION_DIR_INPUT}/ANALYSIS_PROFILES_1week/ -a $ARCHIVE_DIR -d $OPA_RUNDATE"
+opa_prex "python biofloats_ms_plotter.py  -o ${ONLINE_VALIDATION_DIR}/biofloat_ms  -a $I_OPA_HOME/inpdir/VALIDATION/FLOAT/WEEKLY -d $OPA_RUNDATE"
 opa_prex "cp ${ONLINE_VALIDATION_DIR}/biofloat_ms/*png $ONLINE_VALIDATION_DIR/MEDEAF_PUB/Weekly_Float_validation"
 ####################################################
 
@@ -200,60 +174,4 @@ fi #if $OPA_DA_ENABLE
 opa_log 0 "postprocess_C3 done [$(opa_exitcode $ec)]"
 
 opa_exit "$errors"
-
-######### biofloats matchups validation #######
-
-mkdir -p ${ONLINE_VALIDATION_DIR}/ANALYSIS_over_2_weeks/TMP  ${ONLINE_VALIDATION_DIR}/ANALYSIS_over_2_weeks/PROFILATORE/PROFILES
-for I in `ls ${TMP_DIR_PREV}/*nc ` ; do
-  ln -fs $I ${ONLINE_VALIDATION_DIR}/ANALYSIS_over_2_weeks/TMP
-done
-for I in `ls ${TMP_DIR__ACT}/*nc ` ; do
-  ln -fs $I ${ONLINE_VALIDATION_DIR}/ANALYSIS_over_2_weeks/TMP
-done
-
-for I in `ls ${ONLINE_VALIDATION_DIR}/PREVIOUS/PROFILATORE/PROFILES/*nc ` ; do
-  ln -fs $I ${ONLINE_VALIDATION_DIR}/ANALYSIS_over_2_weeks/PROFILATORE/PROFILES
-done
-for I in `ls ${ONLINE_VALIDATION_DIR}/ACTUAL/PROFILATORE/PROFILES/*nc  ` ; do
-  ln -fs $I ${ONLINE_VALIDATION_DIR}/ANALYSIS_over_2_weeks/PROFILATORE/PROFILES
-done
-
-
-OLD_ARCHIVE=Archive_biofloats_ms_validation_V4.tar
-mkdir -p ${ONLINE_VALIDATION_DIR}/biofloat_ms/V4
-cp ${OPA_ETCDIR}/static-data/POSTPROC/${OLD_ARCHIVE} ${ONLINE_VALIDATION_DIR}/biofloat_ms
-tar -xf ${ONLINE_VALIDATION_DIR}/biofloat_ms/${OLD_ARCHIVE} -C  ${ONLINE_VALIDATION_DIR}/biofloat_ms/V4
-PREVIOUS_ARCH=${ONLINE_VALIDATION_DIR}/biofloat_ms/V4
-
-opa_prex_or_die "python biofloats_ms_plotter.py  -o ${ONLINE_VALIDATION_DIR}/biofloat_ms -p $PREVIOUS_ARCH -v ${ONLINE_VALIDATION_DIR} -a $OPA_ARCDIR_ROOT -d $OPA_RUNDATE "
-#fi 
-
-#### MAP GENERATION #####
-
-MAPS_DIR=$OPA_WRKDIR/POSTPROC/AVE_FREQ_1/MAP_GEN
-mkdir -p $MAPSDIR $MAPS_DIR/MAP_ORIG $MAPS_DIR/MAP_COMPRESSED
-opa_stage_in "$MAPS_DIR" "${OPA_ETCDIR}/static-data/POSTPROC/fonts/TitilliumWeb-Regular.ttf" || {
-  opa_die 7 "stage-in failed for font file"
-}
-
-cd $MAPS_DIR
-BACKGROUND=${OPA_ETCDIR}/static-data/POSTPROC/background_medeaf.png
-
-opa_prex "$OPA_BITSEA/build_layer_maps.py -b $BACKGROUND -o $MAPS_DIR/MAP_ORIG -m $MASKFILE -i $OPA_WRKDIR/POSTPROC/AVE_FREQ_1/TMP -p $OPA_BITSEA/postproc/Plotlist_bio.xml "
-opa_prex "$OPA_BITSEA/build_layer_maps.py -b $BACKGROUND -o $MAPS_DIR/MAP_ORIG -m $MASKFILE -i $OPA_WRKDIR/MODEL/FORCINGS -g T*nc  -p $OPA_BITSEA/postproc/Plotlist_phys.xml "
-
-opa_prex "cd $MAPS_DIR/MAP_ORIG"
-opa_prex "$OPA_BINDIR/pngquant *.png "
-opa_prex "mv *fs8.png $MAPS_DIR/MAP_COMPRESSED"
-opa_prex "cd $MAPS_DIR/MAP_COMPRESSED"
-opa_prex "rename 0-fs8.png 0.png *.png"
-
-
-#####################################
-
-opa_log 0 "postprocess_C3 done [$(opa_exitcode $ec)]"
-
-opa_exit "$errors"
-
-
 
