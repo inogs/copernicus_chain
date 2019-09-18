@@ -47,7 +47,7 @@ pip install mpi4py
 pip install python-dateutil
 pip install scipy
 pip install seawater
-pip install matplotlib
-pip install git+https://github.com/matplotlib/basemap.git
+pip install matplotlibpip install git+https://github.com/matplotlib/basemap.git
+pip install latexcodec
 #installare Pillow per concludere la configurazione di venv1
 
