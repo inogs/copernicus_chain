@@ -137,7 +137,7 @@
    ctrcnm(28)="Z3c"
    ctrcun(28)="mg C/m3"
    ctrmax(28)=1.800000e+01 
-   ctr_hf(28)=0 
+   ctr_hf(28)=1 
 
    ctrcnm(29)="Z3n"
    ctrcun(29)="mmol N/m3"
@@ -167,7 +167,7 @@
    ctrcnm(34)="Z5c"
    ctrcun(34)="mg C/m3"
    ctrmax(34)=8.000000e+01 
-   ctr_hf(34)=0 
+   ctr_hf(34)=1 
 
    ctrcnm(35)="Z5n"
    ctrcun(35)="mmol N/m3"
@@ -182,7 +182,7 @@
    ctrcnm(37)="Z6c"
    ctrcun(37)="mg C/m3"
    ctrmax(37)=1.000000e+02 
-   ctr_hf(37)=0 
+   ctr_hf(37)=1 
 
    ctrcnm(38)="Z6n"
    ctrcun(38)="mmol N/m3"
@@ -217,12 +217,12 @@
    ctrcnm(44)="R3c"
    ctrcun(44)="mg C/m3"
    ctrmax(44)=1.000000e+05 
-   ctr_hf(44)=1 
+   ctr_hf(44)=0 
 
    ctrcnm(45)="R6c"
    ctrcun(45)="mg C/m3"
    ctrmax(45)=2.000000e+02 
-   ctr_hf(45)=0 
+   ctr_hf(45)=1 
 
    ctrcnm(46)="R6n"
    ctrcun(46)="mmol N/m3"
