@@ -93,6 +93,7 @@ fi
 
 if $I_OPA_BACKUP; then
   backup_deltatime="07:00:00"
+  OPA_CHECK_HOURS_OFFSET=3   #unchanged if nominal - default=6 (in opa_profile)
 else
   backup_deltatime="00:00:00"
 fi
@@ -102,8 +103,8 @@ opa_start=$( time_sum $opa_start $backup_deltatime f )
 
 opa_chain_start_hour_crontab_tz=$($OPA_BINDIR/date        --date="$OPA_TODAY $opa_start UTC" +"%M %H")
 
-opa_chain_check_hour_crontab_utc=$($OPA_BINDIR/date --utc --date="$OPA_TODAY $OPA_START_HOUR_UTC UTC ${OPA_CHECK_HOURS_OFFSET} hours" +"%M %H")
-opa_chain_check_hour_crontab_tz=$($OPA_BINDIR/date        --date="$OPA_TODAY $OPA_START_HOUR_UTC UTC ${OPA_CHECK_HOURS_OFFSET} hours" +"%M %H")
+opa_chain_check_hour_crontab_utc=$($OPA_BINDIR/date --utc --date="$OPA_TODAY $opa_start UTC ${OPA_CHECK_HOURS_OFFSET} hours" +"%M %H")
+opa_chain_check_hour_crontab_tz=$($OPA_BINDIR/date        --date="$OPA_TODAY $opa_start UTC ${OPA_CHECK_HOURS_OFFSET} hours" +"%M %H")
 
 #20 minutes delay (10 mins + 10 mins)
 opa_download=$( time_sum $OPA_DOWNLOAD_HOUR_UTC $cron_deltatime f )
