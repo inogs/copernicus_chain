@@ -92,7 +92,7 @@ else
 fi
 
 if $I_OPA_BACKUP; then
-  backup_deltatime="02:30:00"
+  backup_deltatime="05:00:00"
 else
   backup_deltatime="00:00:00"
 fi
