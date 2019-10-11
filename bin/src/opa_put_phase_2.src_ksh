@@ -201,16 +201,17 @@ for file in `ls ${PROD_DIR}/${FILES_TO_SEND}` ; do
 #Write transfer info to XML file
 	FINAL_STR="<file FileName=\"${remotefile}\" StartUploadTime=\"${StarTime}\"  StopUploadTime=\"${EndTime}\" Checksum=\"${md5s}\"  FinalStatus=\"${status}\"${close}>"
 	echo "             $FINAL_STR" >> $DNT_FILE
-	if [[ $status == Delivered ]] && [[ ${to_remove_file} != "None" ]] ; then 
-	    echo "             $DELETE_STR"  >> $DNT_FILE
-	fi
-	
+
 	if [[ ${NumberOfAttempts} -ne 1 ]]; then
 	    close=""
 	    RESEND_STR="<resendAttempt DueToErrorCode=\"${lastErrCod}\" DueToErrorMsg=\"${lastError}\" NumberOfAttempts=\"${NumberOfAttempts}\"/>"
 	    echo "                         $RESEND_STR" >> $DNT_FILE
 	    echo "                </file>" >> $DNT_FILE
 	fi
+        if [[ $status == Delivered ]] && [[ ${to_remove_file} != "None" ]] ; then
+            echo "             $DELETE_STR"  >> $DNT_FILE
+        fi
+
 done
 
 #XML file delivery
