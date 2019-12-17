@@ -32,7 +32,7 @@ case "$OPA_VERSION" in
     ;;
 esac
 
-OPA_PROD_VERSION_NUMBER=4C					# Production version
+OPA_PROD_VERSION_NUMBER=6C					# Production version
 
 OPA_FTPSERVER_SUBDIR="v${OPA_TRUE_VERSION_NUMBER}-med-ogs-forecast"    #MEDSEA_FORECAST_BIO_006_002/myov0${OPA_TRUE_VERSION_NUMBER}-med-ogs-bio-fc
 OPA_PRO_FILE_FMT="%8s_dm-OGS---opatm_bfm4-MED-b%8s_fc-fv0${OPA_TRUE_VERSION_NUMBER}.00.nc"	# format specification for the pro file
