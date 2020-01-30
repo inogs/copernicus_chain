@@ -518,11 +518,18 @@ function opa_cp {
 }
     
 function opa_set_run {
-  # Set $OPA_RUNDATE and the variables whose value depends on $OPA_RUNDATE
-  # Without arguments, OPA_RUNDATE is $OPA_DEFAULT_RUNDATE
-  # With 1 argument, this is the value for OPA_RUNDATE
-  if [[ "$1" != '' ]] ; then
-    OPA_RUNDATE="$1"
+  # Arguments:
+  # - RUNTYPE     : 'analysis' or 'forecast', mandatory
+  # - OPA_RUNDATE : e.g. 20190102,            optional, in case of default (with 1 argument)
+  #                 OPA_RUNDATE is $OPA_DEFAULT_RUNDATE
+  #
+  # Sets $OPA_RUNDATE and the variables whose value depends on $OPA_RUNDATE
+
+
+  RUNTYPE=$1
+
+  if [[ "$2" != '' ]] ; then
+    OPA_RUNDATE="$2"
   else
     OPA_RUNDATE="$OPA_DEFAULT_RUNDATE"
   fi
@@ -540,56 +547,34 @@ function opa_set_run {
 
   typeset _opa_restart_weekday
   OPA_RESTART_ARCHIVE_OFFSETS=" 0 "	# restart for +7d chain
-  case "$OPA_WEEKDAY" in
-    2)
-      # Tuesday
-      #_opa_restart_weekday=$OPA_WEEKDAY
-      _opa_restart_weekday=5
-      OPA_RESTART_ARCHIVE_OFFSETS="${OPA_RESTART_ARCHIVE_OFFSETS}-4 "
-      #OPA_DISABLE_POST_PHASES=" ${OPA_DISABLE_POST_PHASES} C2 "
-      OPA_NEXT_RUNDATE_OFFSET=3
-      OPA_PREV_RUNDATE_OFFSET=4
-      ;;
-    5)
-      # Friday
-      #_opa_restart_weekday=$OPA_WEEKDAY
-      _opa_restart_weekday=2
-      OPA_RESTART_ARCHIVE_OFFSETS="${OPA_RESTART_ARCHIVE_OFFSETS}-3 "
-      OPA_DISABLE_POST_PHASES=" ${OPA_DISABLE_POST_PHASES} C2 "
-      OPA_NEXT_RUNDATE_OFFSET=4
-      OPA_PREV_RUNDATE_OFFSET=3
-      OPA_DA_ENABLE=false # Data Assimilation is disabled on Friday!
-      ;;
-    *)
-      echo "ERR: unsupported weekday [${OPA_WEEKDAY}]" 1>&2
-      exit 1
-      ;;
-  esac
-  case "$OPA_TRUE_VERSION_NUMBER" in
-    1)
-      case "$OPA_WEEKDAY" in
-        2)
-          # Tuesday
-          #OPA_TRANSFER_IMAGES=true
-          :
-          ;;
-        5)
-          # Friday
-          OPA_TRANSFER_IMAGES=false
-          ;;
-      esac
-      OPA_DA_ENABLE=false
-      ;;
-    4|2C|3C|4C|5C)
-      OPA_TRANSFER_IMAGES=false
-      ;;
-    *)
-      echo "ERR: unsupported version [${I_OPA_VERSION_NUMBER}]" 1>&2
-      exit 1
-      ;;
-  esac
-  #echo "OPA_TRUE_VERSION_NUMBER=$OPA_TRUE_VERSION_NUMBER"
-  #echo "OPA_DA_ENABLE=$OPA_DA_ENABLE"
+
+	case $RUNTYPE in
+	   'analysis')
+	           case "$OPA_WEEKDAY" in
+	                   2) # Tuesday
+	                      _opa_restart_weekday=1  # Every run starts on Monday
+	                      # OPA_RESTART_ARCHIVE_OFFSETS="${OPA_RESTART_ARCHIVE_OFFSETS}-4 "
+	                      OPA_NEXT_RUNDATE_OFFSET=7
+	                      OPA_PREV_RUNDATE_OFFSET=7
+	                      ;;
+	               *)
+	                 echo "ERR: unsupported weekday [${OPA_WEEKDAY}]" 1>&2
+	                 exit 1
+	                 ;;
+	      esac
+	      ;;
+
+	   'forecast')
+	         _opa_restart_weekday=$($OPA_BINDIR/date --utc --date="$OPA_RUNDATE -1 days" +"%w")
+	         ;;
+	    *)
+	      echo "ERR: unsupported runtype [${RUNTYPE}]" 1>&2
+	      exit 1
+	      ;;
+	  esac
+
+
+
   opa_input_files__setup
   OPA_RESTART_WEEKDAY="${RT_OPA_RESTART_WEEKDAY:-$_opa_restart_weekday}"
   _opa_get_default_run --weekday "$OPA_RESTART_WEEKDAY" --today "$OPA_RUNDATE" --submit-day-offset 1
