@@ -85,257 +85,33 @@ function opa_set_da_start_date {
 }
   
 function opa_input_files__setup  {
-  typeset _opa_version_number="$I_OPA_VERSION_NUMBER"
-  case "$_opa_version_number" in
-    0)
-      OPA_OPAOPER_A_PREFIX=''
-      OPA_OPAOPER_S_PREFIX=''
-      OPA_OPAOPER_F_PREFIX=''
-      OPA_OPAOPER_A_DATE_FORMAT='%y%m%d'
-      OPA_OPAOPER_S_DATE_FORMAT='%y%m%d'
-      OPA_OPAOPER_F_DATE_FORMAT='%y%m%d'
-      OPA_OPAOPER_A_DAY_OFFSET_START=$(( 0 - $OPA_ANALYSES_DAYS ))
-      OPA_OPAOPER_A_DAY_OFFSET_END=-1
-      OPA_OPAOPER_S_DAY_OFFSET_START=0
-      OPA_OPAOPER_S_DAY_OFFSET_END=-1
-      OPA_OPAOPER_F_DAY_OFFSET_START=0
-      OPA_OPAOPER_F_DAY_OFFSET_END=0
-      OPA_OPAOPER_A_RDIR="analyses"
-      OPA_OPAOPER_S_RDIR="undefined"
-      OPA_OPAOPER_F_RDIR="forecast"
-      ;;
-    1|2)
-      OPA_OPAOPER_A_PREFIX='AN_'
-      OPA_OPAOPER_S_PREFIX='SM_'
-      OPA_OPAOPER_F_PREFIX='FC_'
+
+      OPA_OPAOPER_F_PREFIX="mfs_eas5"
       OPA_OPAOPER_A_DATE_FORMAT='%Y%m%d'
       OPA_OPAOPER_S_DATE_FORMAT='%Y%m%d'
       OPA_OPAOPER_F_DATE_FORMAT='%Y%m%d'
       case "$OPA_WEEKDAY" in
         2)
-          # TUESDAY (wednesday's run)
-          OPA_OPAOPER_A_DAY_OFFSET_START=$(( 0 - $OPA_ANALYSES_DAYS ))
-          OPA_OPAOPER_A_DAY_OFFSET_END=-1
-          OPA_OPAOPER_S_DAY_OFFSET_START=0
+          # TUESDAY
+          OPA_OPAOPER_A_DAY_OFFSET_START=$(( -2 - $OPA_ANALYSES_DAYS ))
+          OPA_OPAOPER_A_DAY_OFFSET_END=-2
+          OPA_OPAOPER_S_DAY_OFFSET_START=-1
           OPA_OPAOPER_S_DAY_OFFSET_END=-1
-          ;;
-        5)
-          # TUESDAY (saturday's run)
-          OPA_OPAOPER_A_DAY_OFFSET_START=$(( 0 - $OPA_ANALYSES_DAYS ))
-          OPA_OPAOPER_A_DAY_OFFSET_END=-4 #monday
-          OPA_OPAOPER_S_DAY_OFFSET_START=-3 #tuesday
-          OPA_OPAOPER_S_DAY_OFFSET_END=-1
+          OPA_OPAOPER_A_RDIR="/private/copernicus/mfs_eas5/o"
+          OPA_OPAOPER_A_PREFIX="mfs_eas5"
+          OPA_OPAOPER_S_PREFIX="mfs_eas5"
+          OPA_DATEDIR="${OPA_RUNDATE}"
           ;;
         *)
           opa_die 10 "Unsupported weekday '${OPA_WEEKDAY}'" 
           ;;
       esac
       OPA_OPAOPER_F_DAY_OFFSET_START=0
-#     OPA_OPAOPER_F_DAY_OFFSET_END=$(( $OPA_FORECAST_DAYS - 1 ))
-#     Changes with V3C
       OPA_OPAOPER_F_DAY_OFFSET_END=$(( $OPA_FORECAST_DAYS ))
-      OPA_OPAOPER_A_RDIR="mfs_sys4b2/output"
-      OPA_OPAOPER_S_RDIR="mfs_sys4b2/output"
-      OPA_OPAOPER_F_RDIR="mfs_sys4b2/output"
-      if [[ "$_opa_version_number" == "2" ]] ; then
-         OPA_DA_SAT_RDIR='.'
-      fi
-      ;;
-    3|3.1|4)
-      OPA_OPAOPER_F_PREFIX="mfs_sys4e"
-      OPA_OPAOPER_A_DATE_FORMAT='%Y%m%d'
-      OPA_OPAOPER_S_DATE_FORMAT='%Y%m%d'
-      OPA_OPAOPER_F_DATE_FORMAT='%Y%m%d'
-      case "$OPA_WEEKDAY" in
-        2)
-          # TUESDAY (wednesday's run)
-          OPA_OPAOPER_A_DAY_OFFSET_START=$(( 0 - $OPA_ANALYSES_DAYS ))
-          OPA_OPAOPER_A_DAY_OFFSET_END=-1
-          OPA_OPAOPER_S_DAY_OFFSET_START=0
-          OPA_OPAOPER_S_DAY_OFFSET_END=0
-          OPA_OPAOPER_A_RDIR="mfs_sys4e_output"
-          OPA_OPAOPER_A_PREFIX="mfs_sys4e"
-          OPA_OPAOPER_S_PREFIX="mfs_sys4e"
-          OPA_DATEDIR="${OPA_RUNDATE}"
-          ;;
-        5)
-          # FRIDAY (saturday's run)
-          OPA_OPAOPER_A_DAY_OFFSET_START=$(( 0 - $OPA_ANALYSES_DAYS ))
-          OPA_OPAOPER_A_DAY_OFFSET_END=-4 #monday
-          OPA_OPAOPER_S_DAY_OFFSET_START=-3 #tuesday
-          OPA_OPAOPER_S_DAY_OFFSET_END=0
-          set_spec_data -date ${OPA_RUNDATE} -days "${OPA_OPAOPER_S_DAY_OFFSET_START}"
-          OPA_OPAOPER_A_RDIR="mfs_sys4e_output"
-          OPA_OPAOPER_A_PREFIX="mfs_sys4e"
-          OPA_OPAOPER_S_PREFIX="mfs_sys4e"
-          OPA_DATEDIR="${LAST_RUNDATE}"
-          ;;
-        *)
-          opa_die 10 "Unsupported weekday '${OPA_WEEKDAY}'" 
-          ;;
-      esac
-      OPA_OPAOPER_F_DAY_OFFSET_START=1
-      OPA_OPAOPER_F_DAY_OFFSET_END=$(( $OPA_FORECAST_DAYS - 1 ))
-      OPA_OPAOPER_S_RDIR="mfs_sys4e_output"
-      OPA_OPAOPER_F_RDIR="mfs_sys4e_output"
-      OPA_DA_SAT_RDIR="Intermediate/OCEANCOLOUR_MED_CHL_L4_NRT_OBSERVATIONS_009_060/dataset-oc-med-chl-modis_a-l4-chl_7km_daily-rt-v02"
-      ;;
-    2C)
-      OPA_OPAOPER_F_PREFIX="mfs_efs1"
-      OPA_OPAOPER_A_DATE_FORMAT='%Y%m%d'
-      OPA_OPAOPER_S_DATE_FORMAT='%Y%m%d'
-      OPA_OPAOPER_F_DATE_FORMAT='%Y%m%d'
-      case "$OPA_WEEKDAY" in
-        2)
-          # TUESDAY (wednesday's run)
-          OPA_OPAOPER_A_DAY_OFFSET_START=$(( 0 - $OPA_ANALYSES_DAYS ))
-          OPA_OPAOPER_A_DAY_OFFSET_END=-1
-          OPA_OPAOPER_S_DAY_OFFSET_START=0
-          OPA_OPAOPER_S_DAY_OFFSET_END=0
-          OPA_OPAOPER_A_RDIR="mfs_eas1_output"
-          OPA_OPAOPER_A_PREFIX="mfs_eas1"
-          OPA_OPAOPER_S_PREFIX="mfs_efs1"
-          OPA_DATEDIR="${OPA_RUNDATE}"
-          ;;
-        5)
-          # FRIDAY (saturday's run)
-          OPA_OPAOPER_A_DAY_OFFSET_START=$(( 0 - $OPA_ANALYSES_DAYS ))
-          OPA_OPAOPER_A_DAY_OFFSET_END=-4 #monday
-          OPA_OPAOPER_S_DAY_OFFSET_START=-3 #tuesday
-          OPA_OPAOPER_S_DAY_OFFSET_END=0
-          set_spec_data -date ${OPA_RUNDATE} -days "${OPA_OPAOPER_S_DAY_OFFSET_START}"
-          OPA_OPAOPER_A_RDIR="mfs_eas1_output"
-          OPA_OPAOPER_A_PREFIX="mfs_eas1"
-          OPA_OPAOPER_S_PREFIX="mfs_efs1"
-          OPA_DATEDIR="${LAST_RUNDATE}"
-          ;;
-        *)
-          opa_die 10 "Unsupported weekday '${OPA_WEEKDAY}'"
-      esac
-      OPA_OPAOPER_F_DAY_OFFSET_START=1
-      OPA_OPAOPER_F_DAY_OFFSET_END=$(( $OPA_FORECAST_DAYS - 1 ))
-      OPA_OPAOPER_S_RDIR="mfs_eas1_output"
-      OPA_OPAOPER_F_RDIR="mfs_eas1_output"
-      OPA_DA_SAT_RDIR="Intermediate/OCEANCOLOUR_MED_CHL_L4_NRT_OBSERVATIONS_009_060/dataset-oc-med-chl-modis_a-l4-chl_7km_daily-rt-v02"
-      ;; 
-    3C)
-      OPA_OPAOPER_F_PREFIX="mfs_efs2"
-      OPA_OPAOPER_A_DATE_FORMAT='%Y%m%d'
-      OPA_OPAOPER_S_DATE_FORMAT='%Y%m%d'
-      OPA_OPAOPER_F_DATE_FORMAT='%Y%m%d'
-      case "$OPA_WEEKDAY" in
-        2)
-          # TUESDAY (wednesday's run)
-          OPA_OPAOPER_A_DAY_OFFSET_START=$(( 0 - $OPA_ANALYSES_DAYS ))
-          OPA_OPAOPER_A_DAY_OFFSET_END=-1
-          OPA_OPAOPER_S_DAY_OFFSET_START=0
-          OPA_OPAOPER_S_DAY_OFFSET_END=0
-          OPA_OPAOPER_A_RDIR="mfs_eas2_output"
-          OPA_OPAOPER_A_PREFIX="mfs_eas2"
-          OPA_OPAOPER_S_PREFIX="mfs_efs2"
-          OPA_DATEDIR="${OPA_RUNDATE}"
-          ;;
-        5)
-          # FRIDAY (saturday's run)
-          OPA_OPAOPER_A_DAY_OFFSET_START=$(( 0 - $OPA_ANALYSES_DAYS ))
-          OPA_OPAOPER_A_DAY_OFFSET_END=-4 #monday
-          OPA_OPAOPER_S_DAY_OFFSET_START=-3 #tuesday
-          OPA_OPAOPER_S_DAY_OFFSET_END=0
-          set_spec_data -date ${OPA_RUNDATE} -days "${OPA_OPAOPER_S_DAY_OFFSET_START}"
-          OPA_OPAOPER_A_RDIR="mfs_eas2_output"
-          OPA_OPAOPER_A_PREFIX="mfs_eas2"
-          OPA_OPAOPER_S_PREFIX="mfs_efs2"
-          OPA_DATEDIR="${LAST_RUNDATE}"
-          ;;
-      esac
-      OPA_OPAOPER_F_DAY_OFFSET_START=1
-      OPA_OPAOPER_F_DAY_OFFSET_END=$(( $OPA_FORECAST_DAYS ))
-      OPA_OPAOPER_S_RDIR="mfs_eas3_output"
-      OPA_OPAOPER_F_RDIR="mfs_eas3_output"
-      OPA_DA_SAT_RDIR="Intermediate/OCEANCOLOUR_MED_CHL_L4_NRT_OBSERVATIONS_009_060/dataset-oc-med-chl-modis_a-l4-chl_7km_daily-rt-v02"
-      ;;
-    4C)
-      OPA_OPAOPER_F_PREFIX="mfs_eas3"
-      OPA_OPAOPER_A_DATE_FORMAT='%Y%m%d'
-      OPA_OPAOPER_S_DATE_FORMAT='%Y%m%d'
-      OPA_OPAOPER_F_DATE_FORMAT='%Y%m%d'
-      case "$OPA_WEEKDAY" in
-        2)
-          # TUESDAY (wednesday's run)
-          OPA_OPAOPER_A_DAY_OFFSET_START=$(( 0 - $OPA_ANALYSES_DAYS ))
-          OPA_OPAOPER_A_DAY_OFFSET_END=-1
-          OPA_OPAOPER_S_DAY_OFFSET_START=0
-          OPA_OPAOPER_S_DAY_OFFSET_END=0
-          OPA_OPAOPER_A_RDIR="mfs_eas3_output"
-          OPA_OPAOPER_A_PREFIX="mfs_eas3"
-          OPA_OPAOPER_S_PREFIX="mfs_eas3"
-          OPA_DATEDIR="${OPA_RUNDATE}"
-          ;;
-        5)
-          # FRIDAY (saturday's run)
-          OPA_OPAOPER_A_DAY_OFFSET_START=$(( 0 - $OPA_ANALYSES_DAYS ))
-          OPA_OPAOPER_A_DAY_OFFSET_END=-4 #monday
-          OPA_OPAOPER_S_DAY_OFFSET_START=-3 #tuesday
-          OPA_OPAOPER_S_DAY_OFFSET_END=0
-          set_spec_data -date ${OPA_RUNDATE} -days "${OPA_OPAOPER_S_DAY_OFFSET_START}"
-          OPA_OPAOPER_A_RDIR="mfs_eas3_output"
-          OPA_OPAOPER_A_PREFIX="mfs_eas3"
-          OPA_OPAOPER_S_PREFIX="mfs_eas3"
-          OPA_DATEDIR="${LAST_RUNDATE}"
-          ;;
-        *)
-          opa_die 10 "Unsupported weekday '${OPA_WEEKDAY}'" 
-          ;;
-      esac
-      OPA_OPAOPER_F_DAY_OFFSET_START=1
-      OPA_OPAOPER_F_DAY_OFFSET_END=$(( $OPA_FORECAST_DAYS ))
-      OPA_OPAOPER_S_RDIR="mfs_eas3_output"
-      OPA_OPAOPER_F_RDIR="mfs_eas3_output"
-      OPA_DA_SAT_RDIR="Intermediate/OCEANCOLOUR_MED_CHL_L4_NRT_OBSERVATIONS_009_060/dataset-oc-med-chl-modis_a-l4-chl_7km_daily-rt-v02"
-      ;;
-    5C)
-      OPA_OPAOPER_F_PREFIX="mfs_eas4"
-      OPA_OPAOPER_A_DATE_FORMAT='%Y%m%d'
-      OPA_OPAOPER_S_DATE_FORMAT='%Y%m%d'
-      OPA_OPAOPER_F_DATE_FORMAT='%Y%m%d'
-      case "$OPA_WEEKDAY" in
-        2)
-          # TUESDAY (wednesday's run)
-          OPA_OPAOPER_A_DAY_OFFSET_START=$(( 0 - $OPA_ANALYSES_DAYS ))
-          OPA_OPAOPER_A_DAY_OFFSET_END=-1
-          OPA_OPAOPER_S_DAY_OFFSET_START=0
-          OPA_OPAOPER_S_DAY_OFFSET_END=0
-          OPA_OPAOPER_A_RDIR="/private/copernicus/mfs_eas4/o"
-          OPA_OPAOPER_A_PREFIX="mfs_eas4"
-          OPA_OPAOPER_S_PREFIX="mfs_eas4"
-          OPA_DATEDIR="${OPA_RUNDATE}"
-          ;;
-        5)
-          # FRIDAY (saturday's run)
-          OPA_OPAOPER_A_DAY_OFFSET_START=$(( 0 - $OPA_ANALYSES_DAYS ))
-          OPA_OPAOPER_A_DAY_OFFSET_END=-4 #monday
-          OPA_OPAOPER_S_DAY_OFFSET_START=-3 #tuesday
-          OPA_OPAOPER_S_DAY_OFFSET_END=0
-          set_spec_data -date ${OPA_RUNDATE} -days "${OPA_OPAOPER_S_DAY_OFFSET_START}"
-          OPA_OPAOPER_A_RDIR="/private/copernicus/mfs_eas4/o"
-          OPA_OPAOPER_A_PREFIX="mfs_eas4"
-          OPA_OPAOPER_S_PREFIX="mfs_eas4"
-          OPA_DATEDIR="${LAST_RUNDATE}"
-          ;;
-        *)
-          opa_die 10 "Unsupported weekday '${OPA_WEEKDAY}'" 
-          ;;
-      esac
-      OPA_OPAOPER_F_DAY_OFFSET_START=1
-      OPA_OPAOPER_F_DAY_OFFSET_END=$(( $OPA_FORECAST_DAYS ))
-      OPA_OPAOPER_S_RDIR="/private/copernicus/mfs_eas4/o"
-      OPA_OPAOPER_F_RDIR="/private/copernicus/mfs_eas4/o"
-      OPA_DA_SAT_RDIR="Intermediate/OCEANCOLOUR_MED_CHL_L4_NRT_OBSERVATIONS_009_060/dataset-oc-med-chl-modis_a-l4-chl_7km_daily-rt-v02"
-      ;;
-    *)
-      opa_die 10 "Unsupported version number '$_opa_version_number'"
-      ;;
-  esac
+      OPA_OPAOPER_S_RDIR="/private/copernicus/mfs_eas5/o"
+      OPA_OPAOPER_F_RDIR="/private/copernicus/mfs_eas5/o"
+
+
   
 
   # Actual values (==read from input) for previous variables
@@ -349,29 +125,7 @@ function opa_input_files__setup  {
   opa_set_da_start_date $( $OPA_BINDIR/date --utc --date="$OPA_RUNDATE 00:00:00 $(( 0 - $OPA_OPAOPER_A_DAY_OFFSET_START )) days ago" +'%Y%m%d' )
 
 
-  if false ; then
-    cat <<EOFCAT
-#### I_OPA_VERSION_NUMBER           = [${I_OPA_VERSION_NUMBER}]
-#### OPA_VERSION                    = [${OPA_VERSION}]
 
-#### OPA_OPAOPER_A_DAY_OFFSET_START = [${OPA_OPAOPER_A_DAY_OFFSET_START}]
-#### OPA_OPAOPER_A_DAY_OFFSET_END   = [${OPA_OPAOPER_A_DAY_OFFSET_END}]
-#### OPA_OPAOPER_A_DATE_FORMAT      = [${OPA_OPAOPER_A_DATE_FORMAT}]
-
-#### OPA_OPAOPER_S_DAY_OFFSET_START = [${OPA_OPAOPER_S_DAY_OFFSET_START}]
-#### OPA_OPAOPER_S_DAY_OFFSET_END   = [${OPA_OPAOPER_S_DAY_OFFSET_END}]
-#### OPA_OPAOPER_S_DATE_FORMAT      = [${OPA_OPAOPER_S_DATE_FORMAT}]
-
-#### OPA_OPAOPER_F_DAY_OFFSET_START = [${OPA_OPAOPER_F_DAY_OFFSET_START}]
-#### OPA_OPAOPER_F_DAY_OFFSET_END   = [${OPA_OPAOPER_F_DAY_OFFSET_END}]
-#### OPA_OPAOPER_F_DATE_FORMAT      = [${OPA_OPAOPER_F_DATE_FORMAT}]
-
-#### OPA_DA_START_DATE              = [${OPA_DA_START_DATE}]
-#### OPA_DA_SAT_START_DATE          = [${OPA_DA_SAT_START_DATE}]
-#### OPA_DA_SAT_END_DATE            = [${OPA_DA_SAT_END_DATE}]
-EOFCAT
-    read aaa
-  fi
 }
 
 
@@ -510,9 +264,7 @@ function _Iopa_set_input_files__opaoper_a_s_f {
           OPA_OPAOPER_A_INPUT_VARS[OPA_OPAOPER_A_INPUT_FILES_NUM]="$_v"
           OPA_OPAOPER_A_INPUT_FILES_INDICES="${OPA_OPAOPER_A_INPUT_FILES_INDICES}${OPA_OPAOPER_A_INPUT_FILES_NUM} "
           OPA_OPAOPER_A_INPUT_FILES_NUM=$(( $OPA_OPAOPER_A_INPUT_FILES_NUM + 1 ))
-          echo "@@@ [${0}] ::: [${_a_s_f}] $_opaoper_file_local"
-          #echo "@@@ [${0}] ::: OPA_OPAOPER_A_INPUT_FILES_INDICES=[${OPA_OPAOPER_A_INPUT_FILES_INDICES}]"
-          #echo "@@@ [${0}] ::: OPA_OPAOPER_A_INPUT_FILES_NUM=[${OPA_OPAOPER_A_INPUT_FILES_NUM}]"
+          [ ${_v} == "T" ] ;  then echo "@@@ [${0}] ::: [${_a_s_f}] $_opaoper_file_local" ; fi
           ;;
         f)
           OPA_OPAOPER_F_INPUT_RDIRS[OPA_OPAOPER_F_INPUT_FILES_NUM]="$OPA_OPAOPER_F_RDIR/$OPA_RUNDATE"
@@ -528,7 +280,7 @@ function _Iopa_set_input_files__opaoper_a_s_f {
           OPA_OPAOPER_F_INPUT_FILES_NUM=$(( $OPA_OPAOPER_F_INPUT_FILES_NUM + 1 ))
           _opaoper_file_local_next="${_prefix_local}${_date_local_next}_$_v.nc"
           _ln_next="${_ln_next}${_opaoper_file_local}|${_opaoper_file_local_next} "
-          echo "@@@ [${0}] ::: [${_a_s_f}] $_opaoper_file_local"
+          #echo "@@@ [${0}] ::: [${_a_s_f}] $_opaoper_file_local"
           #echo "@@@ [${0}] ::: OPA_OPAOPER_F_INPUT_FILES_INDICES=[${OPA_OPAOPER_F_INPUT_FILES_INDICES}]"
           #echo "@@@ [${0}] ::: OPA_OPAOPER_F_INPUT_FILES_NUM=[${OPA_OPAOPER_F_INPUT_FILES_NUM}]"
           ;;
@@ -572,7 +324,7 @@ function _Iopa_print_input_files__opaoper_a_f {
   typeset _file
   typeset -i _c=0
   for _file in $_list ; do
-    printf "%4d) %s\n" "$_c" "$_file"
+    printf "%4d) %s\n" "$_c" "$_file" | grep T
     _c=$(( $_c + 1 ))
   done
 }
