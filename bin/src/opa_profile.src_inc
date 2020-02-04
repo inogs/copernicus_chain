@@ -236,6 +236,7 @@ OPA_INPDIR=''								# set by opa_set_run to $OPA_INPDIR_ROOT/$OPA_RUNDATE
 
 
 OPA_RUNDATE=''					# Run date YYYYMMDD (set by opa_set_run)
+OPA_RUNTYPE=''
 typeset -i OPA_NEXT_RUNDATE_OFFSET=0		# Number of days to be added to $OPA_RUNDATE to get the next run
 typeset -i OPA_PREV_RUNDATE_OFFSET=0		# Number of days to be subtracted to $OPA_RUNDATE to get the prev run
 OPA_PRODDATE=''					# Production date YYYYMMDD (set by opa_set_run)
@@ -519,14 +520,14 @@ function opa_cp {
     
 function opa_set_run {
   # Arguments:
-  # - RUNTYPE     : 'analysis' or 'forecast', mandatory
+  # - OPA_RUNTYPE : 'analysis' or 'forecast', mandatory
   # - OPA_RUNDATE : e.g. 20190102,            optional, in case of default (with 1 argument)
   #                 OPA_RUNDATE is $OPA_DEFAULT_RUNDATE
   #
   # Sets $OPA_RUNDATE and the variables whose value depends on $OPA_RUNDATE
 
 
-  RUNTYPE=$1
+  OPA_RUNTYPE=$1
 
   if [[ "$2" != '' ]] ; then
     OPA_RUNDATE="$2"
@@ -548,7 +549,7 @@ function opa_set_run {
   typeset _opa_restart_weekday
   OPA_RESTART_ARCHIVE_OFFSETS=" 0 "	# restart for +7d chain
 
-	case $RUNTYPE in
+	case $OPA_RUNTYPE in
 	   'analysis')
 	           case "$OPA_WEEKDAY" in
 	                   2) # Tuesday
