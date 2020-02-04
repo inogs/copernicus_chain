@@ -79,9 +79,6 @@ function opa_set_da_start_date {
   OPA_DA_START_DATE="$_opa_da_start_date"
   OPA_DA_SAT_START_DATE=$( $OPA_BINDIR/date --date="$OPA_DA_START_DATE $(( ( $_opa_da_start_date_j - 1 ) % $OPA_DA_SAT_DAYS )) days ago" +"%Y%m%d" )
   OPA_DA_SAT_END_DATE=$( $OPA_BINDIR/date --date="$OPA_DA_SAT_START_DATE $(( $OPA_DA_SAT_DAYS - 1 )) days" +"%Y%m%d" )
-  #echo "---> $_opa_da_start_date"
-  #echo "$OPA_DA_START_DATE ; $OPA_DA_SAT_START_DATE ; $OPA_DA_SAT_END_DATE"
-  #read a
 }
   
 function opa_input_files__setup  {
@@ -90,6 +87,7 @@ function opa_input_files__setup  {
       OPA_OPAOPER_A_DATE_FORMAT='%Y%m%d'
       OPA_OPAOPER_S_DATE_FORMAT='%Y%m%d'
       OPA_OPAOPER_F_DATE_FORMAT='%Y%m%d'
+      if [[ $OPA_RUNTYPE == 'analysis' ]]; then
       case "$OPA_WEEKDAY" in
         2)
           # TUESDAY
@@ -101,30 +99,26 @@ function opa_input_files__setup  {
           OPA_OPAOPER_A_PREFIX="mfs_eas5"
           OPA_OPAOPER_S_PREFIX="mfs_eas5"
           OPA_DATEDIR="${OPA_RUNDATE}"
+          # maybe last 3 can be removed
+          OPA_OPAOPER_A_DAY_OFFSET_START__ACTUAL="$OPA_OPAOPER_A_DAY_OFFSET_START"
+          OPA_OPAOPER_A_DAY_OFFSET_END__ACTUAL="$OPA_OPAOPER_A_DAY_OFFSET_END"
+          opa_set_da_start_date $( $OPA_BINDIR/date --utc --date="$OPA_RUNDATE 00:00:00 $(( 0 - $OPA_OPAOPER_A_DAY_OFFSET_START )) days ago" +'%Y%m%d' )
           ;;
         *)
           opa_die 10 "Unsupported weekday '${OPA_WEEKDAY}'" 
           ;;
       esac
+      fi
+      if [[ $OPA_RUNTYPE == 'forecast' ]]; then
       OPA_OPAOPER_F_DAY_OFFSET_START=0
       OPA_OPAOPER_F_DAY_OFFSET_END=$(( $OPA_FORECAST_DAYS ))
+      OPA_OPAOPER_S_DAY_OFFSET_START__ACTUAL="$OPA_OPAOPER_S_DAY_OFFSET_START"
+      OPA_OPAOPER_S_DAY_OFFSET_END__ACTUAL="$OPA_OPAOPER_S_DAY_OFFSET_END"
+      OPA_OPAOPER_F_DAY_OFFSET_START__ACTUAL="$OPA_OPAOPER_F_DAY_OFFSET_START"
+      OPA_OPAOPER_F_DAY_OFFSET_END__ACTUAL="$OPA_OPAOPER_F_DAY_OFFSET_END"
       OPA_OPAOPER_S_RDIR="/private/copernicus/mfs_eas5/o"
       OPA_OPAOPER_F_RDIR="/private/copernicus/mfs_eas5/o"
-
-
-  
-
-  # Actual values (==read from input) for previous variables
-  #echo "OPA_OPAOPER_A_DAY_OFFSET_START='$OPA_OPAOPER_A_DAY_OFFSET_START'"
-  OPA_OPAOPER_A_DAY_OFFSET_START__ACTUAL="$OPA_OPAOPER_A_DAY_OFFSET_START"
-  OPA_OPAOPER_A_DAY_OFFSET_END__ACTUAL="$OPA_OPAOPER_A_DAY_OFFSET_END"
-  OPA_OPAOPER_S_DAY_OFFSET_START__ACTUAL="$OPA_OPAOPER_S_DAY_OFFSET_START"
-  OPA_OPAOPER_S_DAY_OFFSET_END__ACTUAL="$OPA_OPAOPER_S_DAY_OFFSET_END"
-  OPA_OPAOPER_F_DAY_OFFSET_START__ACTUAL="$OPA_OPAOPER_F_DAY_OFFSET_START"
-  OPA_OPAOPER_F_DAY_OFFSET_END__ACTUAL="$OPA_OPAOPER_F_DAY_OFFSET_END"
-  opa_set_da_start_date $( $OPA_BINDIR/date --utc --date="$OPA_RUNDATE 00:00:00 $(( 0 - $OPA_OPAOPER_A_DAY_OFFSET_START )) days ago" +'%Y%m%d' )
-
-
+     fi
 
 }
 
@@ -183,11 +177,7 @@ function _Iopa_set_input_files__opaoper_a_s_f {
       _afs="-f"
       ;;
   esac
-  #echo "@@@ [${0}] _a_s_f=[${_a_s_f}]"
-  #echo "@@@ [${0}] _start=[${_start}]"
-  #echo "@@@ [${0}] _end=[${_end}]"
-  #echo "@@@ [${0}] _prefix_remote=[${_prefix_remote}]"
-  #echo "$_a_s_f $OPA_RUNDATE $_start $_end"
+
       
   # Set the name of the OPAOPER_F input files
   typeset _opaoper_file_remote=''
@@ -238,8 +228,7 @@ function _Iopa_set_input_files__opaoper_a_s_f {
          _prod_cycle=${OPA_RUNDATE}
          ;;
       esac
-      #_opaoper_file_remote="${_prefix_remote}${_prod_cycle}_${_date_remote}${_afs}_${_v}.nc.gz"
-      #V3C change: keep it unzipped
+
       _opaoper_file_remote="${_prefix_remote}${_prod_cycle}-${_date_remote}${_afs}-${_v}.nc"
       _opaoper_file_local="${_prefix_local}${_date_local}_$_v.nc"
       typeset _rdir
@@ -280,9 +269,7 @@ function _Iopa_set_input_files__opaoper_a_s_f {
           OPA_OPAOPER_F_INPUT_FILES_NUM=$(( $OPA_OPAOPER_F_INPUT_FILES_NUM + 1 ))
           _opaoper_file_local_next="${_prefix_local}${_date_local_next}_$_v.nc"
           _ln_next="${_ln_next}${_opaoper_file_local}|${_opaoper_file_local_next} "
-          #echo "@@@ [${0}] ::: [${_a_s_f}] $_opaoper_file_local"
-          #echo "@@@ [${0}] ::: OPA_OPAOPER_F_INPUT_FILES_INDICES=[${OPA_OPAOPER_F_INPUT_FILES_INDICES}]"
-          #echo "@@@ [${0}] ::: OPA_OPAOPER_F_INPUT_FILES_NUM=[${OPA_OPAOPER_F_INPUT_FILES_NUM}]"
+          [ ${_v} == "T" ] ;  then echo "@@@ [${0}] ::: [${_a_s_f}] $_opaoper_file_local" ; fi
           ;;
       esac
     done
@@ -345,9 +332,7 @@ function opa_set_input_files__da_sat {
     OPA_DA_SAT_INPUT_RDIRS[OPA_DA_SAT_INPUT_FILES_NUM]="$OPA_DA_SAT_RDIR/${YYYY}"
     OPA_DA_SAT_INPUT_RFILES[OPA_DA_SAT_INPUT_FILES_NUM]="$_da_sat_file_remote"
     OPA_DA_SAT_INPUT_LFILES[OPA_DA_SAT_INPUT_FILES_NUM]="$_da_sat_file_local"
-  #echo "$OPA_DA_SAT_START_DATE - $OPA_DA_SAT_END_DATE"
   echo "===> $_da_sat_file_local $OPA_DA_SAT_INPUT_FILES_INDICES $OPA_DA_SAT_INPUT_FILES_NUM"
-  #read b
     OPA_DA_SAT_INPUT_COMPRESS_MODES[OPA_DA_SAT_INPUT_FILES_NUM]="none"
     OPA_DA_SAT_INPUT_DOWNLOAD_MODES[OPA_DA_SAT_INPUT_FILES_NUM]="ncftp:$_NCCONFIG_SAT"
     OPA_DA_SAT_INPUT_VARS[OPA_DA_SAT_INPUT_FILES_NUM]=""
