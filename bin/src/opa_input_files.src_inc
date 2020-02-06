@@ -253,7 +253,7 @@ function _Iopa_set_input_files__opaoper_a_s_f {
           OPA_OPAOPER_A_INPUT_VARS[OPA_OPAOPER_A_INPUT_FILES_NUM]="$_v"
           OPA_OPAOPER_A_INPUT_FILES_INDICES="${OPA_OPAOPER_A_INPUT_FILES_INDICES}${OPA_OPAOPER_A_INPUT_FILES_NUM} "
           OPA_OPAOPER_A_INPUT_FILES_NUM=$(( $OPA_OPAOPER_A_INPUT_FILES_NUM + 1 ))
-          [ ${_v} == "T" ] ;  then echo "@@@ [${0}] ::: [${_a_s_f}] $_opaoper_file_local" ; fi
+          if [[ ${_v} == "T" ]] ;  then echo "@@@ [${0}] ::: [${_a_s_f}] $_opaoper_file_local" ; fi
           ;;
         f)
           OPA_OPAOPER_F_INPUT_RDIRS[OPA_OPAOPER_F_INPUT_FILES_NUM]="$OPA_OPAOPER_F_RDIR/$OPA_RUNDATE"
@@ -269,7 +269,7 @@ function _Iopa_set_input_files__opaoper_a_s_f {
           OPA_OPAOPER_F_INPUT_FILES_NUM=$(( $OPA_OPAOPER_F_INPUT_FILES_NUM + 1 ))
           _opaoper_file_local_next="${_prefix_local}${_date_local_next}_$_v.nc"
           _ln_next="${_ln_next}${_opaoper_file_local}|${_opaoper_file_local_next} "
-          [ ${_v} == "T" ] ;  then echo "@@@ [${0}] ::: [${_a_s_f}] $_opaoper_file_local" ; fi
+          if [[ ${_v} == "T" ]] ;  then echo "@@@ [${0}] ::: [${_a_s_f}] $_opaoper_file_local" ; fi
           ;;
       esac
     done

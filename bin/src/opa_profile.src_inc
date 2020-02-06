@@ -569,7 +569,7 @@ function opa_set_run {
 	         _opa_restart_weekday=$($OPA_BINDIR/date --utc --date="$OPA_RUNDATE -1 days" +"%w")
 	         ;;
 	    *)
-	      echo "ERR: unsupported runtype [${RUNTYPE}]" 1>&2
+	      echo "ERR: unsupported runtype [${OPA_RUNTYPE}]" 1>&2
 	      exit 1
 	      ;;
 	  esac
@@ -614,7 +614,6 @@ function opa_is_prod {
 function opa_get_proddate {
   typeset _opa_rundate="${1:-$OPA_RUNDATE}"
   echo "$_opa_rundate"
-  #$OPA_BINDIR/date --utc --date="$_opa_rundate 1 day" +'%Y%m%d'
 }
 
 function opa_range {
