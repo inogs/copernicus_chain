@@ -71,7 +71,19 @@ restart_rundate_yy=$( $OPA_BINDIR/date --utc --date="$restart_rundate" +'%y%m%d'
 restart_rundate_yyyy=$( $OPA_BINDIR/date --utc +'%Y%m%d-%H:%M:%S' --date="$restart_rundate 00:00:00" )
 echo "GFM:DBG:RESTART:$restart_rundate_yyyy"
 ### Copy of restart files:
-restart_arc_dir="$OPA_ARCDIR_ROOT/$OPA_RESTART_RUNDATE/MODEL"
+
+if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
+    restart_arc_dir="$OPA_ARCDIR_ROOT/analysis/$OPA_RESTART_RUNDATE/MODEL"
+
+else # forecast case
+   if [[ $OPA_WEEKDAY -eq 2 ]] ; then
+      restart_arc_dir="$OPA_ARCDIR_ROOT/analysis/$OPA_RESTART_RUNDATE/MODEL"
+   else
+      restart_arc_dir="$OPA_ARCDIR_ROOT/forecast/$OPA_RESTART_RUNDATE/MODEL"
+   fi
+fi
+
+#restart_arc_dir="$OPA_ARCDIR_ROOT/$OPA_RESTART_RUNDATE/MODEL"
 echo "restart_arc_dir=$restart_arc_dir"
 
 function opa_get_restarts {
