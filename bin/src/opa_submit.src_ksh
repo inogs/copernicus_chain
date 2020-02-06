@@ -161,6 +161,11 @@ while [[ ${#@} -ne 0 ]] ; do
       opa_set_default_run_options="${opa_set_default_run_options}$arg '$1' "
       shift 1
       ;;
+    --runtype)
+      OPA_RUNTYPE=$1
+      opa_set_default_run_options="${opa_set_default_run_options}$arg '$1' "
+      shift 1
+      ;;
     --help|-h)
       print_help
       exit 0
