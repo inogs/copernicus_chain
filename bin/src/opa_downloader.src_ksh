@@ -140,7 +140,7 @@ if [ $SYNCRONIZE_INPDIR -eq 1 ] ; then
 	"
 	     for DIR in $GSS_DIRS ; do
 	         opa_mkdir "$I_OPA_HOME/inpdir/ONLINE/$DIR"
-                 opa_prex "rsync -rv ${ONLINE_REPO}/${DIR} $I_OPA_HOME/inpdir/ONLINE/${DIR}"
+                 opa_prex "rsync -rv --exclude=OLD ${ONLINE_REPO}/${DIR} $I_OPA_HOME/inpdir/ONLINE/${DIR}"
 	      done
 fi
 
