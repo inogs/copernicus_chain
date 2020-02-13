@@ -316,38 +316,6 @@ function _Iopa_print_input_files__opaoper_a_f {
   done
 }
 
-function opa_set_input_files__da_sat {
-  typeset _da_sat_file_local
-  typeset _da_sat_file_remote
-  set_spec_data -date ${OPA_RUNDATE} -days "-7" -hours 12
-  RUNDATE_m7=$($OPA_BINDIR/date -d "${OPA_RUNDATE} -7 days" +%Y%m%d )
-  for j in $(opa_range -3 +3 ) ; do
-    YYYYMMDD=$($OPA_BINDIR/date -d "$RUNDATE_m7 +$j days" +%Y%m%d )
-    YYYY=$($OPA_BINDIR/date -d "$RUNDATE_m7 +$j days" +%Y )
-    JULIAN=$($OPA_BINDIR/date -d "$RUNDATE_m7 +$j days" +%j )
-
-    _da_sat_file_local="${YYYYMMDD}_d-OC_CNR-L4-CHL-MedOC3_A_7KM-MED-DT-v02.nc"
-#     _da_sat_file_local_nrt="${YYYYMMDD}_d-OC_CNR-L4-CHL-MedOC3_A_7KM-MED-NRT-v02.nc"
-    _da_sat_file_remote="${_da_sat_file_local}"
-    OPA_DA_SAT_INPUT_RDIRS[OPA_DA_SAT_INPUT_FILES_NUM]="$OPA_DA_SAT_RDIR/${YYYY}"
-    OPA_DA_SAT_INPUT_RFILES[OPA_DA_SAT_INPUT_FILES_NUM]="$_da_sat_file_remote"
-    OPA_DA_SAT_INPUT_LFILES[OPA_DA_SAT_INPUT_FILES_NUM]="$_da_sat_file_local"
-  echo "===> $_da_sat_file_local $OPA_DA_SAT_INPUT_FILES_INDICES $OPA_DA_SAT_INPUT_FILES_NUM"
-    OPA_DA_SAT_INPUT_COMPRESS_MODES[OPA_DA_SAT_INPUT_FILES_NUM]="none"
-    OPA_DA_SAT_INPUT_DOWNLOAD_MODES[OPA_DA_SAT_INPUT_FILES_NUM]="ncftp:$_NCCONFIG_SAT"
-    OPA_DA_SAT_INPUT_VARS[OPA_DA_SAT_INPUT_FILES_NUM]=""
-    OPA_DA_SAT_INPUT_FILES_INDICES="${OPA_DA_SAT_INPUT_FILES_INDICES}${OPA_DA_SAT_INPUT_FILES_NUM} "
-    OPA_DA_SAT_INPUT_FILES_NUM=$(( $OPA_DA_SAT_INPUT_FILES_NUM + 1 ))
-    echo "@@@ [${0}] ::: [d] $_da_sat_file_local"
-  done
-}
-
-function opa_print_input_files__da_sat {
-  typeset -i _i
-  for _i in $OPA_DA_SAT_INPUT_FILES_INDICES ; do
-    printf "%4d) %s\n" "$_i" "${OPA_DA_SAT_INPUT_LFILES[_i]}"
-  done
-}
 
 # end of include guard:
 fi

@@ -520,10 +520,6 @@ EOFCAT
 errors=0
 
 
-if $OPA_DA_ENABLE ; then
-  opa_set_input_files__da_sat
-fi
-
 case $OPA_RUNTYPE in
    'analysis' )
       for i in $OPA_OPAOPER_A_INPUT_FILES_INDICES ; do
