@@ -282,6 +282,7 @@ OPA_KEEP_INPUT="${RT_OPA_KEEP_INPUT:-true}"	# if true, input data are not delete
 
 OPA_LAST_RUNDATE=${OPA_TODAY}
 
+OPA_DEFAULT_RUNTYPE=""
 OPA_DEFAULT_RUNDATE="${RT_OPA_RUNDATE:-$OPA_TODAY}"	# Default rundate
 	# The default rundate is $RT_OPA_RUNDATE if defined, $OPA_TODAY otherways
 
@@ -526,14 +527,19 @@ function opa_set_run {
   #
   # Sets $OPA_RUNDATE and the variables whose value depends on $OPA_RUNDATE
 
-
-  OPA_RUNTYPE=$1
-
-  if [[ "$2" != '' ]] ; then
-    OPA_RUNDATE="$2"
-  else
-    OPA_RUNDATE="$OPA_DEFAULT_RUNDATE"
+  if [[ $# -eq 2 ]] ; then
+     OPA_RUNTYPE=$1
+     OPA_RUNDATE="$2"
   fi
+  if [ $# -eq 1 ]] ;then
+     OPA_RUNTYPE=$1
+     OPA_RUNDATE="$OPA_DEFAULT_RUNDATE"
+  fi
+  if [[ $# -eq 0 ]] ; then
+     OPA_RUNTYPE="$OPA_DEFAULT_RUNTYPE"
+     OPA_RUNDATE="$OPA_DEFAULT_RUNDATE"
+  fi
+
   OPA_WEEKDAY=$($OPA_BINDIR/date --utc --date="$OPA_RUNDATE" +"%w")
   OPA_RUNLOGDIR="$OPA_LOGDIR/${OPA_RUNTYPE}/$OPA_RUNDATE"
   [[ -d "$OPA_RUNLOGDIR" ]] || opa_mkdir $OPA_RUNLOGDIR
@@ -1040,9 +1046,13 @@ _OPA_TODAY=''
 _OPA_SUBMIT_DAY_OFFSET=''
 _OPA_RUNDATE=''
 function _opa_get_default_run {
+  # sets _OPA_SUBMIT_DAY_OFFSET, _OPA_TODAY, _OPA_WEEKDAY, _OPA_RUNDATE
+  # the defaults values are alredy given here in opa_profile
+  # it overwrites them by
   typeset _opa_submit_day_offset="$OPA_SUBMIT_DAY_OFFSET"
   typeset _opa_today="$OPA_TODAY"
   typeset _opa_rundate=""
+  typeset _opa_runtype=""
   typeset _opa_weekday="${OPA_WEEKDAY}"
   typeset _arg
   while [[ ${#@} -ne 0 ]] ; do
@@ -1051,6 +1061,10 @@ function _opa_get_default_run {
     case "$_arg" in
       --rundate|-r)
         _opa_rundate="$1"
+        shift 1
+        ;;
+      --runtype|-t)
+        _opa_runtype="$1"
         shift 1
         ;;
       --weekday|-w)
@@ -1089,15 +1103,18 @@ function _opa_get_default_run {
   _OPA_TODAY="$_opa_today"
   _OPA_SUBMIT_DAY_OFFSET="$_opa_submit_day_offset"
   if [[ "$_opa_rundate" == '' ]] ; then
+    echo "ERRORE: qui non ci dovresti entrare mai **********************"
     _opa_rundate="${OPA_RUNDATE:-$OPA_DEFAULT_RUNDATE}"
   fi
   _OPA_RUNDATE="$_opa_rundate"
+  _OPA_RUNTYPE="$_opa_runtype"
   #echo "DEBUG: _OPA_RUNDATE='$_OPA_RUNDATE'"
 }
 
 function opa_set_default_run {
-  _opa_get_default_run --rundate "$RT_OPA_RUNDATE" "$@"
+  _opa_get_default_run "$@"
   OPA_DEFAULT_RUNDATE="$_OPA_RUNDATE"
+  OPA_DEFAULT_RUNTYPE="$_OPA_RUNTYPE"
   OPA_TODAY="$_OPA_TODAY"
   OPA_SUBMIT_DAY_OFFSET="$_OPA_SUBMIT_DAY_OFFSET"
 }
