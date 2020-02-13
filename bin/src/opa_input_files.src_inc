@@ -208,13 +208,13 @@ function _Iopa_set_input_files__opaoper_a_s_f {
       else
         _days_offset_next="$_i_next days"
       fi
-      _date_local_next=$( $OPA_BINDIR/date --date "$OPA_RUNDATE $_days_offset_next" +'%y%m%d' )
+      _date_local_next=$( $OPA_BINDIR/date --date "$OPA_RUNDATE $_days_offset_next" +'%Y%m%d' )
       _ln_next=""
     fi
     # Apply the offset and get the expected file rundate
-    _date_local=$( $OPA_BINDIR/date --date "$OPA_RUNDATE $_days_offset" +'%y%m%d' )
+    _date_local=$( $OPA_BINDIR/date --date "$OPA_RUNDATE $_days_offset" +'%Y%m%d' )
     _date_remote=$( $OPA_BINDIR/date --date "$OPA_RUNDATE $_days_offset" +"$_date_format_remote" )
-    echo "@@@ [${_date_local}] [${_date_format_remote}] [${_date_remote}]" 1>&2
+    echo "@@@ [${_date_local}] " 1>&2
     # For each input date, three files are downloaded (for T, U and V variables)
     for _v in $OPA_VARIABLES ; do
       case  "$_a_s_f" in
