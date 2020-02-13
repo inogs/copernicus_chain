@@ -469,6 +469,7 @@ function sed_tpl {
    sed	-e "s%@@(S:OPA_HOME)%${I_OPA_HOME}%g"						\
 	-e "s%@@(S:OPA_HOSTNAME)%${I_OPA_HOSTNAME}%g"					\
 	-e "s%@@(S:OPA_RUNDATE)%${OPA_RUNDATE}%g"					\
+    -e "s%@@(S:OPA_RUNTYPE)%${OPA_RUNTYPE}%g"                   \
 	-e "s%@@(S:OPA_RUNLOGDIR)%${OPA_RUNLOGDIR}%g"					\
 	-e "s%@@(S:OPA_MAIL_ADDRESS)%${OPA_MAIL_ADDRESS}%g"				\
 	-e "s%@@(S:OPA_NOTIFY_ADDRESS)%${OPA_NOTIFY_ADDRESSES}%g"			\
@@ -725,7 +726,7 @@ for tpl_name in opa_jcf.tail.${OPA_RM} opa_jcf.body.head opa_jcf.body.${opa_job_
 done
 
 # Check if some @@(...) macro is left unexpanded in JCF
-if [[ $( $OPA_BINDIR/grep -c '@@' $OPA_RUNLOGDIR/$opa_jcf ) -ne 0 ]] ; then
+if [[ $( grep -c '@@' $OPA_RUNLOGDIR/$opa_jcf ) -ne 0 ]] ; then
   opa_log_to_file 0 "ERROR: unexpanded macros in JCF [${opa_jcf}]" 
   opa_exit 1
 fi

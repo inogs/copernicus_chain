@@ -282,7 +282,7 @@ OPA_KEEP_INPUT="${RT_OPA_KEEP_INPUT:-true}"	# if true, input data are not delete
 
 OPA_LAST_RUNDATE=${OPA_TODAY}
 
-OPA_DEFAULT_RUNTYPE=""
+OPA_DEFAULT_RUNTYPE="${RT_OPA_RUNTYPE}"
 OPA_DEFAULT_RUNDATE="${RT_OPA_RUNDATE:-$OPA_TODAY}"	# Default rundate
 	# The default rundate is $RT_OPA_RUNDATE if defined, $OPA_TODAY otherways
 
@@ -531,7 +531,7 @@ function opa_set_run {
      OPA_RUNTYPE=$1
      OPA_RUNDATE="$2"
   fi
-  if [ $# -eq 1 ]] ;then
+  if [[ $# -eq 1 ]] ;then
      OPA_RUNTYPE=$1
      OPA_RUNDATE="$OPA_DEFAULT_RUNDATE"
   fi
@@ -1112,7 +1112,7 @@ function _opa_get_default_run {
 }
 
 function opa_set_default_run {
-  _opa_get_default_run "$@"
+  _opa_get_default_run --rundate "$RT_OPA_RUNDATE"  --runtype  "$RT_OPA_RUNTYPE" "$@"
   OPA_DEFAULT_RUNDATE="$_OPA_RUNDATE"
   OPA_DEFAULT_RUNTYPE="$_OPA_RUNTYPE"
   OPA_TODAY="$_OPA_TODAY"

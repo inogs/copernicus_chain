@@ -1,5 +1,6 @@
 { ### start redirection of output/error to @@(S:OPA_JOB_EO_FILE)
 export RT_OPA_RUNDATE="@@(S:OPA_RUNDATE)"
+export RT_OPA_RUNTYPE="@@(S:OPA_RUNTYPE)"
 export RT_OPA_BATCH="@@(S:OPA_BATCH)"
 export RT_OPA_RUNID="@@(S:OPA_RUNID)"
 
