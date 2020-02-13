@@ -98,7 +98,7 @@ else
   done
 fi
 
-command="$OPA_SCRDIR/opa_submit.ksh $opa_set_default_run_options --runtype $OPA_RUNTYPE --submit $opa_submit_options"
+command="$OPA_SCRDIR/opa_submit.ksh $opa_set_default_run_options --submit $opa_submit_options"
 if $force ; then
   opa_log_to_file 0 "Running command <${command}>"
   opa_prex "$command"
