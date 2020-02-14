@@ -93,11 +93,8 @@ function opa_input_files__setup  {
           # TUESDAY
           OPA_OPAOPER_A_DAY_OFFSET_START=$(( -2 - $OPA_ANALYSES_DAYS ))
           OPA_OPAOPER_A_DAY_OFFSET_END=-2
-          OPA_OPAOPER_S_DAY_OFFSET_START=-1
-          OPA_OPAOPER_S_DAY_OFFSET_END=-1
           OPA_OPAOPER_A_RDIR="/private/copernicus/mfs_eas5/o"
           OPA_OPAOPER_A_PREFIX="mfs_eas5"
-          OPA_OPAOPER_S_PREFIX="mfs_eas5"
           OPA_DATEDIR="${OPA_RUNDATE}"
           # maybe last 3 can be removed
           OPA_OPAOPER_A_DAY_OFFSET_START__ACTUAL="$OPA_OPAOPER_A_DAY_OFFSET_START"
@@ -110,6 +107,9 @@ function opa_input_files__setup  {
       esac
       fi
       if [[ $OPA_RUNTYPE == 'forecast' ]]; then
+      OPA_OPAOPER_S_DAY_OFFSET_START=-1
+      OPA_OPAOPER_S_DAY_OFFSET_END=-1
+      OPA_OPAOPER_S_PREFIX="mfs_eas5"
       OPA_OPAOPER_F_DAY_OFFSET_START=0
       OPA_OPAOPER_F_DAY_OFFSET_END=$(( $OPA_FORECAST_DAYS ))
       OPA_OPAOPER_S_DAY_OFFSET_START__ACTUAL="$OPA_OPAOPER_S_DAY_OFFSET_START"
@@ -127,12 +127,12 @@ function opa_input_files__setup  {
 function opa_set_input_files__opaoper_a {
   OPA_OPAOPER_A_INPUT_FILES_INDICES=' '
   _Iopa_set_input_files__opaoper_a_s_f 'a'
-  _Iopa_set_input_files__opaoper_a_s_f 's'
 }
 
 function opa_set_input_files__opaoper_f {
   OPA_OPAOPER_F_INPUT_FILES_INDICES=' '
-  _Iopa_set_input_files__opaoper_a_s_f 'f'
+  # _Iopa_set_input_files__opaoper_a_s_f 's'
+   _Iopa_set_input_files__opaoper_a_s_f 'f'
 }
 
 function _Iopa_set_input_files__opaoper_a_s_f {
@@ -260,8 +260,6 @@ function _Iopa_set_input_files__opaoper_a_s_f {
           OPA_OPAOPER_F_INPUT_RFILES[OPA_OPAOPER_F_INPUT_FILES_NUM]="$_opaoper_file_remote"
           OPA_OPAOPER_F_INPUT_LFILES[OPA_OPAOPER_F_INPUT_FILES_NUM]="$_opaoper_file_local"
           OPA_OPAOPER_F_INPUT_COMPRESS_MODES[OPA_OPAOPER_F_INPUT_FILES_NUM]="gzip"
-          #OPA_OPAOPER_F_INPUT_DOWNLOAD_MODES[OPA_OPAOPER_F_INPUT_FILES_NUM]="http:$_HTTPCONFIG_INGV"
-          #V5C change: use the new ftp server from CMCC
           OPA_OPAOPER_F_INPUT_DOWNLOAD_MODES[OPA_OPAOPER_F_INPUT_FILES_NUM]="http:$_HTTPCONFIG_CMCC"
           OPA_OPAOPER_F_INPUT_DOWNLOAD_MODES_EMERG[OPA_OPAOPER_F_INPUT_FILES_NUM]="http:$_HTTPCONFIG_INGV_EMERG"
           OPA_OPAOPER_F_INPUT_VARS[OPA_OPAOPER_F_INPUT_FILES_NUM]="$_v"
