@@ -131,7 +131,7 @@ function opa_set_input_files__opaoper_a {
 
 function opa_set_input_files__opaoper_f {
   OPA_OPAOPER_F_INPUT_FILES_INDICES=' '
-  # _Iopa_set_input_files__opaoper_a_s_f 's'
+   _Iopa_set_input_files__opaoper_a_s_f 's'
    _Iopa_set_input_files__opaoper_a_s_f 'f'
 }
 
@@ -233,15 +233,8 @@ function _Iopa_set_input_files__opaoper_a_s_f {
       _opaoper_file_local="${_prefix_local}${_date_local}_$_v.nc"
       typeset _rdir
       case  "$_a_s_f" in
-        a|s)
-          case "$_a_s_f" in
-            a)
+        a)
               _rdir="$OPA_OPAOPER_A_RDIR/${OPA_DATEDIR}"
-              ;;
-            s)
-              _rdir="$OPA_OPAOPER_S_RDIR/${_date_remote}"
-              ;;
-          esac
           OPA_OPAOPER_A_INPUT_RDIRS[OPA_OPAOPER_A_INPUT_FILES_NUM]="$_rdir"
           OPA_OPAOPER_A_INPUT_RFILES[OPA_OPAOPER_A_INPUT_FILES_NUM]="$_opaoper_file_remote"
           OPA_OPAOPER_A_INPUT_LFILES[OPA_OPAOPER_A_INPUT_FILES_NUM]="$_opaoper_file_local"
@@ -255,7 +248,7 @@ function _Iopa_set_input_files__opaoper_a_s_f {
           OPA_OPAOPER_A_INPUT_FILES_NUM=$(( $OPA_OPAOPER_A_INPUT_FILES_NUM + 1 ))
           if [[ ${_v} == "T" ]] ;  then echo "@@@ [${0}] ::: [${_a_s_f}] $_opaoper_file_local" ; fi
           ;;
-        f)
+        s|f)
           OPA_OPAOPER_F_INPUT_RDIRS[OPA_OPAOPER_F_INPUT_FILES_NUM]="$OPA_OPAOPER_F_RDIR/$OPA_RUNDATE"
           OPA_OPAOPER_F_INPUT_RFILES[OPA_OPAOPER_F_INPUT_FILES_NUM]="$_opaoper_file_remote"
           OPA_OPAOPER_F_INPUT_LFILES[OPA_OPAOPER_F_INPUT_FILES_NUM]="$_opaoper_file_local"
