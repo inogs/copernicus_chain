@@ -1002,40 +1002,7 @@ function opa_v2c_files {
   fi
 }
 
-function opa_v3c_files {
-  typeset    _opa_rundate="${1:-$OPA_RUNDATE}"
-  typeset    _workdir="$OPA_WRKDIR/POSTPROC/PRODUCTS"
-  typeset    _opa_proddate=$(opa_get_proddate "$_opa_rundate")
-  typeset    _file_out_fmt="$OPA_V3C_FILE_FMT"
-  typeset    _date
 
-  _hot_start=${2:false}
-
-#Analyses file
-  if $_hot_start ; then
-    _date=$($OPA_BINDIR/date --utc --date="$_opa_rundate $OPA_ANALYSES_DAYS days ago" +"%Y%m%d")
-    _file=$(printf "${_file_out_fmt}\n" "$_date" "$3" "$_opa_proddate" "an")
-    printf "${_file_out_fmt}\n" "$_date" "$3" "$_opa_proddate" "an"
-  fi
-
-#Forecast files
-  for _date in $(opa_forecast_dates $_opa_rundate) ; do
-    printf "${_file_out_fmt}\n" "$_date" "$3" "$_opa_proddate" "fc"
-  done
-
-#Simulation files
-  if ! $_hot_start ; then 
-    for _date in $(opa_analyses_dates $_opa_rundate) ; do
-      _file=$(printf "${_file_out_fmt}\n" "$_date" "$3" "$_opa_proddate" "sm")
-      printf "${_file_out_fmt}\n" "$_date" "$3" "$_opa_proddate" "sm"
-    done
-  else
-    for _date in $(opa_simulates_dates $_opa_rundate) ; do
-      _file=$(printf "${_file_out_fmt}\n" "$_date" "$3" "$_opa_proddate" "sm")
-      printf "${_file_out_fmt}\n" "$_date" "$3" "$_opa_proddate" "sm"
-    done
-  fi
-}
 
 _OPA_TODAY=''
 _OPA_SUBMIT_DAY_OFFSET=''
