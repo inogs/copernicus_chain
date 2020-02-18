@@ -312,11 +312,6 @@ OPA_ACTUAL_INPUT_DESCRIPTION_FILE=''		# set by opa_set_run to "$OPA_WRKDIR/opa_a
 
 OPA_PRO_DESCRIPTION_FILE=''			# pro output file names, for myocean
 
-OPA_TIMESTEP=1800				# model timestep in seconds
-OPA_RDT="$OPA_TIMESTEP"
-OPA_RDTMIN="$OPA_TIMESTEP"
-OPA_RDTMAX="$OPA_TIMESTEP"
-OPA_RDTH="$OPA_TIMESTEP"
 
 #. @@(I:OPA_HOME)/bin/opa_profile__@@(I:OPA_HOSTNAME).inc
 OPA_PRIMARY_LOGIN_NODE="$OPA_HOST_PRIMARY_LOGIN_NODE"

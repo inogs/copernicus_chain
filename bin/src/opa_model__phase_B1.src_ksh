@@ -25,46 +25,7 @@ wrkdir=$OPA_WRKDIR/MODEL
 
 . $OPA_ACTUAL_INPUT_DESCRIPTION_FILE
 
-### Start and end date for computation
-start_offset_s=$(( 0 + $OPA_TIMESTEP ))
-end_offset_s=$(( 0 + $OPA_TIMESTEP ))
-# Start date for computation since epoch (19700101)
-date_start_seconds_since_epoch=$( $OPA_BINDIR/date --utc			\
- --date="$OPA_OPAOPER_DATE_START__ACTUAL 00:00:00 $start_offset_s seconds"\
- +%s )
-# End date for computation since epoch (19700101)
-date_end_seconds_since_epoch=$( $OPA_BINDIR/date --utc				\
- --date="$OPA_OPAOPER_DATE_END__ACTUAL 00:00:00 $end_offset_s seconds"	\
- +%s )
 
-# Year of the start date:
-year=$( $OPA_BINDIR/date --utc --date="$OPA_OPAOPER_DATE_START__ACTUAL 00:00:00" +%Y )
-
-# The first day of this year, in seconds since epoch (19700101)
-date_ref_seconds=$( $OPA_BINDIR/date --utc --date="${year}0101 00:00:00" +%s )
-
-# Start and end date, in seconds since firt of january
-date_start_seconds=$(( $date_start_seconds_since_epoch - $date_ref_seconds ))
-date_end_seconds=$(( $date_end_seconds_since_epoch - $date_ref_seconds ))
-
-start_timesteps=$(( $date_start_seconds / $OPA_TIMESTEP ))
-end_timesteps=$(( $date_end_seconds / $OPA_TIMESTEP ))
-
-start_date=$( $OPA_BINDIR/date --utc --date="$OPA_OPAOPER_DATE_START__ACTUAL" +'%y%m%d' )
-end_date=$( $OPA_BINDIR/date --utc --date="$OPA_OPAOPER_DATE_END__ACTUAL" +'%y%m%d' )
-
-cat <<EofDbg
-@@@ OPA_OPAOPER_DATE_START__ACTUAL=$OPA_OPAOPER_DATE_START__ACTUAL
-@@@ date_start_seconds_since_epoch=$date_start_seconds_since_epoch
-@@@ date_start_seconds=$date_start_seconds
-@@@ start_date=$start_date
-@@@ start_timesteps=$start_timesteps
-@@@ OPA_OPAOPER_DATE_END__ACTUAL=$OPA_OPAOPER_DATE_END__ACTUAL
-@@@ date_end_seconds_since_epoch=$date_end_seconds_since_epoch
-@@@ date_end_seconds=$date_end_seconds
-@@@ end_date=$end_date
-@@@ end_timesteps=$end_timesteps
-EofDbg
 
 restart_rundate=$($OPA_BINDIR/date --utc --date="$OPA_RUNDATE 00:00:00 7 days ago" +'%Y%m%d')
 restart_rundate_yy=$( $OPA_BINDIR/date --utc --date="$restart_rundate" +'%y%m%d' )
