@@ -341,7 +341,7 @@ OPA_HIGH_FREQ_VARIABLES='Ac DIC N1p N3n N4n N5s O2o O3c O3h P1c P1l P1n P1p P1s 
 OPA_DA_VARIABLES='P1l P2l P3l P4l P1n P2n P3n P4n P1c P2c P3c P4c P1p P2p P3p P4p P1s'
 
 
-OPA_SUBMIT_DAY_OFFSET=1					# number of days after rundate for submission
+OPA_SUBMIT_DAY_OFFSET=0 				# number of days after rundate for submission
 OPA_CHECK_HOURS_OFFSET=6				# number of hours for opa_check_run after run submission
 
 export LD_LIBRARY_PATH="${OPA_LIBDIR}:${LD_LIBRARY_PATH}"
@@ -563,6 +563,7 @@ function opa_set_run {
 	                      # OPA_RESTART_ARCHIVE_OFFSETS="${OPA_RESTART_ARCHIVE_OFFSETS}-4 "
 	                      OPA_NEXT_RUNDATE_OFFSET=7
 	                      OPA_PREV_RUNDATE_OFFSET=7
+	                      OPA_RESTART_RUNDATE=$($OPA_BINDIR/date --utc --date="${OPA_RUNDATE} 7 days ago" +"%Y%m%d")
 	                      ;;
 	               *)
 	                 echo "ERR: unsupported weekday [${OPA_WEEKDAY}]" 1>&2
@@ -573,6 +574,7 @@ function opa_set_run {
 
 	   'forecast')
 	         _opa_restart_weekday=$($OPA_BINDIR/date --utc --date="$OPA_RUNDATE -1 days" +"%w")
+	         OPA_RESTART_RUNDATE=$($OPA_BINDIR/date --utc --date="${OPA_RUNDATE} 1 days ago" +"%Y%m%d")
 	         ;;
 	    *)
 	      echo "ERR: unsupported runtype [${OPA_RUNTYPE}]" 1>&2
@@ -584,13 +586,11 @@ function opa_set_run {
 
   opa_input_files__setup
   OPA_RESTART_WEEKDAY="${RT_OPA_RESTART_WEEKDAY:-$_opa_restart_weekday}"
-  _opa_get_default_run --weekday "$OPA_RESTART_WEEKDAY" --today "$OPA_RUNDATE" --submit-day-offset 1
   OPA_WRKDIR="$OPA_WRKDIR_ROOT/${OPA_RUNTYPE}/$OPA_WEEKDAY"
   OPA_INPDIR="$OPA_INPDIR_ROOT/${OPA_RUNTYPE}/$OPA_RUNDATE"
   OPA_ARCDIR="$OPA_ARCDIR_ROOT/${OPA_RUNTYPE}/$OPA_RUNDATE"
   OPA_PRO_DESCRIPTION_FILE="$OPA_WRKDIR/POSTPROC/${OPA_RUNDATE}.${I_OPA_STAGE}.pro"
   OPA_ACTUAL_INPUT_DESCRIPTION_FILE="$OPA_WRKDIR/opa_actual_input_description.inc"
-  OPA_RESTART_RUNDATE="$_OPA_RUNDATE"
   OPA_PRODDATE=$(opa_get_proddate)
   if $OPA_BATCH ; then
     opa_dump_run
@@ -1081,31 +1081,54 @@ function _opa_get_default_run {
         ;;
     esac
   done
-  #echo "DEBUG: _opa_rundate='$_opa_rundate', _opa_weekday='$_opa_weekday'"
-  if [[ "$_opa_rundate" == '' ]] ; then
-    if [[ "$_opa_weekday" == '' ]] ; then
-      _opa_rundate=$(opa_last_rundate "$_opa_today" "$_opa_submit_day_offset")
-    else
-      typeset _opa_submit_weekday=$(( $_opa_weekday + $_opa_submit_day_offset ))
+  echo "DEBUG: _opa_rundate='$_opa_rundate', _opa_runtype='$_opa_runtype', _opa_weekday='$_opa_weekday'"
 
-      typeset _opa_today_weekday=$($OPA_BINDIR/date +%w --utc --date="$_opa_today")
-      typeset _opa_day_offset
-      # the opa_rundate is the previous Tuesday;
-      # * $_opa_today_weekday - $_opa_submit_weekday is the number of days since the last $submit_weekday
-      # * $_opa_today_weekday - $_opa_submit_weekday + $_opa_submit_day_offset is the number of days since the last $opa_weekday
-      # * ( $_opa_today_weekday - $_opa_submit_weekday + 7 + $_opa_submit_day_offset ) % 7 ) is normalized between 0 and 6
-      # * 1 offset day is added because opa_rundate is Tuesday, not Wednesday
-      _opa_day_offset=$(( ( ( $_opa_today_weekday - $_opa_submit_weekday + 7 ) % 7 ) + $_opa_submit_day_offset ))
-      _opa_rundate=$( $OPA_BINDIR/date --utc --date="$_opa_today 00:00:00 $_opa_day_offset days ago" +%Y%m%d)
-      #echo "DEBUG: _opa_submit_weekday='$_opa_submit_weekday', _opa_today_weekday='$_opa_today_weekday', _opa_day_offset='$_opa_day_offset', _opa_rundate='$_opa_rundate'"
-    fi
+  if [[ $_opa_runtype == '' ]] ; then
+      echo "ERR : runtype analysis or forecast must be defined"
+      opa_exit 1
   fi
-  _OPA_TODAY="$_opa_today"
-  _OPA_SUBMIT_DAY_OFFSET="$_opa_submit_day_offset"
-  if [[ "$_opa_rundate" == '' ]] ; then
-    echo "ERRORE: qui non ci dovresti entrare mai **********************"
-    _opa_rundate="${OPA_RUNDATE:-$OPA_DEFAULT_RUNDATE}"
-  fi
+
+  case $_opa_runtype in
+     'analysis')
+        if [[ $_opa_rundate == '' ]] ; then
+            if [[ $_opa_weekday == '' ]] ; then
+               echo "ERR: rundate or weekday must be defined"
+               opa_exit 1
+             else ####################### weekday defined
+
+		      typeset _opa_submit_weekday=$(( $_opa_weekday + $_opa_submit_day_offset ))
+
+		      typeset _opa_today_weekday=$($OPA_BINDIR/date +%w --utc --date="$_opa_today")
+		      typeset _opa_day_offset
+		      # the opa_rundate is the previous Tuesday;
+		      # * $_opa_today_weekday - $_opa_submit_weekday is the number of days since the last $submit_weekday
+		      # * $_opa_today_weekday - $_opa_submit_weekday + $_opa_submit_day_offset is the number of days since the last $opa_weekday
+		      # * ( $_opa_today_weekday - $_opa_submit_weekday + 7 + $_opa_submit_day_offset ) % 7 ) is normalized between 0 and 6
+		      # * 1 offset day is added because opa_rundate is Tuesday, not Wednesday
+		      _opa_day_offset=$(( ( ( $_opa_today_weekday - $_opa_submit_weekday + 7 ) % 7 ) + $_opa_submit_day_offset ))
+		      _opa_rundate=$( $OPA_BINDIR/date --utc --date="$_opa_today 00:00:00 $_opa_day_offset days ago" +%Y%m%d)
+		      echo "DEBUG:**** _opa_submit_weekday='$_opa_submit_weekday', _opa_today_weekday='$_opa_today_weekday', _opa_day_offset='$_opa_day_offset', _opa_rundate='$_opa_rundate'"
+             fi
+        fi
+        if [[ $_opa_weekday == '' ]] ; then
+            if [[ $_opa_rundate == '' ]] ; then
+               echo "ERR: rundate or weekday must be defined"
+               opa_exit 1
+             fi
+        fi
+        ;;
+
+    'forecast' )
+      if [[ $_opa_rundate == '' ]] ; then    # TODAY RUN
+           _opa_rundate=${OPA_TODAY}
+      fi
+      ;;
+    * ) echo "ERR: unsupported runtype"
+        opa_exit 1
+       ;;
+  esac
+
+
   _OPA_RUNDATE="$_opa_rundate"
   _OPA_RUNTYPE="$_opa_runtype"
   #echo "DEBUG: _OPA_RUNDATE='$_OPA_RUNDATE'"
