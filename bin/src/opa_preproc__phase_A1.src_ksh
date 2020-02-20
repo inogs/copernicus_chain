@@ -9,30 +9,39 @@ opa_set_run
 # start
 opa_start
 
-# Get name of ECMWF wind input files
-opa_set_input_files__opaoper_a
-opa_set_input_files__opaoper_f
+
+if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
+
+   for _v in ${OPA_VARIABLES} ; do
+     MONDAY=$( $OPA_BINDIR/date --date="${OPA_RUNDATE} 1 days ago" +"%Y%m%d")
+     SUNDAY=$( $OPA_BINDIR/date --date="${OPA_RUNDATE} 2 days ago" +"%Y%m%d")
+
+     MONDAY_FILE=${OPA_WRKDIR}/CMCC_PHYS/${_v}${MONDAY}-12:00:00.nc
+     SUNDAY_FILE=${OPA_WRKDIR}/CMCC_PHYS/${_v}${SUNDAY}-12:00:00.nc #existing
+     opa_prex_or_die "ln -fs $SUNDAY_FILE $MONDAY_FILE"
+   done
+fi
+
+opa_exit 0
 
 typeset -i errors=0
+### set up of input files in $OPA_WRKDIR
 
-### set up of input files in $OPA_WRKDIR/OPAOPER
+if [[ $RUNTYPE == 'forecast' ]] ; then
+    opa_set_input_files__opaoper_f
+    $OPA_SCRDIR/opa_input_stagein.ksh || errors=$(( $errors + 1 ))
 
-$OPA_SCRDIR/opa_input_stagein.ksh || errors=$(( $errors + 1 ))
+   # $OPA_SCRDIR/opa_link_forecast.ksh || errors=$(( $errors + 1 ))
+   # ### split forecast
+   # $OPA_SCRDIR/opa_split_forecast.ksh || errors=$(( $errors + 1 ))
+fi
 
-# ### create links for analyses
-# $OPA_SCRDIR/opa_link_analyses.ksh || errors=$(( $errors + 1 ))
 
-# ### create links for analyses
-# $OPA_SCRDIR/opa_link_forecast.ksh || errors=$(( $errors + 1 ))
-
-# ### split forecast
-# $OPA_SCRDIR/opa_split_forecast.ksh || errors=$(( $errors + 1 ))
 
 if [[ $errors -gt 0 ]] ; then
   opa_log 0 "WRN: $errors errors during phase A1"
 fi
 
-echo "DBG: LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
 
 ### check input files:
 typeset -i exit_code=0
