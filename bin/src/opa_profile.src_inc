@@ -341,7 +341,7 @@ OPA_CHECK_HOURS_OFFSET=6				# number of hours for opa_check_run after run submis
 
 export LD_LIBRARY_PATH="${OPA_LIBDIR}:${LD_LIBRARY_PATH}"
 
-OPA_ENABLE_PRE_PHASES="${RT_OPA_ENABLE_PRE_PHASES:- SETUP GET A1 A2 A4}"	# List of phases in step pre
+OPA_ENABLE_PRE_PHASES="${RT_OPA_ENABLE_PRE_PHASES:- SETUP GET A1 A4}"	# List of phases in step pre
 OPA_DISABLE_PRE_PHASES="${RT_OPA_DISABLE_PRE_PHASES}"			# List of phases in step pre
 
 OPA_ENABLE_MODEL_PHASES="${RT_OPA_ENABLE_MODEL_PHASES:- B1 B2 B3 C1}"	# List of phases in step model
