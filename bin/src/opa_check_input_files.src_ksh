@@ -41,7 +41,7 @@ typeset -i a_num_days=0
 a_file=''
 while [[ $day_offset -ge $OPA_OPAOPER_A_DAY_OFFSET_START ]] ; do
   day_offset_abs=$(( 0 - $day_offset ))
-  a_date=$( $OPA_BINDIR/date --utc --date="$OPA_RUNDATE 00:00:00 $day_offset_abs days ago" +'%y%m%d' )
+  a_date=$( $OPA_BINDIR/date --utc --date="$OPA_RUNDATE 00:00:00 $day_offset_abs days ago" +'%Y%m%d' )
   some_variable_missing=false
   for var_index in $OPA_VARIABLE_INDICES ; do
     var=${OPA_VARIABLE[var_index]}
@@ -133,8 +133,6 @@ done
 opa_forecast_days__actual=$f_num_days
 opa_opaoper_date_end__actual=$( $OPA_BINDIR/date --utc --date="$OPA_RUNDATE 00:00:00 $opa_opaoper_f_day_offset_end__actual days" +'%y%m%d' )
 
-## DA:
-opa_set_da_start_date "$opa_opaoper_date_start__actual"
 
 cat <<EofCat
 ==> opa_opaoper_date_end__actual		= $opa_opaoper_date_end__actual

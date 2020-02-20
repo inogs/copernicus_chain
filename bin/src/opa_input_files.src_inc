@@ -73,13 +73,6 @@ _HTTPCONFIG_INGV_EMERG="$I_OPA_HOME/etc/http-config/.ingv.httpconfig.emerg"
 _HTTPCONFIG_CMCC="$I_OPA_HOME/etc/http-config/.cmcc.httpconfig"
 _NCCONFIG_SAT="$I_OPA_HOME/etc/nc-config/.sat.ncconfig"
 
-function opa_set_da_start_date {
-  typeset    _opa_da_start_date=${1:-$OPA_DA_START_DATE}
-  typeset -i _opa_da_start_date_j=$( $OPA_BINDIR/date --date="$_opa_da_start_date" +"%j" | sed -e 's/^0//' )
-  OPA_DA_START_DATE="$_opa_da_start_date"
-  OPA_DA_SAT_START_DATE=$( $OPA_BINDIR/date --date="$OPA_DA_START_DATE $(( ( $_opa_da_start_date_j - 1 ) % $OPA_DA_SAT_DAYS )) days ago" +"%Y%m%d" )
-  OPA_DA_SAT_END_DATE=$( $OPA_BINDIR/date --date="$OPA_DA_SAT_START_DATE $(( $OPA_DA_SAT_DAYS - 1 )) days" +"%Y%m%d" )
-}
   
 function opa_input_files__setup  {
 
@@ -99,7 +92,6 @@ function opa_input_files__setup  {
           # maybe last 3 can be removed
           OPA_OPAOPER_A_DAY_OFFSET_START__ACTUAL="$OPA_OPAOPER_A_DAY_OFFSET_START"
           OPA_OPAOPER_A_DAY_OFFSET_END__ACTUAL="$OPA_OPAOPER_A_DAY_OFFSET_END"
-          opa_set_da_start_date $( $OPA_BINDIR/date --utc --date="$OPA_RUNDATE 00:00:00 $(( 0 - $OPA_OPAOPER_A_DAY_OFFSET_START )) days ago" +'%Y%m%d' )
           ;;
         *)
           opa_die 10 "Unsupported weekday '${OPA_WEEKDAY}'" 

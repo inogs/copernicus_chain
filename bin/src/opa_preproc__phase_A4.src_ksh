@@ -22,16 +22,7 @@ fi
 # Get the name of DA_SAT data input files
 RUNDATE_m7=$($OPA_BINDIR/date -d "${OPA_RUNDATE} -7 days" +%Y%m%d )
 
-#case $I_OPA_HOSTNAME in
-#    pico)
-#      sat_archive_dir="/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ONLINE/SAT/MULTISENSOR/1Km/NRT/WEEKLY_2_24/"
-#      ;;
-#    galileo|marconi)
-#      sat_archive_dir="$I_OPA_HOME/inpdir/WEEKLY/"
-#      ;;
-#    *)
-#      ;;
-#    esac
+
 
 sat_archive_dir="$I_OPA_HOME/inpdir/ONLINE/SAT/MULTISENSOR/1Km/NRT/WEEKLY_2_24/"
 sat_file="$sat_archive_dir/${OPA_DA_START_DATE}_d-OC_CNR-L3-CHL-MedOC4AD4_MULTI_1KM-MED-NRT-v02.nc"
@@ -58,31 +49,6 @@ da_sat_dir="$da_wrkdir/SATELLITE"
 da_3d_var_dir="$da_static/3D_VAR"
 
 opa_month=$( $OPA_BINDIR/date --date="$OPA_DA_START_DATE" +"%m" )
-
-cat <<EofCat
-#### OPA_RUNDATE__ACTUAL			= $OPA_RUNDATE__ACTUAL
-#### OPA_OPAOPER_A_DAY_OFFSET_START__ACTUAL	= $OPA_OPAOPER_A_DAY_OFFSET_START__ACTUAL
-#### OPA_OPAOPER_A_DAY_OFFSET_END__ACTUAL	= $OPA_OPAOPER_A_DAY_OFFSET_END__ACTUAL
-#### OPA_ANALYSES_DAYS__ACTUAL			= $OPA_ANALYSES_DAYS__ACTUAL
-#### OPA_OPAOPER_F_DAY_OFFSET_START__ACTUAL	= $OPA_OPAOPER_F_DAY_OFFSET_START__ACTUAL
-#### OPA_OPAOPER_F_DAY_OFFSET_END__ACTUAL	= $OPA_OPAOPER_F_DAY_OFFSET_END__ACTUAL
-#### OPA_FORECAST_DAYS__ACTUAL			= $OPA_FORECAST_DAYS__ACTUAL
-####
-#### OPA_DA_START_DATE				= $OPA_DA_START_DATE
-#### OPA_DA_SAT_START_DATE			= $OPA_DA_SAT_START_DATE
-#### OPA_DA_SAT_END_DATE			= $OPA_DA_SAT_END_DATE
-####
-#### opa_month					= $opa_month
-####
-#### da_wrkdir					= [${da_wrkdir}]
-#### opa_da_misfit_wrkdir			= [${opa_da_misfit_wrkdir}]
-#### opa_da_sat_wrkdir				= [${opa_da_sat_wrkdir}]
-#### opa_bilinear_wrkdir			= [${opa_bilinear_wrkdir}]
-#### opa_da_3d_var_wrkdir			= [${opa_da_3d_var_wrkdir}]
-#### opa_da_postproc_wrkdir			= [${opa_da_postproc_wrkdir}]
-####
-####
-EofCat
 
 
 ### Stage-in of var2d files:

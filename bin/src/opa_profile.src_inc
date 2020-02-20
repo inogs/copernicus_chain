@@ -350,11 +350,6 @@ OPA_DISABLE_MODEL_PHASES="${RT_OPA_DISABLE_MODEL_PHASES}"		# List of phases in s
 OPA_ENABLE_POST_PHASES="${RT_OPA_ENABLE_POST_PHASES:- PUT_INGV PUT_CMCC C1 C3 C4 PUT_SALON}"	# List of phases in step post
 OPA_DISABLE_POST_PHASES="${RT_OPA_DISABLE_POST_PHASES}"			# List of phases in step post
 
-### DA (Data Assimilation) parameters:
-typeset -i OPA_DA_SAT_DAYS=5				# num days in sat file for Data Assimilation
-OPA_DA_START_DATE=""					# start date of the Data Assimilation
-OPA_DA_SAT_START_DATE=""				# start date of the sat file
-OPA_DA_SAT_END_DATE=""					# end date of the sat file
 OPA_DA_ENABLE="${RT_OPA_DA_ENABLE:-true}"		# Data Assimilation is enabled (eventually overridden by opa_set_run)
 
 OPA_FORCE_DOWNLOAD="${RT_OPA_FORCE_DOWNLOAD:-true}"	# Download input data even if already downloaded
