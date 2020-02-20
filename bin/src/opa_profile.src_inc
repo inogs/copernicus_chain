@@ -544,7 +544,7 @@ function opa_set_run {
 
   [[ -d "$OPA_LOGDIR/report" ]] || opa_mkdir $OPA_LOGDIR/report
 
-  OPA_REPORTFILE="$OPA_LOGDIR/report/opa.${OPA_RUNDATE}.log"
+  OPA_REPORTFILE="$OPA_LOGDIR/{OPA_RUNTYPE}/report/opa.${OPA_RUNDATE}.log"
   [[ -f "$OPA_REPORTFILE" ]] || opa_prex "touch $OPA_REPORTFILE"
 
   typeset _opa_restart_weekday

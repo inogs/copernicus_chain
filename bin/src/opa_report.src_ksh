@@ -15,6 +15,7 @@ Usage: $OPA_PROGNAME [options]
 EofCat
 }
 
+opa_set_run
 
 DATE="$OPA_RUNDATE"
 FROM_DATE=''
@@ -86,14 +87,10 @@ EOFCAT
 thisdate=$(date --date="$OPA_RUNDATE" +%d)
 echo "today is: $thisdate"
 
-#OPA_NOTIFY_ADDRESSES='s.campagna@cineca.it'
-opa_report_dir="$OPA_LOGDIR/report"
+
+opa_report_dir="$OPA_LOGDIR/${OPA_RUNTYPE}/report"
 [[ -d $opa_report_dir ]] || opa_mkdir $opa_report_dir
-#if [[ $thisdate = "01" ]];then
-#monthdate=$(date --date="$OPA_RUNDATE 1 month ago" +%Y%m)
-#else
-monthdate=$(date --date="$OPA_RUNDATE" +%Y%m)
-#fi
+
 fulldate=$monthdate$thisdate
 opa_report="$opa_report_dir/monthly_report_$fulldate.auto"
 export OPA_HOME="$I_OPA_HOME"
