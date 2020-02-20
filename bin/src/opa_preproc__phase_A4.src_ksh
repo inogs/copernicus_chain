@@ -20,26 +20,15 @@ fi
 
 
 # Get the name of DA_SAT data input files
-RUNDATE_m7=$($OPA_BINDIR/date -d "${OPA_RUNDATE} -7 days" +%Y%m%d )
+SAT_DATE=$($OPA_BINDIR/date -d "${OPA_RUNDATE} -7 days" +%Y%m%d )
 
 
 
 sat_archive_dir="$I_OPA_HOME/inpdir/ONLINE/SAT/MULTISENSOR/1Km/NRT/WEEKLY_2_24/"
-sat_file="$sat_archive_dir/${OPA_DA_START_DATE}_d-OC_CNR-L3-CHL-MedOC4AD4_MULTI_1KM-MED-NRT-v02.nc"
+sat_file="$sat_archive_dir/${SAT_DATE}_d-OC_CNR-L3-CHL-MedOC4AD4_MULTI_1KM-MED-NRT-v02.nc"
 
-
-### source of actual input description file:
-if [[ ! -f $OPA_ACTUAL_INPUT_DESCRIPTION_FILE ]] ; then
-  opa_die 2 "Missing description file $OPA_ACTUAL_DESCRIPTION_FILE"
-fi
-. $OPA_ACTUAL_INPUT_DESCRIPTION_FILE
 
 typeset -i errors=0
-
-### Check if OPA_RUNDATE and OPA_RUNDATE__ACTUAL are the same
-if [[ $OPA_RUNDATE != $OPA_RUNDATE__ACTUAL ]] ; then
-  opa_die 3 "ERR: Actual input description file refers to $OPA_RUNDATE__ACTUAL, which is not $OPA_RUNDATE"
-fi
 
 
 da_wrkdir="$OPA_WRKDIR/DA"
@@ -52,44 +41,31 @@ opa_month=$( $OPA_BINDIR/date --date="$OPA_DA_START_DATE" +"%m" )
 
 
 ### Stage-in of var2d files:
-var2d_dir="$OPA_ETCDIR/static-data/DA/MISFIT/VAR2D"
-var2d_file="var2D.${opa_month}.nc.gz"
-opa_stage_in "$da_misfit/VAR2D" "$var2d_dir/$var2d_file" || {
-  opa_die 7 "stage-in failed for var2d file '$var2d_dir/$var2d_file'"
-}
 
-opa_prex_or_die "gzip -d $da_misfit/VAR2D/$var2d_file "
+var2d_file="var2D.${opa_month}.nc"
+
+opa_prex_or_die "gzip -dc $OPA_ETCDIR/static-data/DA/MISFIT/VAR2D/${var2d_file}.gz > ${da_misfit}/VAR2D/${var2d_file}"
+
+
 
 
 ### Stage-in of EOF file:
-eof_dir="$OPA_ETCDIR/static-data/DA/3D_VAR/EOF"
 eof_file="eof.${opa_month}.nc"
-opa_stage_in "$da_3d_var_dir/EOF" "$eof_dir/${eof_file}.gz" || {
-  opa_die 8 "stage-in failed for var2d file '$eof_dir/$eof_file' -> '$da_3d_var_dir/$eof_file'"
-}
+opa_prex_or_die "gzip -dc $OPA_ETCDIR/static-data/DA/3D_VAR/EOF/${eof_file}.gz  > $da_3d_var_dir/EOF/${eof_file}"
 
-opa_prex "gzip -d $da_3d_var_dir/EOF/${eof_file}.gz"
+
 
 ### Stage-in of GRID file:
-grid_dir="$OPA_ETCDIR/static-data/DA/3D_VAR/GRID"
-grid_file="BFM_grid.nc.gz"
-da_grid_file="$da_3d_var_dir/GRID/$grid_file"
-opa_stage_in "$da_3d_var_dir/GRID" "$grid_dir/${grid_file}" || {
-  opa_die 9 "stage-in failed for var2d file '$grid_dir/$grid_file' -> '$da_grid_file'"
-}
 
-opa_prex_or_die "gzip -d $da_grid_file "
+grid_file="BFM_grid.nc"
+opa_prex_or_die "gzip -dc $OPA_ETCDIR/static-data/DA/3D_VAR/GRID/${grid_file}.gz  > $da_3d_var_dir/GRID/${grid_file}"
 
 
 ### Stage-in of gradsal file:
-grad_dir="$OPA_ETCDIR/static-data/DA/3D_VAR/"
-grad_file="gradsal.nc.gz"
-da_grad_file="$da_3d_var_dir/$grad_file"
-opa_stage_in "$da_3d_var_dir/" "$grad_dir/${grad_file}" || {
-  opa_die 9 "stage-in failed for gradsal file '$grad_dir/$grad_file' -> '$da_grid_file'"
-}
 
-opa_prex_or_die "gzip -d $da_grad_file "
+grad_file="gradsal.nc"
+opa_prex_or_die "gzip -dc $OPA_ETCDIR/static-data/DA/3D_VAR//${grad_file}.gz  > $da_3d_var_dir/${grad_file}"
+
 
 ### Stage-in of SAT24  file:
 opa_stage_in "$da_sat_dir" "$sat_file" || {
