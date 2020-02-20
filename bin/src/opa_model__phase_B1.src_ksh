@@ -21,14 +21,10 @@ typeset -i errors=0
 
 domain_dir="$OPA_ETCDIR/static-data/DOMAIN"
 wrkdir=$OPA_WRKDIR/MODEL
-# [[ -d $wrkdir ]] || opa_prex "mkdir -p $wrkdir"
-
-. $OPA_ACTUAL_INPUT_DESCRIPTION_FILE
 
 
 
-restart_rundate=$($OPA_BINDIR/date --utc --date="$OPA_RUNDATE 00:00:00 7 days ago" +'%Y%m%d')
-restart_rundate_yy=$( $OPA_BINDIR/date --utc --date="$restart_rundate" +'%y%m%d' )
+restart_rundate=$($OPA_BINDIR/date --utc --date="$OPA_RUNDATE 00:00:00 8 days ago" +'%Y%m%d')
 restart_rundate_yyyy=$( $OPA_BINDIR/date --utc +'%Y%m%d-%H:%M:%S' --date="$restart_rundate 00:00:00" )
 echo "GFM:DBG:RESTART:$restart_rundate_yyyy"
 ### Copy of restart files:
@@ -44,7 +40,7 @@ else # forecast case
    fi
 fi
 
-#restart_arc_dir="$OPA_ARCDIR_ROOT/$OPA_RESTART_RUNDATE/MODEL"
+
 echo "restart_arc_dir=$restart_arc_dir"
 
 function opa_get_restarts {
@@ -211,10 +207,9 @@ opa_stage_in	"$wrkdir/KEXT/" \
   errors=$(( $errors + $? ))
 }
 
-for I in `ls $OPA_WRKDIR/OPAOPER/* ` ; do
+for I in `ls $OPA_WRKDIR/CMCC_PHYS/* ` ; do
     F=`basename $I`
-    filename=${F:7:1}20${F:0:6}-00:00:00.nc
-    opa_prex_or_die "ln -fs $I $wrkdir/FORCINGS/$filename" || errors=$(( $errors + 1 ))
+    opa_prex_or_die "ln -fs $I $wrkdir/FORCINGS/$F" || errors=$(( $errors + 1 ))
 done
 
 opa_prex "module unload numpy"
@@ -231,7 +226,6 @@ NAMELIST_INIT=$( python $OPA_BITSEA/preproc/decision_deltat.py -i $wrkdir/DeltaT
 opa_cp "$nml_dir/${NAMELIST_INIT} $wrkdir/namelist.init"
 
 
-#opa_prex "ln -fs $OPA_WRKDIR/INTERP/FORCINGS/* $wrkdir/FORCINGS/" || errors=$(( $errors + 1 ))
 opa_prex_or_die "ln -fs $OPA_WRKDIR/DA/SATELLITE      -t $wrkdir" || errors=$(( $errors + 1 ))
 opa_prex_or_die "ln -fs $OPA_WRKDIR/DA/DA_static_data -t $wrkdir" || errors=$(( $errors + 1 ))
 
@@ -271,47 +265,52 @@ opa_prex_or_die  "datelist FORCINGS/U      > forcingsTimes" || errors=$(( $error
 opa_prex_or_die  "datelist KEXT/KextF_     >     kextTimes" || errors=$(( $errors + 1 ))
 
 opa_prex_or_die  "datelistsat SATELLITE    > daTimes "    || errors=$(( $errors + 1 ))
-#opa_prex "for I in `ls SATELLITE | cut -c 1-8` ; do echo ${I}-12:00:00 ; done > daTimes "
 
 
 opa_prex "rm -f Start_End_Times 1.aveTimes 2.aveTimes restartTimes"
 
 # CREAZIONE FILE Start_End_Times
 file_time_names="Start_End_Times"
-set_spec_data -date ${OPA_RUNDATE} -days "-7" -hours 0
-echo ${RUNDATE_tmp} > ${file_time_names}
-set_spec_data -date ${OPA_RUNDATE} -days 10 -hours 0
-echo ${RUNDATE_tmp} >> ${file_time_names}
+
+if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
+  set_spec_data -date ${OPA_RUNDATE} -days "-8" -hours 0
+  echo ${RUNDATE_tmp} > ${file_time_names}
+  set_spec_data -date ${OPA_RUNDATE} -days -1 -hours 0
+  echo ${RUNDATE_tmp} >> ${file_time_names}
+fi
+
 
 # CREAZIONE FILE aveTimes
 file_time_names="1.aveTimes"
-typeset -i myday=-7
-while [[ ${myday} -ne 10 ]] ; do
+if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
+typeset -i myday=-8
+while [[ ${myday} -ne -1 ]] ; do
   myday=$(( $myday + 1 ))
   set_spec_data -date ${OPA_RUNDATE} -days ${myday}
   echo ${RUNDATE_tmp} >> ${file_time_names}
 done
 
+fi
+
+
 file_time_names="2.aveTimes"
-if [[ ${OPA_WEEKDAY} -eq 2 ]]; then
-  set_spec_data -date ${OPA_RUNDATE} -days 0 -hours 0
+if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
+  set_spec_data -date ${OPA_RUNDATE} -days "-1" -hours 0
   echo ${RUNDATE_tmp} > ${file_time_names}
 else
-  touch ${file_time_names}
+  touch ${file_time_names} #empty
 fi
 
 
 # CREAZIONE FILE restartTimes
 file_time_names="restartTimes"
-# if [[ ${OPA_WEEKDAY} -eq 2 ]]; then
-#   deltaday=3
-# elif [[ ${OPA_WEEKDAY} -eq 5 ]]; then
-#   deltaday=4
-# fi
-set_spec_data -date ${OPA_RUNDATE} -days "-${OPA_PREV_RUNDATE_OFFSET}" -hours 0
-echo ${RUNDATE_tmp} > ${file_time_names}
-# set_spec_data -date ${OPA_RUNDATE} -days 0 -hours 12
-# echo ${RUNDATE_tmp} >> ${file_time_names}
+
+#set_spec_data -date ${OPA_RUNDATE} -days "-${OPA_PREV_RUNDATE_OFFSET}" -hours 0
+#echo ${RUNDATE_tmp} > ${file_time_names}
+if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
+set_spec_data -date ${OPA_RUNDATE} -days "-1" -hours 0
+echo ${RUNDATE_tmp} >> ${file_time_names}
+fi
 
 opa_exit "$errors"
 
