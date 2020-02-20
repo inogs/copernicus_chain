@@ -8,17 +8,15 @@
 # Rundate definition
 opa_set_run
 
-opa_set_input_files__opaoper_a
-opa_set_input_files__opaoper_f
+#opa_set_input_files__opaoper_a
+#opa_set_input_files__opaoper_f
 
 # start
 opa_start
 
 typeset -i errors=0
 
-OPAOPERDIRS="OPAOPER OPAOPER_A OPAOPER_F"
 
-INTERPDIRS="INTERP INTERP/FORCINGS "
 
 DADIRS="DA DA/SATELLITE \
            DA/DA_static_data/3D_VAR \
@@ -34,7 +32,7 @@ POSTPROCDIRS="POSTPROC POSTPROC/AVE_FREQ_1 POSTPROC/AVE_FREQ_1/TMP POSTPROC/AVE_
               POSTPROC/AVE_FREQ_2/TMP POSTPROC/AVE_FREQ_2/INTEGRALS POSTPROC/AVE_FREQ_2/STAT_PROFILES \
               POSTPROC/AVE_FREQ_2/PROFILES"
 
-wrk_subdirs="$OPAOPERDIRS $DADIRS $INTERPDIRS $MODELDIRS $POSTPROCDIRS"
+wrk_subdirs=" $DADIRS  $MODELDIRS $POSTPROCDIRS"
 
 # reset input directories
 for subdir in $wrk_subdirs ; do

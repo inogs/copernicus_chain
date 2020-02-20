@@ -357,8 +357,6 @@ EOFCAT
 	fi
         _input_rdirs[_input_files_index]="${OPA_OPAOPER_A_INPUT_RDIRS[_input_files_index]}"
       done
-      _lidir="$OPA_INPDIR/OPAOPER_A"
-      _lwdir="$OPA_WRKDIR/OPAOPER_A"
       ;;
     f)
       _input_files_indices=$(opa_set_difference "${OPA_OPAOPER_F_INPUT_FILES_INDICES}" "$_DOWNLOADED_INDICES_F")
@@ -373,11 +371,13 @@ EOFCAT
 	fi
         _input_rdirs[_input_files_index]="${OPA_OPAOPER_F_INPUT_RDIRS[_input_files_index]}"
       done
-      _lidir="$OPA_INPDIR/OPAOPER_F"
-      _lwdir="$OPA_WRKDIR/OPAOPER_F"
       ;;
 
   esac
+
+  _lidir="$OPA_INPDIR/CMCC_PHYS"
+  _lwdir="$OPA_WRKDIR/CMCC_PHYS"
+
   typeset _lidir_download="$_lidir/$(hostname).$$.$RANDOM"	# local directory for download
   trap "rm -rf ${_lidir_download:-undefined}" 0
 
@@ -491,9 +491,12 @@ EOFCAT
           _file_found=false
         fi
         opa_prex "mv    $_lidir_download/$_compressed_rfile $_lidir"
-        opa_cp -p $_lidir/$_compressed_rfile $_lwdir
-        opa_cp -p $_lidir/$_compressed_rfile $_lidir/$_decompressed_lfile
-        opa_cp -p $_lidir/$_decompressed_lfile $_lwdir
+        # opa_cp -p $_lidir/$_compressed_rfile $_lwdir                      # cp orig in wrkdir/analysis/2/OPAOPER_A
+        # opa_cp -p $_lidir/$_compressed_rfile $_lidir/$_decompressed_lfile # cp orig in inpdir/analysis/20200218/OPAOPER_A/20200209_T.nc
+        # opa_cp -p $_lidir/$_decompressed_lfile $_lwdir                    # cp inpdir/analysis/20200218/OPAOPER_A/20200209_T.nc wrkdir/analysis/2/OPAOPER_A
+
+        opa_prex_or_die "ln -s $_lidir/$_compressed_rfile $_lwdir/$_decompressed_lfile "
+
       fi
 
       # exit from loop if file has been found

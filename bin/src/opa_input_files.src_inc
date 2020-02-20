@@ -230,7 +230,7 @@ function _Iopa_set_input_files__opaoper_a_s_f {
       esac
 
       _opaoper_file_remote="${_prefix_remote}${_prod_cycle}-${_date_remote}${_afs}-${_v}.nc"
-      _opaoper_file_local="${_prefix_local}${_date_local}_$_v.nc"
+      _opaoper_file_local="${_v}${_date_local}-12:00:00.nc"
       typeset _rdir
       case  "$_a_s_f" in
         a)
