@@ -1,8 +1,7 @@
 SHELL		= /bin/ksh
 include CONFIG/Make.config
 
-SCRIPTS=	cvs_check.ksh					\
-		opa_archive.ksh					\
+SCRIPTS=	opa_archive.ksh					\
 		opa_check_input_files.ksh			\
 		opa_get.ksh					\
 		opa_get_emerg.ksh				\
@@ -47,15 +46,12 @@ SCRIPTS=	cvs_check.ksh					\
 		opa_setup_grads.ksh				\
 		opa_setup_environment.ksh			\
 		opa_setup_directories.ksh			\
-		opa_setup_static_data.ksh			\
 		opa_log_job.ksh					\
 		opa_split_forecast.ksh				\
 		opa_start.ksh					\
 		opa_submit.ksh					\
-		opa_transfer.ksh				\
 		opa_log_inspect.py				\
 		opa_postcheckout.ksh				\
-		merge_parts.py					\
 		opa_put_phase_2.ksh				\
                 opa_put_phase_2_monthly.ksh                     \
 		opa_report.ksh					\
