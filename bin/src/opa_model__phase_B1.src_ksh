@@ -16,6 +16,9 @@ opa_set_run
 
 # start
 opa_start
+opa_prex "module unload numpy"
+opa_prex "source $OPA_VENV_1/bin/activate"
+PYTHONPATH=${PYTHONPATH}:$OPA_BITSEA
 
 typeset -i errors=0
 
@@ -43,50 +46,6 @@ fi
 
 echo "restart_arc_dir=$restart_arc_dir"
 
-function opa_get_restarts {
-  typeset    _restart_rundate_yyyy="$1"
-  typeset    _wrkdir="$2"
-  typeset    _restart_dir="$3"
-  typeset    _type_file="$4"
-  typeset    _link_or_copy="${5:-copy}"
-
-  typeset    _restart_file
-  typeset    _output_var
-  typeset -i _num_missing=0
-  if [[ "${_type_file}" == "RST" ]]; then
-    _prefix="RST"
-    _suffix="nc"
-    _variables="$OPA_OUTPUT_VARIABLES"
-  elif [[ "${_type_file}" == "BKP" ]];then
-    _prefix="ave"
-    _suffix="nc.bkp"
-    _variables="$OPA_HIGH_FREQ_VARIABLES"
-  else
-    echo "DBG: Type file <<${type_file}>> unknown!"
-  fi
-
-  for _output_var in ${_variables} ; do
-    _restart_file="${_prefix}.${_restart_rundate_yyyy}.${_output_var}.${_suffix}"
-    if [[ -f $_wrkdir/$_restart_file ]] ; then
-      ## File is already in wrkdir; nothing to do!
-      #opa_log 0 "WRN: restart file [${_restart_file}] already in work directory"
-      opa_prex "rm -f '$_wrkdir/$_restart_file"
-    fi
-    if [[ -f $_restart_dir/${_restart_file} ]] ; then
-      if [[ $_link_or_copy == "copy" ]] ; then
-        opa_cp -p $_restart_dir/${_restart_file} $_wrkdir/${_restart_file}
-      else
-        opa_prex "ln -s $_restart_dir/${_restart_file} $_wrkdir/${_restart_file}"
-      fi
-    elif [[ -f $_restart_dir/${_restart_file}.gz ]] ; then
-      opa_prex "gzip -dc $_restart_dir/${_restart_file}.gz > $_wrkdir/${_restart_file}"
-    else
-      _num_missing=$(( $_num_missing + 1 ))
-      echo "DBG: MANCA $_restart_dir/${_restart_file}[.gz]"
-    fi
-  done
-  return $_num_missing
-}
 
   if $I_OPA_BACKUP; then
     if (ssh $OPA_NOMINAL_LOGIN [ -d $OPA_NOMINAL_HOME/archive/$OPA_RESTART_RUNDATE ]); then
@@ -96,7 +55,9 @@ function opa_get_restarts {
       print "Error with $OPA_NOMINAL_HOME/archive/$OPA_RESTART_RUNDATE on $OPA_NOMINAL_LOGIN: directory not existing. Continuing from backup archive"
     fi
   fi
-  opa_get_restarts "$restart_rundate_yyyy" "$wrkdir/RESTARTS" "$restart_arc_dir" "RST"; _restart_from_da=$? 
+
+opa_prex_or_die "mpirun -np 26 python $OPA_POSTPROCDIR/archive/uncompress.py -i $restart_arc_dir -o $wrkdir/RESTARTS -l RST*.nc.gz "
+
 
 
 ### Instantiation of namelist templates:
@@ -212,9 +173,7 @@ for I in `ls $OPA_WRKDIR/CMCC_PHYS/* ` ; do
     opa_prex_or_die "ln -fs $I $wrkdir/FORCINGS/$F" || errors=$(( $errors + 1 ))
 done
 
-opa_prex "module unload numpy"
-opa_prex "source $OPA_VENV_1/bin/activate"
-PYTHONPATH=${PYTHONPATH}:$OPA_BITSEA
+
 
 opa_mkdir "$wrkdir/DeltaT"
 opa_stage_in "$wrkdir/DeltaT" "$OPA_ETCDIR/static-data/MED24_141/meshmask.nc"
@@ -264,53 +223,75 @@ opa_prex_or_die  "datelist BC/CO2_          > carbonTimes" || errors=$(( $errors
 opa_prex_or_die  "datelist FORCINGS/U      > forcingsTimes" || errors=$(( $errors + 1 ))
 opa_prex_or_die  "datelist KEXT/KextF_     >     kextTimes" || errors=$(( $errors + 1 ))
 
-opa_prex_or_die  "datelistsat SATELLITE    > daTimes "    || errors=$(( $errors + 1 ))
+opa_prex_or_die  "datelistsat SATELLITE    > daTimes_sat "    || errors=$(( $errors + 1 ))
 
 
 opa_prex "rm -f Start_End_Times 1.aveTimes 2.aveTimes restartTimes"
 
 # CREAZIONE FILE Start_End_Times
-file_time_names="Start_End_Times"
 
 if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
-  set_spec_data -date ${OPA_RUNDATE} -days "-8" -hours 0
-  echo ${RUNDATE_tmp} > ${file_time_names}
-  set_spec_data -date ${OPA_RUNDATE} -days -1 -hours 0
-  echo ${RUNDATE_tmp} >> ${file_time_names}
+  START_TIME=$( set_spec_data -date ${OPA_RUNDATE} -days "-8" -hours 0 )
+  END___TIME=$( set_spec_data -date ${OPA_RUNDATE} -days "-1" -hours 0 )
 fi
+
+echo ${START_TIME}  > Start_End_Times
+echo ${END___TIME} >> Start_End_Times
 
 
 # CREAZIONE FILE aveTimes
-file_time_names="1.aveTimes"
 if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
 typeset -i myday=-8
 while [[ ${myday} -ne -1 ]] ; do
   myday=$(( $myday + 1 ))
-  set_spec_data -date ${OPA_RUNDATE} -days ${myday}
-  echo ${RUNDATE_tmp} >> ${file_time_names}
+  set_spec_data -date ${OPA_RUNDATE} -days ${myday} >> 1.aveTimes
 done
 
 fi
 
 
-file_time_names="2.aveTimes"
 if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
-  set_spec_data -date ${OPA_RUNDATE} -days "-1" -hours 0
-  echo ${RUNDATE_tmp} > ${file_time_names}
+  set_spec_data -date ${OPA_RUNDATE} -days "-1" -hours 0 > 2.aveTimes
 else
-  touch ${file_time_names} #empty
+  touch 2.aveTimes #empty
 fi
 
 
 # CREAZIONE FILE restartTimes
-file_time_names="restartTimes"
-
 #set_spec_data -date ${OPA_RUNDATE} -days "-${OPA_PREV_RUNDATE_OFFSET}" -hours 0
 #echo ${RUNDATE_tmp} > ${file_time_names}
 if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
-set_spec_data -date ${OPA_RUNDATE} -days "-1" -hours 0
-echo ${RUNDATE_tmp} >> ${file_time_names}
+    set_spec_data -date ${OPA_RUNDATE} -days "-1" -hours 0 > restartTimes
 fi
+
+
+
+
+if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
+
+  export ONLINE_REPO=$I_OPA_HOME/inpdir/ONLINE
+  DA_TIMES_SAT=$wrkdir/daTimes_sat
+  DAFREQ=1
+  DA_HH=13
+
+  DATIMES_WRKDIR="$OPA_WRKDIR/DA"
+  OUTDIR=$wrkdir/DA__FREQ_1
+  OUTFILE=$wrkdir/daTimes
+
+
+  cd $OPA_BITSEA/Float/daTimes
+
+  for VARDA in N3n P_l; do
+    opa_prex_or_die "python profile_dates_DAfreq.py -f $DAFREQ -t $DA_HH -s ${START_TIME:0:8} -e ${END___TIME:0:8} -v ${VARDA} -o ${DATIMES_WRKDIR}/daTimes_float_${VARDA} "
+  done
+
+
+  # Edit varlist in merge_daTimes.py
+  opa_prex_or_die "python merge_daTimes.py -s $DA_TIMES_SAT -d $DATIMES_WRKDIR -o ${OUTFILE} "
+  opa_prex_or_die "python gen_3dvar_satfloat_namelists.py -o $OUTDIR -t satfloat.template.nml -r $OUTFILE -s $DA_TIMES_SAT -d $DATIMES_WRKDIR "
+
+fi
+
 
 opa_exit "$errors"
 

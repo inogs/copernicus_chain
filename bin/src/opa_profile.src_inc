@@ -539,7 +539,7 @@ function opa_set_run {
 
   [[ -d "$OPA_LOGDIR/report" ]] || opa_mkdir $OPA_LOGDIR/report
 
-  OPA_REPORTFILE="$OPA_LOGDIR/{OPA_RUNTYPE}/report/opa.${OPA_RUNDATE}.log"
+  OPA_REPORTFILE="$OPA_LOGDIR/${OPA_RUNTYPE}/report/opa.${OPA_RUNDATE}.log"
   [[ -f "$OPA_REPORTFILE" ]] || opa_prex "touch $OPA_REPORTFILE"
 
   typeset _opa_restart_weekday
@@ -1298,9 +1298,7 @@ function set_spec_data {
     _days=$(( -1*${_days} ))
     _ago=" ago"
   fi
-#   echo   "typeset RUNDATE_m_tmp= --date=${_date} ${_hours}:00:00  ${_days} day${_ago}"
-  eval "RUNDATE_tmp=$( date --utc +"%Y%m%d-%H:%M:%S" --date="${_date} 00:00:00  ${_days} day${_ago} ${_hours} hour" )"
-  eval "LAST_RUNDATE=$( date --utc +"%Y%m%d" --date="${_date} ${_days} day${_ago} " )"
+  date --utc +"%Y%m%d-%H:%M:%S" --date="${_date} 00:00:00  ${_days} day${_ago} ${_hours} hour"
 }
 
 function opa_check_da {
