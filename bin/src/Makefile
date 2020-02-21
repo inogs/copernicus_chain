@@ -7,7 +7,6 @@ SCRIPTS=	cvs_check.ksh					\
 		opa_get.ksh					\
 		opa_get_emerg.ksh				\
                 opa_get_recovery.ksh				\
-		opa_put.ksh					\
 		opa_input_files.inc				\
 		opa_link_analyses.ksh				\
 		opa_link_forecast.ksh				\
@@ -56,7 +55,6 @@ SCRIPTS=	cvs_check.ksh					\
 		opa_transfer.ksh				\
 		opa_log_inspect.py				\
 		opa_postcheckout.ksh				\
-		opa_split_file.ksh				\
 		merge_parts.py					\
 		opa_put_phase_2.ksh				\
                 opa_put_phase_2_monthly.ksh                     \
