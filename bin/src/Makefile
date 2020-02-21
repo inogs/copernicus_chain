@@ -57,17 +57,13 @@ SCRIPTS=	opa_archive.ksh					\
 		opa_report.ksh					\
 		opa_parse_reports.ksh				\
 		opa_parse_reports.py				\
-		opa_date_j.py					\
 		opa_check_run.ksh				\
 		opa_recovery.ksh				\
 		opa_test_rundate_options.ksh			\
 		opa_restart_cp.ksh				\
 		opa_clean.ksh					\
-		opa_cleaner.ksh					\
 		opa_lists.inc					\
 		opa_test_lists.ksh				\
-		opa_dates.inc					\
-		opa_test_dates.ksh				\
 		opa_is_login_node.ksh				\
 		opa_downloader.ksh				\
 		opa_check_remote_cron.ksh			\
