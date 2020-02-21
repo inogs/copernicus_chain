@@ -64,9 +64,7 @@ SCRIPTS=	cvs_check.ksh					\
 		opa_date_j.py					\
 		opa_check_run.ksh				\
 		opa_recovery.ksh				\
-		opa_add_binaries.ksh				\
 		opa_test_rundate_options.ksh			\
-		opa_search_nans.ksh				\
 		opa_restart_cp.ksh				\
 		opa_clean.ksh					\
 		opa_cleaner.ksh					\
