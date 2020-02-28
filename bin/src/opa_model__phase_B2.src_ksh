@@ -19,6 +19,16 @@ wrkdir=$OPA_WRKDIR/MODEL
 ### MODEL
 opa_log 0 "model execution on [${RM_NUM_NODES}] nodes <${RM_NODES}>, using [${RM_NUM_PROCS}] processors"
 
+export ONLINE_REPO=$I_OPA_HOME/inpdir/ONLINE
+export MASKFILE=$wrkdir/meshmask.nc
+export OPA_SCRDIR
+export DA_DIR=$OPA_WRKDIR/DA
+export DA__FREQ_1=$wrkdir/DA__FREQ_1
+export OPA_VENV_1
+export OPA_BITSEA
+export OPA_BINDIR
+export OPA_POSTPROCDIR
+
 opa_prex "cd $wrkdir"
 # opa_prex "ulimit -s 1024000"
 opa_mpi_run "$OPA_BINDIR/ogstm.xx$OPA_DEBUG_EXTENSION" || {
