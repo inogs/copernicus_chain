@@ -8,14 +8,15 @@
 !
 !             BFGS minimizers set-up
 !
-!  ctl_m   -  Number of copies saved in the minimizer
-!  ctl_tol -  Stopping criteria (absolute)
-!  ctl_per -  Stopping criteria (relative)
+!  ctl_tol -  Minimum gradient of J
+!  ctl_per -  Percentage of initial gradient
+!  verbose -  Add verbose on standard output
 !
 ! ---
 &ctllst
    ctl_tol  = 1.e-11
-   ctl_per  = 1.e-3
+   ctl_per  = 1.e-2
+   verbose  = 1
 /
 !------------------------------------------------------------
 !
@@ -24,8 +25,13 @@
 !
 !             Covariance constants
 !
-!  neof     - Number of vertical EOFs 
-!  nreg    -  Number of regions
+!  neof_chl - Number of vertical EOFs for chl
+!  neof_n3n - Number of vertical EOFs for n3n
+!  neof_o2o - Number of vertical EOFs for o2o
+!  neof_multi - Number of multivariate vertical EOFs
+!  kmchl    - chl Nlevels in multi EOFs
+!  kmnit    - nit Nlevels in multi EOFs
+!  nreg     -  Number of regions
 !  read_eof - Logical to read EOFs from files.
 !             See subroutine def_cov.f90       
 !  rcf_ntr -  Number of iterations of the recursive filter
@@ -34,59 +40,16 @@
 !
 ! ---
 &covlst
-   neof     = 26
+   neof_chl = 26
+   neof_n3n = 26
+   neof_o2o = 26
+   neof_multi = 26
+   kmchl    = 36
+   kmnit    = 60
    nreg     = 144657
    read_eof = .true. 
    rcf_ntr  = 4
    rcf_L    = 10000.
    rcf_efc  = 5.0
-/
-!------------------------------------------------------------
-!
-! Namelist biolst
-! ---
-!
-!          Biological assimilation set-up
-!
-!  biol    -  1-biological variables in state vector, 
-!             0-no biological variables in state vector
-!  bphy    -  1-biological and physical variables in state vector,
-!             0-no physical variables in state vector
-!  nchl    -  Number of phytoplankton species
-!  chl_dep -  Minimum depth for chlorophyll assimilation
-!  lsize   -  size of the working block in the master-slave approach
-!
-! ---
-&biolst
-  bio_assim = 1
-  nphyto    = 4
-  chl_dep = 0.0
-  ncmp    = 5
-  ApplyConditions=.true.
-/
-!------------------------------------------------------------
-!
-! Namelist parameters
-! ---
-!
-!          Parameters namelist
-!
-!  sat     - 1-assimilate satellite data
-!            0-no satellite assimilation
-!  argo    - 1-assimilate argo data
-!          - 0-no argo assimilation
-! uniformL - 1-non uniform radius
-!          - 0-uniform radius (rcf%L)
-! anisL    - 1-anisotropy
-!            0-isotropy
-! verbose  - 1-set verbose output
-!
-! ---
-&params
-  sat_obs = 1
-  argo    = 0
- uniformL = 0
-  anisL   = 1
- verbose  = 0
 /
 !------------------------------------------------------------
