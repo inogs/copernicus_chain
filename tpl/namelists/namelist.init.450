@@ -38,7 +38,8 @@
 
    nwritetrc = 10000,
    freq_ave_phys        = 1 ! 0 = none, 1=group 1, 2 = group 2
-   save_bkp_group2      = .true.
+   freq_flux_dump       = 1 ! 1=group 1, 2 = group 2
+   save_bkp_group2      = .false.
    deflate_ave          = 0
    deflate_level_ave    = 4
    deflate_rst          = 0
@@ -57,10 +58,11 @@
 /
 
 &DA_setup
-    DA_Nprocs = 22,
+    DA_Nprocs = 12,
     satfile_suffix = "_d-OC_CNR-L3-CHL-MedOC4AD4_MULTI_1KM-MED-NRT-v02.nc"
     satvarname     = "CHL"
-    AssimilationLevels = 36
+    AssimilationLevels_sat = 36
+    AssimilationLevels_float = 60
 /
 
 &Number_Fluxes
