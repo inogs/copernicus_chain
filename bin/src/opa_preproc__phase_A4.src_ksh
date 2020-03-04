@@ -40,7 +40,7 @@ da_3d_var_dir="$da_static/3D_VAR"
 mon_start=$( $OPA_BINDIR/date --date="$SAT_DATE"    +"%m" )
 mon_end=$(   $OPA_BINDIR/date --date="$OPA_RUNDATE" +"%m" )
 
-for opa_month in $month_start $month_end ; do
+for opa_month in $mon_start $mon_end ; do
 
    ### Stage-in of var2d files:
 
@@ -72,11 +72,15 @@ opa_prex_or_die "gzip -dc $OPA_ETCDIR/static-data/DA/3D_VAR/GRID/${grid_file}.gz
 
 grad_file="gradsal.nc"
 opa_prex_or_die "gzip -dc $OPA_ETCDIR/static-data/DA/3D_VAR/${grad_file}.gz  > $da_3d_var_dir/${grad_file}"
+rad_corr_file="chl_rad_corr.nc"
+opa_prex_or_die "gzip -dc $OPA_ETCDIR/static-data/DA/3D_VAR/${rad_corr_file}.gz  > $da_3d_var_dir/${rad_corr_file}"
 
 ### Stage-in of vardescriptor files for Float_misfit_gen.sh :
 opa_stage_in "$da_wrkdir" \
  "$OPA_ETCDIR/static-data/DA/MISFIT/VarDescriptor_P_l.xml" \
- "$OPA_ETCDIR/static-data/DA/MISFIT/VarDescriptor_N3n.xml" || { opa_die 1 "stage-in of Vardescriptors failed" }
+ "$OPA_ETCDIR/static-data/DA/MISFIT/VarDescriptor_N3n.xml" || {
+ opa_die 1 "stage-in of Vardescriptors failed"
+ }
 
 ### Stage-in of SAT24  file:
 opa_stage_in "$da_sat_dir" "$sat_file" || {
