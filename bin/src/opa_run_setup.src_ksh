@@ -21,9 +21,12 @@ typeset -i errors=0
 DADIRS="DA DA/SATELLITE \
            DA/DA_static_data/3D_VAR \
            DA/DA_static_data/3D_VAR/EOF \
+           DA/DA_static_data/3D_VAR/EOF/CHLFloat \
+           DA/DA_static_data/3D_VAR/EOF/CHL__Sat \
+           DA/DA_static_data/3D_VAR/EOF/N3n \
            DA/DA_static_data/3D_VAR/GRID \
-           DA/DA_static_data/MISFIT \
-           DA/DA_static_data/MISFIT/VAR2D "
+           DA/DA_static_data/3D_VAR/MISFIT \
+           DA/DA_static_data/VAR_SAT "
 
 MODELDIRS="MODEL MODEL/BC MODEL/FORCINGS MODEL/AVE_FREQ_1 MODEL/AVE_FREQ_2 MODEL/AVE_PHYS MODEL/RESTARTS MODEL/DA__FREQ_1 MODEL/KEXT"
 

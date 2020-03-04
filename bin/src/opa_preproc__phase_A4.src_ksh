@@ -51,7 +51,12 @@ opa_prex_or_die "gzip -dc $OPA_ETCDIR/static-data/DA/MISFIT/VAR2D/${var2d_file}.
 
 ### Stage-in of EOF file:
 eof_file="eof.${opa_month}.nc"
-opa_prex_or_die "gzip -dc $OPA_ETCDIR/static-data/DA/3D_VAR/EOF/${eof_file}.gz  > $da_3d_var_dir/EOF/${eof_file}"
+opa_prex_or_die "gzip -dc $OPA_ETCDIR/static-data/DA/3D_VAR/EOF/CHL__Sat/${eof_file}.gz  > $da_3d_var_dir/EOF/CHL__Sat/${eof_file}"
+opa_stage_in "$da_3d_var_dir/EOF/CHLFloat/" "$OPA_ETCDIR/static-data/DA/3D_VAR/EOF/CHLFloat/${eof_file}"  || { opa_die 1 "stage-in of CHLFloat eof failed" }
+
+opa_prex_or_die "gzip -dc $OPA_ETCDIR/static-data/DA/3D_VAR/EOF/N3n/${eof_file}.gz  > $da_3d_var_dir/EOF/N3n/${eof_file}"
+opa_prex_or_die "gzip -dc $OPA_ETCDIR/static-data/DA/3D_VAR/EOF/O2o/${eof_file}.gz  > $da_3d_var_dir/EOF/O2o/${eof_file}"
+
 
 
 
