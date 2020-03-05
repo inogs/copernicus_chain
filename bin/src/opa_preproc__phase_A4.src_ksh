@@ -64,9 +64,8 @@ for opa_month in $mon_start $mon_end ; do
    opa_prex_or_die "gzip -dc $OPA_ETCDIR/static-data/DA/3D_VAR/EOF/N3n/${eof_file}.gz  > $da_3d_var_dir/EOF/N3n/${eof_file}"
 
    ### Stage-in of Crosscor  file:
-   crosscor_file="crosscor.${opa_month}.nc"
-   opa_prex_or_die "gzip -dc $OPA_ETCDIR/static-data/DA/3D_VAR/CROSSCORS/${crosscor_file}.gz  > $da_3d_var_dir/CROSSCORS/${crosscor_file}"
-
+   crosscor_file="crosscorrs.${opa_month}.nc"
+   opa_prex_or_die "gzip -dc $OPA_ETCDIR/static-data/DA/3D_VAR/CROSSCORRS/${crosscor_file}.gz  > $da_3d_var_dir/CROSSCORRS/${crosscor_file}
 done
 
 

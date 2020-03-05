@@ -25,7 +25,7 @@ DADIRS="DA DA/SATELLITE \
            DA/DA_static_data/3D_VAR/EOF/CHLFloat/compressed \
            DA/DA_static_data/3D_VAR/EOF/CHL__Sat \
            DA/DA_static_data/3D_VAR/EOF/N3n \
-           DA/DA_static_data/3D_VAR/CROSSCORS \
+           DA/DA_static_data/3D_VAR/CROSSCORRS \
            DA/DA_static_data/3D_VAR/GRID \
            DA/DA_static_data/3D_VAR/MISFIT \
            DA/DA_static_data/VAR_SAT "
