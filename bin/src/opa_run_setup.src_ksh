@@ -22,6 +22,7 @@ DADIRS="DA DA/SATELLITE \
            DA/DA_static_data/3D_VAR \
            DA/DA_static_data/3D_VAR/EOF \
            DA/DA_static_data/3D_VAR/EOF/CHLFloat \
+           DA/DA_static_data/3D_VAR/EOF/CHLFloat/compressed \
            DA/DA_static_data/3D_VAR/EOF/CHL__Sat \
            DA/DA_static_data/3D_VAR/EOF/N3n \
            DA/DA_static_data/3D_VAR/GRID \

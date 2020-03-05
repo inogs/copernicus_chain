@@ -10,6 +10,9 @@ opa_set_run
 
 # start
 opa_start
+opa_prex "module unload numpy"
+opa_prex "source $OPA_VENV_1/bin/activate"
+PYTHONPATH=${PYTHONPATH}:$OPA_BITSEA
 
 opa_log 2 "PHASE A4 : data assimilation [${OPA_DA_ENABLE}]"
 
@@ -52,10 +55,10 @@ for opa_month in $mon_start $mon_end ; do
    ### Stage-in of EOF file:
    eof_file="eof.${opa_month}.nc"
    opa_prex_or_die "gzip -dc $OPA_ETCDIR/static-data/DA/3D_VAR/EOF/CHL__Sat/${eof_file}.gz  > $da_3d_var_dir/EOF/CHL__Sat/${eof_file}"
-   opa_stage_in "$da_3d_var_dir/EOF/CHLFloat/" "$OPA_ETCDIR/static-data/DA/3D_VAR/EOF/CHLFloat/${eof_file}"  || {
+   opa_stage_in "$da_3d_var_dir/EOF/CHLFloat/compressed" "$OPA_ETCDIR/static-data/DA/3D_VAR/EOF/CHLFloat/${eof_file}"  || {
    opa_die 1 "stage-in of CHLFloat eof failed"
    }
-
+   opa_prex_or_die "python $OPA_BITSEA/PreprocDA/netcdf4_uncompress.py -i $da_3d_var_dir/EOF/CHLFloat/compressed/${eof_file} -o  $da_3d_var_dir/EOF/CHLFloat/${eof_file} "
    opa_prex_or_die "gzip -dc $OPA_ETCDIR/static-data/DA/3D_VAR/EOF/N3n/${eof_file}.gz  > $da_3d_var_dir/EOF/N3n/${eof_file}"
 
 done
