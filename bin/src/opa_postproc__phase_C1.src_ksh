@@ -21,8 +21,6 @@ ec=0 ; errors=$(( $errors + $ec ))
 OPA_POSTPROC=$OPA_WRKDIR/POSTPROC
 opa_prex "cd $OPA_POSTPROC"
 
-. $OPA_ACTUAL_INPUT_DESCRIPTION_FILE
-
 typeset -i errors=0
 
 opa_prex "module unload numpy"
@@ -52,6 +50,8 @@ opa_stage_in "$OPA_POSTPROC"  \
   opa_die 1 "stage-in of POSTPROC failed"
 }
 
+
+
     MODELDIR=$OPA_WRKDIR/MODEL
   CHLSUP_DIR=$OPA_WRKDIR/POSTPROC/AVE_FREQ_1/CHL_SUP
   if [[ $I_OPA_HOSTNAME = "meucci" ]]
@@ -76,22 +76,22 @@ case $I_OPA_HOSTNAME in
      ;;
 esac
 
+
+
 opa_prex "cd $OPA_POSTPROC"
-if $hot_start ; then
-   opa_analyses_dates  $OPA_RUNDATE | head -1 > timelist.a
+if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
 
-     opa_prex "mpirun -np 1 python $OPA_POSTPROCDIR/prodotti/prodotti_copernicus.py -i $OPA_WRKDIR/MODEL/AVE_FREQ_1 -o $PRODUCTS_DIR -m $MASK_FILE -t timelist.a -d an -b $BULLETIN_DATE --tr daily" 
+   opa_analyses_dates  $OPA_RUNDATE  > timelist.a
 
-   opa_analyses_dates  $OPA_RUNDATE | tail -6 > timelist.s
+   opa_prex_or_die "mpirun -np 7 python $OPA_POSTPROCDIR/prodotti/prodotti_copernicus.py -i $OPA_WRKDIR/MODEL/AVE_FREQ_1 -o $PRODUCTS_DIR -m $MASK_FILE -t timelist.a -d an -b $BULLETIN_DATE --tr daily"
 else
+
    opa_analyses_dates  $OPA_RUNDATE          > timelist.s
+   opa_forecast_dates $OPA_RUNDATE           > timelist.f
+
+     opa_prex_or_die "mpirun -np 1  python $OPA_POSTPROCDIR/prodotti/prodotti_copernicus.py -i $OPA_WRKDIR/MODEL/AVE_FREQ_1 -o $PRODUCTS_DIR -m $MASK_FILE -t timelist.s -d sm -b $BULLETIN_DATE --tr daily"
+     opa_prex_or_die "mpirun -np 10 python $OPA_POSTPROCDIR/prodotti/prodotti_copernicus.py -i $OPA_WRKDIR/MODEL/AVE_FREQ_1 -o $PRODUCTS_DIR -m $MASK_FILE -t timelist.f -d fc -b $BULLETIN_DATE --tr daily"
 fi
-
-opa_forecast_dates $OPA_RUNDATE           > timelist.f 
-
-     opa_prex "mpirun -np 6  python $OPA_POSTPROCDIR/prodotti/prodotti_copernicus.py -i $OPA_WRKDIR/MODEL/AVE_FREQ_1 -o $PRODUCTS_DIR -m $MASK_FILE -t timelist.s -d sm -b $BULLETIN_DATE --tr daily" 
-     opa_prex "mpirun -np 10 python $OPA_POSTPROCDIR/prodotti/prodotti_copernicus.py -i $OPA_WRKDIR/MODEL/AVE_FREQ_1 -o $PRODUCTS_DIR -m $MASK_FILE -t timelist.f -d fc -b $BULLETIN_DATE --tr daily" 
-
 
 
   ZIPPED_DIR=$OPA_WRKDIR/POSTPROC/COMPRESSED_FOR_ARCHIVE
@@ -102,21 +102,24 @@ opa_mkdir "$ZIPPED_DIR/AVE_FREQ_2"
 opa_mkdir "$ZIPPED_DIR/AVE_PHYS"
 
 opa_mkdir "$ZIPPED_DIR/RST"
-opa_mkdir "$ZIPPED_DIR/RST/BEFORE"
-opa_mkdir "$ZIPPED_DIR/RST/AFTER"
-opa_mkdir "$ZIPPED_DIR/PHYS/"
 
-     opa_prex_or_die "mpirun -np 34 python $OPA_BITSEA/validation/online/reduce_ave_phys.py -i $MODELDIR/AVE_PHYS -o $MODELDIR/AVE_FREQ_1  -m $MASK_FILE"
+opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/archive/compress.py -i $MODELDIR/AVE_FREQ_1 -o $ZIPPED_DIR/AVE_FREQ_1 -l *nc"
 
-     opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/archive/compress.py -i $MODELDIR/AVE_FREQ_1 -o $ZIPPED_DIR/AVE_FREQ_1 -l *nc"
 
-     for opa_restart_archive_offset in $OPA_RESTART_ARCHIVE_OFFSETS ; do
-        output_restart_date=$($OPA_BINDIR/date --utc --date="$OPA_RUNDATE $opa_restart_archive_offset days " +%Y%m%d)
-        opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/archive/compress.py -i $MODELDIR/RESTARTS -o $ZIPPED_DIR/RST -l RST.${output_restart_date}-00:00:00.*nc"
-     done
+output_restart_date=`set_spec_data -date ${OPA_RUNDATE} -days "-1" -hours 0 `
+opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/archive/compress.py -i $MODELDIR/RESTARTS -o $ZIPPED_DIR/RST -l RST.${output_restart_date}.*nc"
 
-     opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/archive/compress.py -i $MODELDIR/DA__FREQ_1  -o $ZIPPED_DIR/RST/AFTER  -l RST_after*12:00:00*.nc"
-     opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/archive/compress.py -i $MODELDIR/DA__FREQ_1  -o $ZIPPED_DIR/RST/BEFORE -l RSTbefore*12:00:00*.nc"
+
+if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
+     opa_mkdir "$ZIPPED_DIR/RST/BEFORE"
+     opa_mkdir "$ZIPPED_DIR/RST/AFTER"
+     opa_mkdir "$ZIPPED_DIR/PHYS/"
+
+     opa_prex_or_die "mpirun -np 14 python $OPA_BITSEA/validation/online/reduce_ave_phys.py -i $MODELDIR/AVE_PHYS -o $MODELDIR/AVE_FREQ_1  -m $MASK_FILE"
+
+
+     opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/archive/compress.py -i $MODELDIR/DA__FREQ_1  -o $ZIPPED_DIR/RST/AFTER  -l RST_after*1[23]:00:00*.nc"
+     opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/archive/compress.py -i $MODELDIR/DA__FREQ_1  -o $ZIPPED_DIR/RST/BEFORE -l RSTbefore*1[23]:00:00*.nc"
 
      opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/var_aggregator.py -l ave*N1p.nc -i $MODELDIR/AVE_FREQ_2  -d VarDescriptor_2.xml  -t $MODELDIR/AVE_FREQ_2  -c $CHLSUP_DIR -m $MASK_FILE"
      opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/archive/compress.py -i $MODELDIR/AVE_FREQ_2   -o $ZIPPED_DIR/AVE_FREQ_2 -l ave.*.nc"
@@ -124,7 +127,7 @@ opa_mkdir "$ZIPPED_DIR/PHYS/"
 # monthly products
 
 DAY=$( date --date="$OPA_RUNDATE" +%d )
-if [[ $DAY > 10 ]] && [[ $DAY < 15 ]] ; then
+if [[ $DAY > 7 ]] && [[ $DAY < 15 ]] ; then
 ARCHIVE_DIR=$I_OPA_HOME/archive
 
    ZIPPED_DIR=$OPA_POSTPROC/MONTHLY/ZIPPED
@@ -145,7 +148,7 @@ opa_prex_or_die "basename $( ls $MONTHLY_DIR/ave*N1p.nc ) |  cut -c 5-12 > timel
 opa_prex_or_die "mpirun -np 1 python ${OPA_POSTPROCDIR}/prodotti/prodotti_copernicus.py -i $MONTHLY_DIR -o $MONTHLY_PROD -t timelist_monthly.txt -d an -m $MASKFILE --tr monthly -b $BULLETIN_DATE "
 
 fi
-
+fi # analysis
 
 #### MAP GENERATION #####
 

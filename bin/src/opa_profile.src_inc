@@ -880,10 +880,10 @@ function opa_analyses_dates {
   typeset    _opa_rundate="${1:-$OPA_RUNDATE}"
   typeset -i _day_offset=$OPA_ANALYSES_DAYS
   typeset    _date
-  while [[ _day_offset -gt 0 ]] ; do
+  _day_offset=$(( $_day_offset + 1 ))
+  while [[ _day_offset -gt 1 ]] ; do
     _date=$($OPA_BINDIR/date --utc --date="$_opa_rundate $_day_offset days ago" +"%Y%m%d")
     echo "$_date"
-    #printf "${file_out_fmt}\n" "$_date" "$_opa_rundate"
     _day_offset=$(( $_day_offset - 1 ))
   done
 }
