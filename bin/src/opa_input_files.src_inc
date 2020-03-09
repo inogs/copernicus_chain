@@ -86,7 +86,7 @@ function opa_input_files__setup  {
           # TUESDAY
           OPA_OPAOPER_A_DAY_OFFSET_START=$(( -2 - $OPA_ANALYSES_DAYS ))
           OPA_OPAOPER_A_DAY_OFFSET_END=-2
-          OPA_OPAOPER_A_RDIR="/medsea_oce/nrt/op/out/o/"
+          OPA_OPAOPER_A_RDIR="/medsea_oce/nrt/op/out/mfs_eas5/o/"
           OPA_OPAOPER_A_PREFIX="mfs_eas5"
           OPA_DATEDIR="${OPA_RUNDATE}"
           # maybe last 3 can be removed
