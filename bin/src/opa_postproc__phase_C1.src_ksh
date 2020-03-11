@@ -96,12 +96,6 @@ fi
 
   ZIPPED_DIR=$OPA_WRKDIR/POSTPROC/COMPRESSED_FOR_ARCHIVE
 
-opa_mkdir "$ZIPPED_DIR"
-opa_mkdir "$ZIPPED_DIR/AVE_FREQ_1"
-opa_mkdir "$ZIPPED_DIR/AVE_FREQ_2"
-opa_mkdir "$ZIPPED_DIR/AVE_PHYS"
-
-opa_mkdir "$ZIPPED_DIR/RST"
 
 opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/archive/compress.py -i $MODELDIR/AVE_FREQ_1 -o $ZIPPED_DIR/AVE_FREQ_1 -l *nc"
 
@@ -111,15 +105,27 @@ opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/archive/compress.py -i $MODELDIR
 
 
 if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
-     opa_mkdir "$ZIPPED_DIR/RST/BEFORE"
-     opa_mkdir "$ZIPPED_DIR/RST/AFTER"
+     opa_mkdir "$ZIPPED_DIR/AVE_FREQ_2"
+     opa_mkdir "$ZIPPED_DIR/AVE_PHYS"
+     opa_mkdir "$ZIPPED_DIR/DA/"
+     opa_mkdir "$ZIPPED_DIR/DA/tar"
      opa_mkdir "$ZIPPED_DIR/PHYS/"
 
      opa_prex_or_die "mpirun -np 14 python $OPA_BITSEA/validation/online/reduce_ave_phys.py -i $MODELDIR/AVE_PHYS -o $MODELDIR/AVE_FREQ_1  -m $MASK_FILE"
 
+     # DA_SECTION ###########
+	 opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/archive/netcdf4_compress.py -i $MODELDIR/DA__FREQ_1  -o $ZIPPED_DIR/DA -l RST_after*1[23]:00:00*.nc"
+	 opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/archive/netcdf4_compress.py -i $MODELDIR/DA__FREQ_1  -o $ZIPPED_DIR/DA -l RSTbefore*1[23]:00:00*.nc -c 60"
+	 opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/archive/compress.py         -i $MODELDIR/DA__FREQ_1  -o $ZIPPED_DIR/DA -l [2cl]*nc " # *corr.nc, limcorr.nc, chl*nc"
+	 opa_prex_or_die "cp $MODELDIR/DA__FREQ_1/*dat      $ZIPPED_DIR/DA"
+	 opa_prex_or_die "cp $MODELDIR/DA__FREQ_1/OceanVar* $ZIPPED_DIR/DA"
 
-     opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/archive/compress.py -i $MODELDIR/DA__FREQ_1  -o $ZIPPED_DIR/RST/AFTER  -l RST_after*1[23]:00:00*.nc"
-     opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/archive/compress.py -i $MODELDIR/DA__FREQ_1  -o $ZIPPED_DIR/RST/BEFORE -l RSTbefore*1[23]:00:00*.nc"
+	 DA_TIMES=$OPA_WRKDIR/POSTPROC/daTimes
+	 opa_prex_or_die "cat $MODELDIR/daTimes | cut -c 1-8 | uniq > $DA_TIMES"
+
+	 opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/archive/packDA.py -i $ZIPPED_DIR/DA -o $ZIPPED_DIR/DA/tar -v $DA_TIMES"
+     ##########################
+
 
      opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/var_aggregator.py -l ave*N1p.nc -i $MODELDIR/AVE_FREQ_2  -d VarDescriptor_2.xml  -t $MODELDIR/AVE_FREQ_2  -c $CHLSUP_DIR -m $MASK_FILE"
      opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/archive/compress.py -i $MODELDIR/AVE_FREQ_2   -o $ZIPPED_DIR/AVE_FREQ_2 -l ave.*.nc"
