@@ -714,7 +714,7 @@ function opa_report {
       type_reg="target_time_recover"
       _string=$(echo "${_rdate}" "${type_reg}" "$OPA_RUNDATE" "$eventid")
 
-      opa_prex "rm $OPA_REPORTFILE.tmp"
+      if [ -f $OPA_REPORTFILE.tmp ] ; then opa_prex "rm $OPA_REPORTFILE.tmp" ; fi
       printf 'EventID:%s , TimeStamp:%s , ProdCycle:%s , TypeRegistration:%s-fail\n' ${_string} | tee -a $OPA_REPORTFILE.tmp
 
       # solo se in precedenza ho fallito mando un email che i dati sono stati recuperati
@@ -1085,7 +1085,7 @@ function _opa_get_default_run {
        ;;
   esac
 
-
+  _OPA_SUBMIT_DAY_OFFSET="$_opa_submit_day_offset"
   _OPA_RUNDATE="$_opa_rundate"
   _OPA_RUNTYPE="$_opa_runtype"
   #echo "DEBUG: _OPA_RUNDATE='$_OPA_RUNDATE'"
