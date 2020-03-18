@@ -32,12 +32,14 @@ opa_step_has_phase pre A1 && {
 
 
 ### PHASE A4
-$OPA_DA_ENABLE && opa_step_has_phase pre A4 && {
+if [[ $OPA_RUNTYPE == 'analysis' ]]; then
+opa_step_has_phase pre A4 && {
   opa_exec_and_log opa_preproc__phase_A4	|| errors=$(( $errors + 1 ))
 }
+fi
 
-#opa_exit "$errors"
-opa_exit "0"
+opa_exit "$errors"
+
 
 
 

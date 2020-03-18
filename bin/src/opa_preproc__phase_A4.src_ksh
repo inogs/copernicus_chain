@@ -16,12 +16,6 @@ PYTHONPATH=${PYTHONPATH}:$OPA_BITSEA
 
 opa_log 2 "PHASE A4 : data assimilation [${OPA_DA_ENABLE}]"
 
-if ! $OPA_DA_ENABLE ; then
-  opa_log 2 "Data Assimilation is disabled!"
-  opa_exit 0
-fi
-
-
 # Get the name of DA_SAT data input files
 SAT_DATE=$($OPA_BINDIR/date -d "${OPA_RUNDATE} -8 days" +%Y%m%d )
 
