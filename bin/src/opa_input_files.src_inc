@@ -54,17 +54,6 @@ OPA_OPAOPER_F_LAST_FILES=""			# list of file to be replicated
 OPA_OPAOPER_A_RDIR=''				# remote directory for analyses
 OPA_OPAOPER_S_RDIR=''				# remote directory for simulations
 OPA_OPAOPER_F_RDIR=''				# remote directory for forecasts
-OPA_DATEDIR=''					# remote main directory 
-# DA parameters
-set -A OPA_DA_SAT_INPUT_VARS --
-set -A OPA_DA_SAT_INPUT_LFILES --
-set -A OPA_DA_SAT_INPUT_RFILES --
-set -A OPA_DA_SAT_INPUT_COMPRESS_MODES --
-set -A OPA_DA_SAT_INPUT_DOWNLOAD_MODES --
-set -A OPA_DA_SAT_INPUT_RDIRS --
-OPA_DA_SAT_INPUT_FILES_INDICES=' '
-typeset -i OPA_DA_SAT_INPUT_FILES_NUM=0
-OPA_DA_SAT_RDIR=''				# remote directory for SAT file
 
 
 _FTPCONFIG_INGV="$I_OPA_HOME/etc/http-config/.ingv.ftpconfig"
@@ -88,7 +77,6 @@ function opa_input_files__setup  {
           OPA_OPAOPER_A_DAY_OFFSET_END=-2
           OPA_OPAOPER_A_RDIR="/medsea_oce/nrt/op/out/mfs_eas5/o/"
           OPA_OPAOPER_A_PREFIX="mfs_eas5"
-          OPA_DATEDIR="${OPA_RUNDATE}"
           # maybe last 3 can be removed
           OPA_OPAOPER_A_DAY_OFFSET_START__ACTUAL="$OPA_OPAOPER_A_DAY_OFFSET_START"
           OPA_OPAOPER_A_DAY_OFFSET_END__ACTUAL="$OPA_OPAOPER_A_DAY_OFFSET_END"
@@ -103,13 +91,13 @@ function opa_input_files__setup  {
       OPA_OPAOPER_S_DAY_OFFSET_END=-1
       OPA_OPAOPER_S_PREFIX="mfs_eas5"
       OPA_OPAOPER_F_DAY_OFFSET_START=0
-      OPA_OPAOPER_F_DAY_OFFSET_END=$(( $OPA_FORECAST_DAYS ))
+      OPA_OPAOPER_F_DAY_OFFSET_END=$(( $OPA_FORECAST_DAYS - 1 ))
       OPA_OPAOPER_S_DAY_OFFSET_START__ACTUAL="$OPA_OPAOPER_S_DAY_OFFSET_START"
       OPA_OPAOPER_S_DAY_OFFSET_END__ACTUAL="$OPA_OPAOPER_S_DAY_OFFSET_END"
       OPA_OPAOPER_F_DAY_OFFSET_START__ACTUAL="$OPA_OPAOPER_F_DAY_OFFSET_START"
       OPA_OPAOPER_F_DAY_OFFSET_END__ACTUAL="$OPA_OPAOPER_F_DAY_OFFSET_END"
-      OPA_OPAOPER_S_RDIR="/private/copernicus/mfs_eas5/o"
-      OPA_OPAOPER_F_RDIR="/private/copernicus/mfs_eas5/o"
+      OPA_OPAOPER_S_RDIR="/medsea_oce/nrt/op/out/mfs_eas5/o/"
+      OPA_OPAOPER_F_RDIR="/medsea_oce/nrt/op/out/mfs_eas5/o/"
      fi
 
 }
@@ -208,31 +196,20 @@ function _Iopa_set_input_files__opaoper_a_s_f {
     _date_remote=$( $OPA_BINDIR/date --date "$OPA_RUNDATE $_days_offset" +"$_date_format_remote" )
     echo "@@@ [${_date_local}] " 1>&2
     # For each input date, three files are downloaded (for T, U and V variables)
+    _prod_cycle=${OPA_RUNDATE}
     for _v in $OPA_VARIABLES ; do
-      case  "$_a_s_f" in
-        a)
-         _prod_cycle=${OPA_DATEDIR}
-         ;;
-        s)
-         _prod_cycle=${_date_remote}
-         ;;
-        f)
-         _prod_cycle=${OPA_RUNDATE}
-         ;;
-      esac
 
       _opaoper_file_remote="${_prefix_remote}${_prod_cycle}-${_date_remote}${_afs}-${_v}.nc"
       _opaoper_file_local="${_v}${_date_local}-12:00:00.nc"
       typeset _rdir
       case  "$_a_s_f" in
         a)
-              _rdir="$OPA_OPAOPER_A_RDIR/${OPA_DATEDIR}"
+              _rdir="$OPA_OPAOPER_A_RDIR/${OPA_RUNDATE}"
           OPA_OPAOPER_A_INPUT_RDIRS[OPA_OPAOPER_A_INPUT_FILES_NUM]="$_rdir"
           OPA_OPAOPER_A_INPUT_RFILES[OPA_OPAOPER_A_INPUT_FILES_NUM]="$_opaoper_file_remote"
           OPA_OPAOPER_A_INPUT_LFILES[OPA_OPAOPER_A_INPUT_FILES_NUM]="$_opaoper_file_local"
           OPA_OPAOPER_A_INPUT_COMPRESS_MODES[OPA_OPAOPER_A_INPUT_FILES_NUM]="gzip"
-          #OPA_OPAOPER_A_INPUT_DOWNLOAD_MODES[OPA_OPAOPER_A_INPUT_FILES_NUM]="http:$_HTTPCONFIG_INGV"
-          #V5C change: use the new http server from CMCC
+
           OPA_OPAOPER_A_INPUT_DOWNLOAD_MODES[OPA_OPAOPER_A_INPUT_FILES_NUM]="http:$_HTTPCONFIG_CMCC"
           OPA_OPAOPER_A_INPUT_DOWNLOAD_MODES_EMERG[OPA_OPAOPER_A_INPUT_FILES_NUM]="http:$_HTTPCONFIG_INGV_EMERG"
           OPA_OPAOPER_A_INPUT_VARS[OPA_OPAOPER_A_INPUT_FILES_NUM]="$_v"
