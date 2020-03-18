@@ -108,6 +108,7 @@ if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
      opa_mkdir "$ZIPPED_DIR/AVE_FREQ_2"
      opa_mkdir "$ZIPPED_DIR/AVE_PHYS"
      opa_mkdir "$ZIPPED_DIR/DA/"
+     opa_mkdir "$ZIPPED_DIR/DA/DATIMES"
      opa_mkdir "$ZIPPED_DIR/DA/tar"
      opa_mkdir "$ZIPPED_DIR/PHYS/"
 
@@ -119,6 +120,13 @@ if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
 	 opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/archive/compress.py         -i $MODELDIR/DA__FREQ_1  -o $ZIPPED_DIR/DA -l [2cl]*nc " # *corr.nc, limcorr.nc, chl*nc"
 	 opa_prex_or_die "cp $MODELDIR/DA__FREQ_1/*dat      $ZIPPED_DIR/DA"
 	 opa_prex_or_die "cp $MODELDIR/DA__FREQ_1/OceanVar* $ZIPPED_DIR/DA"
+	 opa_prex_or_die "cp $OPA_WRKDIR/DA/*check.txt      $ZIPPED_DIR/DA"
+	 opa_prex_or_die "cp $OPA_WRKDIR/DA/*nc             $ZIPPED_DIR/DA"
+
+     opa_prex_or_die "cp $OPA_WRKDIR/DA/daTimes*       $ZIPPED_DIR/DA/DATIMES"
+     opa_prex_or_die "cp $MODELDIR/daTimes*            $ZIPPED_DIR/DA/DATIMES"
+     cd $ZIPPED_DIR/DA/DATIMES
+	 opa_prex_or_die "tar -cf $ZIPPED_DIR/DA/tar/daTimes.tar daTimes*"
 
 	 DA_TIMES=$OPA_WRKDIR/POSTPROC/daTimes
 	 opa_prex_or_die "cat $MODELDIR/daTimes | cut -c 1-8 | uniq > $DA_TIMES"
@@ -127,7 +135,7 @@ if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
      ##########################
 
 
-     opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/var_aggregator.py -l ave*N1p.nc -i $MODELDIR/AVE_FREQ_2  -d VarDescriptor_2.xml  -t $MODELDIR/AVE_FREQ_2  -c $CHLSUP_DIR -m $MASK_FILE"
+     opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/var_aggregator.py -l ave*N1p.nc -i $MODELDIR/AVE_FREQ_2  -d $OPA_POSTPROC/VarDescriptor_2.xml  -t $MODELDIR/AVE_FREQ_2  -c $CHLSUP_DIR -m $MASK_FILE"
      opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/archive/compress.py -i $MODELDIR/AVE_FREQ_2   -o $ZIPPED_DIR/AVE_FREQ_2 -l ave.*.nc"
 
 # monthly products
@@ -177,6 +185,15 @@ cd $OPA_BITSEA/validation/online
 opa_prex "mpirun -np 36 python map_compressor.py -i $MAPS_DIR/MAP_ORIG -o $MAPS_DIR/MAP_COMPRESSED -b $OPA_BINDIR"
 opa_prex "cd $MAPS_DIR/MAP_COMPRESSED"
 opa_prex "rename 0-fs8.png 0.png *.png"
+
+
+opa_prex "echo $OPA_RUNDATE > ${MAPS_DIR}/MAP_COMPRESSED/last"
+opa_prex "cp $OPA_BITSEA/postproc/Plotlist_bio.xml ${MAPS_DIR}"
+
+opa_prex "cd $MAPS_DIR/MAP_COMPRESSED"
+opa_prex "tar -cf $OPA_POSTPROC/AVE_FREQ_1/maps.tar * "
+
+opa_prex "cp $OPA_WRKDIR/POSTPROC/AVE_FREQ_1/STAT_PROFILES/ave*nc $I_OPA_HOME/inpdir/analysis/VALIDATION/MODEL/AVE_FREQ_1/STAT_PROFILES/"
 
 
 opa_log 0 "postprocess_C1 done [$(opa_exitcode $ec)]"
