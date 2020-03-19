@@ -89,7 +89,7 @@ if [ $OCEANVAR == true ] ; then
    # make clean
    gmake
    if [ $? -ne 0 ] ; then  echo  ERROR; exit 1 ; fi
-   export DA_INC=$PWD
+export DA_INC=$PWD
    echo DA_INC= $DA_INC
 fi
 
@@ -121,7 +121,7 @@ else
    # in-place replace the entire ARCH line
    sed -i "s/.*ARCH.*/        ARCH    = '$INC_FILE'  /"  build/configurations/OGS_PELAGIC/configuration
    cd $BFMDIR/build
-   ./bfm_configure.sh -gc -o ../lib/libbfm.a -p OGS_PELAGIC
+   ./bfm_configure.sh -gcv -o ../lib/libbfm.a -p OGS_PELAGIC
    if [ $? -ne 0 ] ; then  echo  ERROR; exit 1 ; fi
 fi
 
@@ -218,4 +218,8 @@ cp ${THREEDVARDIR}/libnc-medlevel/libnc-medlevel.a ${OPA_HOME}/HOST/${OPA_HOSTNA
 cp ${BFM_LIB}/libbfm.a ${OPA_HOME}/HOST/${OPA_HOSTNAME}/lib
 cp ${OGSTMDIR}/bin/* ${OPA_HOME}/HOST/${OPA_HOSTNAME}/bin
 cp ${OGSTMDIR}/lib/* ${OPA_HOME}/HOST/${OPA_HOSTNAME}/lib
+OGSTM_FLOATPRE=${OGSTMDIR}/src/DA/external_scripts/float_preproc
+cp ${OGSTM_FLOATPRE}/float_extractor.py ${OGSTM_FLOATPRE}/Float_misfit_gen.sh ${OGSTM_FLOATPRE}/preproc.py ${OGSTM_FLOATPRE}/merge_arg_mis.py ${OPA_HOME}/HOST/${OPA_HOSTNAME}/bin
+
+# /galileo/home/usera07ogs/a07ogs00/OPA/V6C-dev/HOST/galileo/postproc/prodotti/get_daily_product_in_DU.sh
 
