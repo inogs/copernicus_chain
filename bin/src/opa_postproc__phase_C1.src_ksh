@@ -86,8 +86,8 @@ if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
    opa_prex_or_die "mpirun -np 7 python $OPA_POSTPROCDIR/prodotti/prodotti_copernicus.py -i $OPA_WRKDIR/MODEL/AVE_FREQ_1 -o $PRODUCTS_DIR -m $MASK_FILE -t timelist.a -d an -b $BULLETIN_DATE --tr daily"
 else
 
-   opa_analyses_dates  $OPA_RUNDATE          > timelist.s
-   opa_forecast_dates $OPA_RUNDATE           > timelist.f
+   opa_simulates_dates $OPA_RUNDATE          > timelist.s
+   opa_forecast_dates  $OPA_RUNDATE          > timelist.f
 
      opa_prex_or_die "mpirun -np 1  python $OPA_POSTPROCDIR/prodotti/prodotti_copernicus.py -i $OPA_WRKDIR/MODEL/AVE_FREQ_1 -o $PRODUCTS_DIR -m $MASK_FILE -t timelist.s -d sm -b $BULLETIN_DATE --tr daily"
      opa_prex_or_die "mpirun -np 10 python $OPA_POSTPROCDIR/prodotti/prodotti_copernicus.py -i $OPA_WRKDIR/MODEL/AVE_FREQ_1 -o $PRODUCTS_DIR -m $MASK_FILE -t timelist.f -d fc -b $BULLETIN_DATE --tr daily"
