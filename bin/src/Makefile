@@ -26,7 +26,6 @@ SCRIPTS=	opa_archive.ksh					\
 		opa_postproc__phase_C2.ksh			\
 		opa_postproc__phase_C3.ksh			\
 		opa_postproc__phase_C4.ksh			\
-		opa_postproc__phase_C5.ksh			\
 		opa_postproc__phase_C6.ksh			\
 		opa_pre_wrapper.ksh				\
 		opa_preproc.ksh					\
