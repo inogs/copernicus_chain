@@ -67,7 +67,6 @@ SCRIPTS=	opa_archive.ksh					\
 		opa_downloader.ksh				\
 		opa_check_remote_cron.ksh			\
 		opa_log_report.py				\
-		opa_HTML.py					\
 
 
 default:	compile
