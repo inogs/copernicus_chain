@@ -99,8 +99,11 @@ fi
 
 opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/archive/compress.py -i $MODELDIR/AVE_FREQ_1 -o $ZIPPED_DIR/AVE_FREQ_1 -l *nc"
 
-
-output_restart_date=`set_spec_data -date ${OPA_RUNDATE} -days "-1" -hours 0 `
+if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
+   output_restart_date=`set_spec_data -date ${OPA_RUNDATE} -days "-1" -hours 0 `
+else
+   output_restart_date=`set_spec_data -date ${OPA_RUNDATE} -days  "0" -hours 0 `
+fi
 opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/archive/compress.py -i $MODELDIR/RESTARTS -o $ZIPPED_DIR/RST -l RST.${output_restart_date}.*nc"
 
 
