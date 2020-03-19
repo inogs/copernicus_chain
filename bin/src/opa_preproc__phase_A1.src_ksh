@@ -35,6 +35,15 @@ if [[ $OPA_RUNTYPE == 'forecast' ]] ; then
      opa_prex_or_die "ln -fs $LAST_AVAIL_FILE $LINKED_FILE"
    done
 
+   # we need a forcing at h00 on the first day
+   for _v in ${OPA_VARIABLES} ; do
+    FIRST_DATE=$( $OPA_BINDIR/date --date="${OPA_RUNDATE} 1 days ago " +"%Y%m%d")
+
+    FIRST_AVAIL_FILE=${OPA_WRKDIR}/CMCC_PHYS/${_v}${FIRST_DATE}-12:00:00.nc #existing
+         LINKED_FILE=${OPA_WRKDIR}/CMCC_PHYS/${_v}${FIRST_DATE}-00:00:00.nc
+     opa_prex_or_die "ln -fs $FIRST_AVAIL_FILE $LINKED_FILE"
+   done
+
 fi
 
 
