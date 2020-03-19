@@ -47,7 +47,6 @@ SCRIPTS=	opa_archive.ksh					\
 		opa_setup_environment.ksh			\
 		opa_setup_directories.ksh			\
 		opa_log_job.ksh					\
-		opa_split_forecast.ksh				\
 		opa_start.ksh					\
 		opa_submit.ksh					\
 		opa_log_inspect.py				\
