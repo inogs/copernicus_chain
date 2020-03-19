@@ -37,8 +37,11 @@ POSTPROCDIRS="POSTPROC POSTPROC/AVE_FREQ_1  POSTPROC/AVE_FREQ_1/INTEGRALS \
               POSTPROC/COMPRESSED_FOR_ARCHIVE/AVE_FREQ_1 \
               POSTPROC/COMPRESSED_FOR_ARCHIVE/RST "
 
-
+if [[ $OPA_RUNTYPE == 'analysis' ]]; then
 wrk_subdirs=" $DADIRS  $MODELDIRS $POSTPROCDIRS $FORCINGDIRS "
+else
+wrk_subdirs=" $MODELDIRS $POSTPROCDIRS $FORCINGDIRS "
+fi
 
 # reset input directories
 for subdir in $wrk_subdirs ; do
