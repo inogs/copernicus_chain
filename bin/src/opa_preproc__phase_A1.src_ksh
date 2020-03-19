@@ -1,5 +1,5 @@
 #!/bin/ksh
-
+### links the last file in $OPA_WRKDIR
 # Load common profile
 . @@(I:OPA_HOME)/bin/opa_profile.inc
 
@@ -22,19 +22,21 @@ if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
    done
 fi
 
-opa_exit 0
 
-typeset -i errors=0
-### set up of input files in $OPA_WRKDIR
 
-if [[ $RUNTYPE == 'forecast' ]] ; then
-    opa_set_input_files__opaoper_f
-    $OPA_SCRDIR/opa_input_stagein.ksh || errors=$(( $errors + 1 ))
+if [[ $OPA_RUNTYPE == 'forecast' ]] ; then
 
-   # $OPA_SCRDIR/opa_link_forecast.ksh || errors=$(( $errors + 1 ))
-   # ### split forecast
-   # $OPA_SCRDIR/opa_split_forecast.ksh || errors=$(( $errors + 1 ))
+   for _v in ${OPA_VARIABLES} ; do
+     LAST_AVAIL_DATE=$( $OPA_BINDIR/date --date="${OPA_RUNDATE} 9 days " +"%Y%m%d")
+         LINKED_DATE=$( $OPA_BINDIR/date --date="${OPA_RUNDATE} 10 days" +"%Y%m%d")
+
+     LAST_AVAIL_FILE=${OPA_WRKDIR}/CMCC_PHYS/${_v}${LAST_AVAIL_DATE}-12:00:00.nc #existing
+         LINKED_FILE=${OPA_WRKDIR}/CMCC_PHYS/${_v}${LINKED_DATE}-12:00:00.nc
+     opa_prex_or_die "ln -fs $LAST_AVAIL_FILE $LINKED_FILE"
+   done
+
 fi
+
 
 
 
@@ -42,10 +44,6 @@ if [[ $errors -gt 0 ]] ; then
   opa_log 0 "WRN: $errors errors during phase A1"
 fi
 
+opa_exit
 
-### check input files:
-typeset -i exit_code=0
-$OPA_SCRDIR/opa_check_input_files.ksh || exit_code=$?
-
-opa_report "bio_chain-tl-start_production" "0" "true"
-opa_exit "$exit_code"
+### there was an opa_check_input_files.ksh
