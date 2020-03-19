@@ -233,6 +233,10 @@ opa_prex "rm -f Start_End_Times 1.aveTimes 2.aveTimes restartTimes"
 if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
   START_TIME=$( set_spec_data -date ${OPA_RUNDATE} -days "-8" -hours 0 )
   END___TIME=$( set_spec_data -date ${OPA_RUNDATE} -days "-1" -hours 0 )
+else
+  START_TIME=$( set_spec_data -date ${OPA_RUNDATE} -days "-1" -hours 0 )
+  END___TIME=$( set_spec_data -date ${OPA_RUNDATE} -days "10" -hours 0 )
+
 fi
 
 echo ${START_TIME}  > Start_End_Times
@@ -243,6 +247,13 @@ echo ${END___TIME} >> Start_End_Times
 if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
 typeset -i myday=-8
 while [[ ${myday} -ne -1 ]] ; do
+  myday=$(( $myday + 1 ))
+  set_spec_data -date ${OPA_RUNDATE} -days ${myday} >> 1.aveTimes
+done
+
+else
+typeset -i myday=-1
+while [[ ${myday} -ne 10 ]] ; do
   myday=$(( $myday + 1 ))
   set_spec_data -date ${OPA_RUNDATE} -days ${myday} >> 1.aveTimes
 done
@@ -258,10 +269,10 @@ fi
 
 
 # CREAZIONE FILE restartTimes
-#set_spec_data -date ${OPA_RUNDATE} -days "-${OPA_PREV_RUNDATE_OFFSET}" -hours 0
-#echo ${RUNDATE_tmp} > ${file_time_names}
 if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
     set_spec_data -date ${OPA_RUNDATE} -days "-1" -hours 0 > restartTimes
+else
+    set_spec_data -date ${OPA_RUNDATE} -days "0"  -hours 0 > restartTimes
 fi
 
 
@@ -289,7 +300,9 @@ if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
   # Edit varlist in merge_daTimes.py
   opa_prex_or_die "python merge_daTimes.py -s $DA_TIMES_SAT -d $DATIMES_WRKDIR -o ${OUTFILE} "
   opa_prex_or_die "python gen_3dvar_satfloat_namelists.py -o $OUTDIR -t satfloat.template.nml -r $OUTFILE -s $DA_TIMES_SAT -d $DATIMES_WRKDIR "
+else
 
+  touch daTimes # empty
 fi
 
 
