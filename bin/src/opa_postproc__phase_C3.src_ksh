@@ -14,12 +14,7 @@ opa_start
 typeset -i errors=0
 
 OPA_POSTPROC=${OPA_WRKDIR}/POSTPROC
-MAPS_DIR=$OPA_WRKDIR/POSTPROC/AVE_FREQ_1/MAP_GEN/MAP_COMPRESSED
-opa_prex "echo $OPA_RUNDATE > ${MAPS_DIR}/last"
-opa_prex "cp $OPA_BITSEA/postproc/Plotlist_bio.xml ${MAPS_DIR}"
 
-opa_prex "cd $MAPS_DIR"
-opa_prex "tar -cf $OPA_POSTPROC/AVE_FREQ_1/maps.tar * "
 
 
 opa_prex "cd $OPA_BITSEA/validation/online"
@@ -48,7 +43,6 @@ IMG_DIR__ACT=${ONLINE_VALIDATION_DIR}/ACTUAL/matchup_outputs
 export MASKFILE=${OPA_WRKDIR}/MODEL/meshmask.nc
 export ROOT_DIR=$OPA_BITSEA
 
-if $OPA_DA_ENABLE ; then
 
 opa_mkdir ${ONLINE_VALIDATION_DIR}/PREVIOUS
 opa_mkdir ${ONLINE_VALIDATION_DIR}/PREVIOUS/output
@@ -103,22 +97,22 @@ done
 
 
 
-opa_prex "cp ${ONLINE_VALIDATION_DIR}/Validation_*nc $I_OPA_HOME/inpdir/VALIDATION/SAT" 
-opa_prex "python sat_plotter.py  -i $I_OPA_HOME/inpdir/VALIDATION/SAT -o ${ONLINE_VALIDATION_DIR}   -d $OPA_RUNDATE " 
+opa_prex "cp ${ONLINE_VALIDATION_DIR}/Validation_*nc $I_OPA_HOME/inpdir/analysis/VALIDATION/SAT"
+opa_prex "python sat_plotter.py  -i $I_OPA_HOME/inpdir/analysis/VALIDATION/SAT -o ${ONLINE_VALIDATION_DIR}   -d $OPA_RUNDATE "
 
 
 
 # step 4 -- generation of matchups, png and NetCDF
 #Matchup analysis on previous
 opa_prex "python float_extractor.py -st ${STARTTIME_a} -et ${END__TIME_a} -i $TMP_DIR_PREV -b $PROFILERDIRP  -o $IMG_DIR_PREV -m $MASKFILE"
-opa_prex "cp $PROFILERDIRP/PROFILES/*nc $I_OPA_HOME/inpdir/VALIDATION/FLOAT/PROFILATORE/PROFILES" # updating inpdir
-opa_prex "cp $PROFILERDIRP/PUNTI/*dat   $I_OPA_HOME/inpdir/VALIDATION/FLOAT/PROFILATORE/PUNTI"
+opa_prex "cp $PROFILERDIRP/PROFILES/*nc $I_OPA_HOME/inpdir/analysis/VALIDATION/FLOAT/PROFILATORE/PROFILES" # updating inpdir
+opa_prex "cp $PROFILERDIRP/PUNTI/*dat   $I_OPA_HOME/inpdir/anaylsis/VALIDATION/FLOAT/PROFILATORE/PUNTI"
 #Matchup forecasts on previous
 opa_prex "python float_extractor.py -st ${STARTTIME_f} -et ${END__TIME_f} -i $TMP_DIR_PREV -b $PROFILERDIRP  -o $IMG_DIR_PREV -m $MASKFILE"
 # Matchup analysis on actual
 opa_prex "python float_extractor.py -st ${STARTTIME_f} -et ${END__TIME_f} -i $TMP_DIR__ACT -b $PROFILERDIRA  -o $IMG_DIR__ACT -m $MASKFILE"
-opa_prex "cp $PROFILERDIRA/PROFILES/*nc $I_OPA_HOME/inpdir/VALIDATION/FLOAT/PROFILATORE/PROFILES" # updating inpdir
-opa_prex "cp $PROFILERDIRA/PUNTI/*dat   $I_OPA_HOME/inpdir/VALIDATION/FLOAT/PROFILATORE/PUNTI"
+opa_prex "cp $PROFILERDIRA/PROFILES/*nc $I_OPA_HOME/inpdir/analysis/VALIDATION/FLOAT/PROFILATORE/PROFILES" # updating inpdir
+opa_prex "cp $PROFILERDIRA/PUNTI/*dat   $I_OPA_HOME/inpdir/analysis/VALIDATION/FLOAT/PROFILATORE/PUNTI"
 
 
 opa_prex "tar -cf  ${ONLINE_VALIDATION_DIR}/matchup_outputs/analysis_forecast.tar ${IMG_DIR_PREV}/* "
@@ -155,20 +149,18 @@ done
 #NRT_biofloat_out_name=${ONLINE_VALIDATION_DIR}/ANALYSIS_PROFILES_1week/NRT_validation_${OPA_RUNDATE}_on_week_floats.${STARTTIME_s}.nc
 NRT_biofloat_out_name=${ONLINE_VALIDATION_DIR}/ANALYSIS_PROFILES_1week/BioFloat_Weekly_validation_${STARTTIME_s}.nc
 opa_prex "python biofloats_ms.py -d $STARTTIME_s -m $MASKFILE -b ${ONLINE_VALIDATION_DIR}/ANALYSIS_PROFILES_1week/PROFILATORE -o ${NRT_biofloat_out_name} "
-opa_prex "cp ${NRT_biofloat_out_name} $I_OPA_HOME/inpdir/VALIDATION/FLOAT/WEEKLY " # updating inpdir 
+opa_prex "cp ${NRT_biofloat_out_name} $I_OPA_HOME/inpdir/analysis/VALIDATION/FLOAT/WEEKLY " # updating inpdir
 
 opa_mkdir ${ONLINE_VALIDATION_DIR}/biofloat_ms
  
 
-opa_prex "python biofloats_ms_plotter.py  -o ${ONLINE_VALIDATION_DIR}/biofloat_ms  -a $I_OPA_HOME/inpdir/VALIDATION/FLOAT/WEEKLY -d $OPA_RUNDATE"
+opa_prex "python biofloats_ms_plotter.py  -o ${ONLINE_VALIDATION_DIR}/biofloat_ms  -a $I_OPA_HOME/inpdir/analysis/VALIDATION/FLOAT/WEEKLY -d $OPA_RUNDATE"
 opa_prex "cp ${ONLINE_VALIDATION_DIR}/biofloat_ms/*png $ONLINE_VALIDATION_DIR/MEDEAF_PUB/Weekly_Float_validation"
 ####################################################
 
 opa_prex "cd $ONLINE_VALIDATION_DIR "
 opa_prex "tar -cf $ONLINE_VALIDATION_DIR/medeaf_pub.tar MEDEAF_PUB"
 
-
-fi #if $OPA_DA_ENABLE 
 
 
 opa_log 0 "postprocess_C3 done [$(opa_exitcode $ec)]"
