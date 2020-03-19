@@ -184,9 +184,10 @@ NAMELIST_INIT=$( python $OPA_BITSEA/preproc/decision_deltat.py -i $wrkdir/DeltaT
 
 opa_cp "$nml_dir/${NAMELIST_INIT} $wrkdir/namelist.init"
 
-
+if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
 opa_prex_or_die "ln -fs $OPA_WRKDIR/DA/SATELLITE      -t $wrkdir" || errors=$(( $errors + 1 ))
 opa_prex_or_die "ln -fs $OPA_WRKDIR/DA/DA_static_data -t $wrkdir" || errors=$(( $errors + 1 ))
+fi
 
 function datelist {
 VAR=$1
