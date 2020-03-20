@@ -192,7 +192,7 @@ for file in `ls ${PROD_DIR}/${FILES_TO_SEND}` ; do
 	NumberOfAttempts=1
 	errCod=0
 
-    to_remove_file=/$yyyy/$mm/$remote_name
+    to_remove_file=$yyyy/$mm/$remote_name
     DELETE_STR="<file FileName=\"${to_remove_file}\" > <KeyWord>Delete</KeyWord> </file>"
 
 
@@ -272,7 +272,7 @@ else
 
 if [ $upload_xml == "True" ] ; then
   opa_prex "$OPA_BINDIR/ncftpput -u ${ogs_user} -p ${ogs_pass} -T .tmp. ${ogs_host} /${product}/DNT $DNT_FILE"
-  opa_prex "$OPA_BINDIR/ncftpput -u ${ogs_user_dnt} -p ${ogs_pass_dnt} -P ${ogs_port_dnt}  -T .tmp. ${ogs_host_dnt} /${product}/DNT $DNT_FILE  "
+  # opa_prex "$OPA_BINDIR/ncftpput -u ${ogs_user_dnt} -p ${ogs_pass_dnt} -P ${ogs_port_dnt}  -T .tmp. ${ogs_host_dnt} /${product}/DNT $DNT_FILE  "
   #caso di backup OGS_USER=bio_b
 
 else
