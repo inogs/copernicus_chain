@@ -42,14 +42,12 @@ SCRIPTS=	opa_archive.ksh					\
 		opa_job.ksh					\
 		opa_run_setup.ksh				\
 		opa_setup_crontab.ksh				\
-		opa_setup_grads.ksh				\
 		opa_setup_environment.ksh			\
 		opa_setup_directories.ksh			\
 		opa_log_job.ksh					\
 		opa_start.ksh					\
 		opa_submit.ksh					\
 		opa_log_inspect.py				\
-		opa_postcheckout.ksh				\
 		opa_put_phase_2.ksh				\
                 opa_put_phase_2_monthly.ksh                     \
 		opa_report.ksh					\
