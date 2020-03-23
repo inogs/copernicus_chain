@@ -124,8 +124,13 @@ if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
 	 opa_prex_or_die "cp $MODELDIR/DA__FREQ_1/*dat      $ZIPPED_DIR/DA"
 	 opa_prex_or_die "cp $MODELDIR/DA__FREQ_1/OceanVar* $ZIPPED_DIR/DA"
 	 opa_prex_or_die "cp $OPA_WRKDIR/DA/*check.txt      $ZIPPED_DIR/DA"
-	 opa_prex_or_die "cp $OPA_WRKDIR/DA/*nc             $ZIPPED_DIR/DA"
 
+     LEN_EXCLUDED=$( ls $OPA_WRKDIR/DA/*nc | wc -l )
+     if [[ $LEN_EXCLUDED > 0 ]] ; then
+         opa_prex_or_die "cp $OPA_WRKDIR/DA/*nc             $ZIPPED_DIR/DA"
+     else
+         echo "No DA Check Exclusion files "
+     fi
      opa_prex_or_die "cp $OPA_WRKDIR/DA/daTimes*       $ZIPPED_DIR/DA/DATIMES"
      opa_prex_or_die "cp $MODELDIR/daTimes*            $ZIPPED_DIR/DA/DATIMES"
      cd $ZIPPED_DIR/DA/DATIMES
