@@ -559,12 +559,20 @@ function opa_set_run {
 	                 echo "ERR: unsupported weekday [${OPA_WEEKDAY}]" 1>&2
 	                 exit 1
 	                 ;;
-	      esac
-	      ;;
+	           esac
+	           ;;
 
 	   'forecast')
-	         _opa_restart_weekday=$($OPA_BINDIR/date --utc --date="$OPA_RUNDATE -1 days" +"%w")
-	         OPA_RESTART_RUNDATE=$($OPA_BINDIR/date --utc --date="${OPA_RUNDATE} 1 days ago" +"%Y%m%d")
+	           case "$OPA_WEEKDAY" in
+	                   2) # Tuesday
+	                      _opa_restart_weekday=2
+	                      OPA_RESTART_RUNDATE=${OPA_RUNDATE}
+	                      ;;
+	                   * )
+	                   _opa_restart_weekday=$($OPA_BINDIR/date --utc --date="$OPA_RUNDATE -1 days" +"%w")
+	                   OPA_RESTART_RUNDATE=$($OPA_BINDIR/date --utc --date="${OPA_RUNDATE} 1 days ago" +"%Y%m%d")
+	                   ;;
+	           esac
 	         ;;
 	    *)
 	      echo "ERR: unsupported runtype [${OPA_RUNTYPE}]" 1>&2
