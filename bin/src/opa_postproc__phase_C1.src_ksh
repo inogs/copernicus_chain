@@ -107,6 +107,9 @@ fi
 opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/archive/compress.py -i $MODELDIR/RESTARTS -o $ZIPPED_DIR/RST -l RST.${output_restart_date}.*nc"
 
 
+opa_prex_or_die "mpirun -np 22 python $OPA_BITSEA/validation/online/reduce_ave_phys.py -i $MODELDIR/AVE_PHYS -o $MODELDIR/AVE_FREQ_1  -m $MASK_FILE"
+
+
 if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
      opa_mkdir "$ZIPPED_DIR/AVE_FREQ_2"
      opa_mkdir "$ZIPPED_DIR/AVE_PHYS"
@@ -115,7 +118,6 @@ if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
      opa_mkdir "$ZIPPED_DIR/DA/tar"
      opa_mkdir "$ZIPPED_DIR/PHYS/"
 
-     opa_prex_or_die "mpirun -np 14 python $OPA_BITSEA/validation/online/reduce_ave_phys.py -i $MODELDIR/AVE_PHYS -o $MODELDIR/AVE_FREQ_1  -m $MASK_FILE"
 
      # DA_SECTION ###########
 	 opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/archive/netcdf4_compress.py -i $MODELDIR/DA__FREQ_1  -o $ZIPPED_DIR/DA -l RST_after*1[23]:00:00*.nc"
