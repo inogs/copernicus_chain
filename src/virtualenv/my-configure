@@ -41,13 +41,15 @@ virtualenv $VENV_PATH
 
 source $VENV_PATH/bin/activate
 pip install --upgrade pip
-CFLAGS+="-L/cineca/prod/opt/compilers/intel/pe-xe-2017/binary/lib/intel64 -lsvml -limf -lirc" CC=mpiicc pip install netcdf4 --global-option=build_ext
+pip install cftime==1.1.1
+CFLAGS+="-L/cineca/prod/opt/compilers/intel/pe-xe-2018/binary/lib/intel64 -lsvml -limf -lirc" CC=mpiicc pip install netcdf4 --global-option=build_ext
 pip install ipython
 pip install mpi4py
 pip install python-dateutil
 pip install scipy
 pip install seawater
-pip install matplotlibpip install git+https://github.com/matplotlib/basemap.git
+pip install matplotlib
+pip install git+https://github.com/matplotlib/basemap.git
 pip install latexcodec
 #installare Pillow per concludere la configurazione di venv1
 
