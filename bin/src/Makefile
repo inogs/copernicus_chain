@@ -29,8 +29,6 @@ SCRIPTS=	opa_archive.ksh					\
 		opa_pre_wrapper.ksh				\
 		opa_preproc.ksh					\
 		opa_preproc__phase_A1.ksh			\
-		opa_preproc__phase_A2.ksh			\
-		opa_preproc__phase_A3.ksh			\
 		opa_preproc__phase_A4.ksh			\
 		opa_profile.inc					\
 		opa_profile__galileo.inc			\
