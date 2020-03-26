@@ -4,7 +4,6 @@ include CONFIG/Make.config
 SCRIPTS=	opa_archive.ksh					\
 		opa_check_input_files.ksh			\
 		opa_get.ksh					\
-		opa_get_emerg.ksh				\
                 opa_get_recovery.ksh				\
 		opa_input_files.inc				\
 		opa_link_analyses.ksh				\
