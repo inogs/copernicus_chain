@@ -41,7 +41,8 @@ typeset -i OPA_OPAOPER_A_INPUT_FILES_NUM=0	# num of the OPAOPER_A files
 # The following variable is set by 'opa_set_input_files__opaoper':
 set -A OPA_OPAOPER_F_INPUT_VARS --		# variable
 set -A OPA_OPAOPER_F_INPUT_LFILES --		# names of all the OPAOPER_F input files
-set -A OPA_OPAOPER_F_INPUT_RFILES --		# remote names of all the OPAOPER_F files as downloaded
+set -A OPA_OPAOPER_F_INPUT_RFILES --		# remote names of all the CMCC files as downloaded
+set -A OPA_OPAOPER_F_INPUT_PFILES --		# remote names of all the CMCC files as downloaded by previous run
 set -A OPA_OPAOPER_F_INPUT_COMPRESS_MODES --	# compress mode for the OPAOPER_F files as downloaded
 set -A OPA_OPAOPER_F_INPUT_DOWNLOAD_MODES --	# compress mode for the OPAOPER_F files as downloaded (protocol:config)
 set -A OPA_OPAOPER_F_INPUT_DOWNLOAD_MODES_EMERG --	# emergency download mode for the OPAOPER_F files as downloaded (protocol:config)
@@ -197,10 +198,12 @@ function _Iopa_set_input_files__opaoper_a_s_f {
     echo "@@@ [${_date_local}] " 1>&2
     # For each input date, three files are downloaded (for T, U and V variables)
     _prod_cycle=${OPA_RUNDATE}
+    _prod_cycle_recovery=$( $OPA_BINDIR/date --date "$OPA_RUNDATE 1 days ago" +'%Y%m%d' )
     for _v in $OPA_VARIABLES ; do
 
       _opaoper_file_remote="${_prefix_remote}${_prod_cycle}-${_date_remote}${_afs}-${_v}.nc"
       _opaoper_file_local="${_v}${_date_local}-12:00:00.nc"
+      _opaoper_file_recovery="${_prefix_remote}${_prod_cycle_recovery}-${_date_remote}-f-${_v}.nc"
       typeset _rdir
       case  "$_a_s_f" in
         a)
@@ -221,6 +224,7 @@ function _Iopa_set_input_files__opaoper_a_s_f {
           OPA_OPAOPER_F_INPUT_RDIRS[OPA_OPAOPER_F_INPUT_FILES_NUM]="$OPA_OPAOPER_F_RDIR/$OPA_RUNDATE"
           OPA_OPAOPER_F_INPUT_RFILES[OPA_OPAOPER_F_INPUT_FILES_NUM]="$_opaoper_file_remote"
           OPA_OPAOPER_F_INPUT_LFILES[OPA_OPAOPER_F_INPUT_FILES_NUM]="$_opaoper_file_local"
+          OPA_OPAOPER_F_INPUT_PFILES[OPA_OPAOPER_F_INPUT_FILES_NUM]="$_opaoper_file_recovery"
           OPA_OPAOPER_F_INPUT_COMPRESS_MODES[OPA_OPAOPER_F_INPUT_FILES_NUM]="gzip"
           OPA_OPAOPER_F_INPUT_DOWNLOAD_MODES[OPA_OPAOPER_F_INPUT_FILES_NUM]="http:$_HTTPCONFIG_CMCC"
           OPA_OPAOPER_F_INPUT_DOWNLOAD_MODES_EMERG[OPA_OPAOPER_F_INPUT_FILES_NUM]="http:$_HTTPCONFIG_INGV_EMERG"

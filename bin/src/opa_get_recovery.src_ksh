@@ -3,16 +3,45 @@
 # Load common profile
 . @@(I:OPA_HOME)/bin/opa_profile.inc
 
-opa_prex "opa_set_run $RUNDATE"
+opa_prex "opa_set_run"
+
+if [[ $OPA_RUNTYPE == 'forecast' ]] ; then
+   opa_set_input_files__opaoper_f
+
+for _v in U V W T; do
+   for i in $OPA_OPAOPER_F_INPUT_FILES_INDICES ; do
+      previous_filename=${OPA_OPAOPER_F_INPUT_PFILES[i]}
+        actual_filename=${OPA_OPAOPER_F_INPUT_RFILES[i]}
+         local_filename=${OPA_OPAOPER_F_INPUT_LFILES[i]}
+      [[ ${previous_filename:29:1} != $_v ]] && continue  # to have a cycle on a single var
+      try_1_filename=${OPA_INPDIR_ROOT}/forecast/${OPA_RESTART_RUNDATE}/CMCC_PHYS/$previous_filename
+      try_2_filename=$LAST_EXISTING
+      if [ -f $try_1_filename ] ; then
+          LAST_EXISTING=$try_1_filename
+          PreviousRun_found_file=$try_1_filename
+      else
+          PreviousRun_found_file=$LAST_EXISTING
+      fi
+      actual_inpdir_file=$OPA_INPDIR/CMCC_PHYS/$actual_filename
+      actual_wrkdir_file=$OPA_WRKDIR/CMCC_PHYS/$local_filename
+      opa_prex_or_die "ln -s ${PreviousRun_found_file} $actual_inpdir_file "
+      opa_prex_or_die "ln -s $actual_inpdir_file       $actual_wrkdir_file " # like opa_get
+   done
+done
+
+fi
+
+opa_exit 0
+
+
+if  [[ $OPA_RUNTYPE == 'analysis' ]] ; then
 opa_set_input_files__opaoper_a
-opa_set_input_files__opaoper_f
+
 
 
 echo "#######  CLEANING INPDIR RESIDUALS      ######## "
-opa_prex  "rm -f $OPA_INPDIR/OPAOPER_A/*nc"
-opa_prex  "rm -f $OPA_INPDIR/OPAOPER_F/*nc"
-opa_prex  "rm -f $OPA_WRKDIR/OPAOPER_A/*nc"
-opa_prex  "rm -f $OPA_WRKDIR/OPAOPER_F/*nc"
+opa_prex  "rm -f $OPA_INPDIR/CMCC_PHYS/*nc"
+
 
 
 for i in $OPA_OPAOPER_A_INPUT_FILES_INDICES ; do
@@ -29,23 +58,7 @@ for i in $OPA_OPAOPER_A_INPUT_FILES_INDICES ; do
    opa_prex_or_die " ln -s ${PreviousRun_found_file}  $OPA_INPDIR/OPAOPER_A/$filename "
    opa_prex_or_die " ln -s ${PreviousRun_found_file}  $OPA_WRKDIR/OPAOPER_A/$filename "
 done
+fi
 
 
 
-
-for _v in U V W T; do
-   for i in $OPA_OPAOPER_F_INPUT_FILES_INDICES ; do
-      filename=${OPA_OPAOPER_F_INPUT_LFILES[i]}
-      [[ ${filename:7:1} != $_v ]] && continue  # to have a cycle on a single var
-      try_1_filename=${OPA_INPDIR_ROOT}/${OPA_RESTART_RUNDATE}/OPAOPER_F/$filename
-      try_2_filename=$LAST_EXISTING
-      if [ -f $try_1_filename ] ; then
-          LAST_EXISTING=$try_1_filename
-          PreviousRun_found_file=$try_1_filename
-      else
-          PreviousRun_found_file=$LAST_EXISTING
-      fi
-      opa_prex_or_die "ln -s ${PreviousRun_found_file} $OPA_INPDIR/OPAOPER_F/$filename "
-      opa_prex_or_die "ln -s ${PreviousRun_found_file} $OPA_WRKDIR/OPAOPER_F/$filename "
-   done
-done
