@@ -97,8 +97,6 @@ fi
   ZIPPED_DIR=$OPA_WRKDIR/POSTPROC/COMPRESSED_FOR_ARCHIVE
 
 
-opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/archive/compress.py -i $MODELDIR/AVE_FREQ_1 -o $ZIPPED_DIR/AVE_FREQ_1 -l *nc"
-
 if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
    output_restart_date=`set_spec_data -date ${OPA_RUNDATE} -days "-1" -hours 0 `
 else
@@ -108,7 +106,7 @@ opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/archive/compress.py -i $MODELDIR
 
 
 opa_prex_or_die "mpirun -np 22 python $OPA_BITSEA/validation/online/reduce_ave_phys.py -i $MODELDIR/AVE_PHYS -o $MODELDIR/AVE_FREQ_1  -m $MASK_FILE"
-
+opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/archive/compress.py -i $MODELDIR/AVE_FREQ_1 -o $ZIPPED_DIR/AVE_FREQ_1 -l *nc"
 
 if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
      opa_mkdir "$ZIPPED_DIR/AVE_FREQ_2"
