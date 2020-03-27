@@ -29,25 +29,32 @@ opa_prex "@@(I:OPA_HOME)/bin/opa_put_phase_2.ksh -y PFTC 1>> $_logfile 2>&1"    
 opa_prex "@@(I:OPA_HOME)/bin/opa_put_phase_2.ksh -y CO2F 1>> $_logfile 2>&1"            || errors=$(( $errors + 1 ))
 
 opa_exit "$errors"
-DAY=$( date --date="$OPA_RUNDATE" +%d )
-if [[ $DAY > 10 ]] && [[ $DAY < 15 ]] ; then
+  DAY=$( date --date="$OPA_RUNDATE" +%d )
+ YEAR=$( date --date="$OPA_RUNDATE" +%Y )
+MONTH=$( date --date="$OPA_RUNDATE" +%m )
 
-# Deliver monthly products to CMEMS
-PRODUCTS_DIR=$OPA_WRKDIR/POSTPROC/MONTHLY/PRODUCTS
-TMPFILE=$PRODUCTS_DIR/tmpM.log
-opa_prex_with_output "$OPA_POSTPROCDIR/prodotti/check_monthly_products_in_DU.sh -p $PRODUCTS_DIR -b $OPA_BINDIR -t $TMPFILE"
+if [[ $DAY > 7 ]] && [[ $DAY < 15 ]] ; then
 
-if [ $? == 0  ] ; then
-   opa_log 0 " No monthly upload to CMEMS DU"
-else
-   opa_log 0 "delivering monthly to CMEMS DU"
-   opa_prex "@@(I:OPA_HOME)/bin/opa_put_phase_2_monthly.ksh -y NUTR 1>> $_logfile 2>&1"            || errors=$(( $errors + 1 ))
-   opa_prex "@@(I:OPA_HOME)/bin/opa_put_phase_2_monthly.ksh -y BIOL 1>> $_logfile 2>&1"            || errors=$(( $errors + 1 ))
-   opa_prex "@@(I:OPA_HOME)/bin/opa_put_phase_2_monthly.ksh -y CARB 1>> $_logfile 2>&1"            || errors=$(( $errors + 1 ))
-   opa_prex "@@(I:OPA_HOME)/bin/opa_put_phase_2_monthly.ksh -y PFTC 1>> $_logfile 2>&1"            || errors=$(( $errors + 1 ))
-   opa_prex "@@(I:OPA_HOME)/bin/opa_put_phase_2_monthly.ksh -y CO2F 1>> $_logfile 2>&1"            || errors=$(( $errors + 1 ))
-fi
+	# Deliver monthly products to CMEMS
+	PRODUCTS_DIR=$OPA_WRKDIR/POSTPROC/MONTHLY/PRODUCTS
 
+	opa_log 0 "delivering monthly to CMEMS DU"
+	opa_prex "@@(I:OPA_HOME)/bin/opa_put_phase_2_monthly.ksh -y NUTR 1>> $_logfile 2>&1"            || errors=$(( $errors + 1 ))
+	opa_prex "@@(I:OPA_HOME)/bin/opa_put_phase_2_monthly.ksh -y BIOL 1>> $_logfile 2>&1"            || errors=$(( $errors + 1 ))
+	opa_prex "@@(I:OPA_HOME)/bin/opa_put_phase_2_monthly.ksh -y CARB 1>> $_logfile 2>&1"            || errors=$(( $errors + 1 ))
+	opa_prex "@@(I:OPA_HOME)/bin/opa_put_phase_2_monthly.ksh -y PFTC 1>> $_logfile 2>&1"            || errors=$(( $errors + 1 ))
+	opa_prex "@@(I:OPA_HOME)/bin/opa_put_phase_2_monthly.ksh -y CO2F 1>> $_logfile 2>&1"            || errors=$(( $errors + 1 ))
+
+    if [ $errors -eq 0 ] ;then
+
+    YEAR_TO_REMOVE=$( $YEAR - 2 )
+    opa_prex "@@(I:OPA_HOME)/bin/opa_remove_DU_prod.ksh -y $YEAR_TO_REMOVE -m $MONTH -t NUTR 1>> $_logfile 2>&1"  || errors=$(( $errors + 1 ))
+    opa_prex "@@(I:OPA_HOME)/bin/opa_remove_DU_prod.ksh -y $YEAR_TO_REMOVE -m $MONTH -t BIOL 1>> $_logfile 2>&1"  || errors=$(( $errors + 1 ))
+    opa_prex "@@(I:OPA_HOME)/bin/opa_remove_DU_prod.ksh -y $YEAR_TO_REMOVE -m $MONTH -t CARB 1>> $_logfile 2>&1"  || errors=$(( $errors + 1 ))
+    opa_prex "@@(I:OPA_HOME)/bin/opa_remove_DU_prod.ksh -y $YEAR_TO_REMOVE -m $MONTH -t PFTC 1>> $_logfile 2>&1"  || errors=$(( $errors + 1 ))
+    opa_prex "@@(I:OPA_HOME)/bin/opa_remove_DU_prod.ksh -y $YEAR_TO_REMOVE -m $MONTH -t CO2F 1>> $_logfile 2>&1"  || errors=$(( $errors + 1 ))
+
+    fi
 fi
 
 opa_log 0 "postprocess_C5 done [$(opa_exitcode $ec)]"
