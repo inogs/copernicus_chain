@@ -74,29 +74,29 @@ DATASET=${ONLINE_REPO}/FLOAT_BIO
 GSS_RAW_INDEX=${DATASET}/Float_Index.0.txt
 GSS_SEL_INDEX=${DATASET}/Float_Index.txt
 
-opa_prex "python Float/dump_index.py -i ${DATASET} -f ${GSS_SEL_INDEX} -o ${GSS_RAW_INDEX} --type coriolis  1>> $OPA_LOGDIR/daily/$DATE.log 2>&1"
-opa_prex "python Float/check_time_pos.py -i ${GSS_RAW_INDEX} -o ${GSS_SEL_INDEX}                            1>> $OPA_LOGDIR/daily/$DATE.log 2>&1" 
+opa_prex "python Float/dump_index.py -i ${DATASET} -f ${GSS_SEL_INDEX} -o ${GSS_RAW_INDEX} --type coriolis"
+opa_prex "python Float/check_time_pos.py -i ${GSS_RAW_INDEX} -o ${GSS_SEL_INDEX}"
 
 DATASET=${ONLINE_REPO}/FLOAT_LOVBIO
 GSS_RAW_INDEX=${DATASET}/Float_Index.0.txt
 GSS_SEL_INDEX=${DATASET}/Float_Index.txt
-opa_prex "python Float/dump_index.py -i ${DATASET} -f ${GSS_SEL_INDEX} -o ${GSS_RAW_INDEX} --type lov  1>> $OPA_LOGDIR/daily/$DATE.log 2>&1"
-opa_prex "python Float/check_time_pos.py -i ${GSS_RAW_INDEX} -o ${GSS_SEL_INDEX}                       1>> $OPA_LOGDIR/daily/$DATE.log 2>&1"
+opa_prex "python Float/dump_index.py -i ${DATASET} -f ${GSS_SEL_INDEX} -o ${GSS_RAW_INDEX} --type lov"
+opa_prex "python Float/check_time_pos.py -i ${GSS_RAW_INDEX} -o ${GSS_SEL_INDEX} "
 
 DATASET=${ONLINE_REPO}/SUPERFLOAT
 GSS_RAW_INDEX=${DATASET}/Float_Index.0.txt
 GSS_SEL_INDEX=${DATASET}/Float_Index.txt
-OFFSET_DAYS=-7
+OFFSET_DAYS=-15
 DATESTART=$( opa_date_day_offset $OPA_TODAY $OFFSET_DAYS )
-opa_prex "python Float/superfloat_chla.py    -s $DATESTART -e $OPA_TODAY -o $DATASET "
-opa_prex "python Float/superfloat_nitrate.py -s $DATESTART -e $OPA_TODAY -o $DATASET "
-opa_prex "python Float/superfloat_oxygen.py  -s $DATESTART -e $OPA_TODAY -o $DATASET "
-opa_prex "python Float/superfloat_par.py     -s $DATESTART -e $OPA_TODAY -o $DATASET "
-opa_prex "python Float/superfloat_bbp700.py  -s $DATESTART -e $OPA_TODAY -o $DATASET "
-opa_prex "python Float/superfloat_ph.py      -s $DATESTART -e $OPA_TODAY -o $DATASET "
+opa_prex "python Float/superfloat_chla.py    -s $DATESTART -e $OPA_TODAY -o $DATASET -f"
+opa_prex "python Float/superfloat_nitrate.py -s $DATESTART -e $OPA_TODAY -o $DATASET -f"
+opa_prex "python Float/superfloat_oxygen.py  -s $DATESTART -e $OPA_TODAY -o $DATASET -f"
+opa_prex "python Float/superfloat_par.py     -s $DATESTART -e $OPA_TODAY -o $DATASET -f"
+opa_prex "python Float/superfloat_bbp700.py  -s $DATESTART -e $OPA_TODAY -o $DATASET -f"
+opa_prex "python Float/superfloat_ph.py      -s $DATESTART -e $OPA_TODAY -o $DATASET -f"
 
-opa_prex "python Float/dump_index.py -i ${DATASET} -o ${GSS_RAW_INDEX} --type superfloat  1>> $OPA_LOGDIR/daily/$DATE.log 2>&1"
-opa_prex "python Float/check_time_pos.py -i ${GSS_RAW_INDEX} -o ${GSS_SEL_INDEX}                              1>> $OPA_LOGDIR/daily/$DATE.log 2>&1"
+opa_prex "python Float/dump_index.py -i ${DATASET} -o ${GSS_RAW_INDEX} --type superfloat "
+opa_prex "python Float/check_time_pos.py -i ${GSS_RAW_INDEX} -o ${GSS_SEL_INDEX} "
 
 ################   4. Update of SAT NRT derived datasets  ############################
 
@@ -117,7 +117,7 @@ opa_prex "cd Sat"
 opa_prex "python sat_check.py -i $ORIGDIR -o $CHECK_BASEDIR -c $CLIM_FILE -m SAT1km_mesh -s $DIR_SUBMASK -w ${CHECK_BASEDIR}/STATISTICS "
 opa_prex " python interpolator.py -i $CHECKDIR -o $DAILY_DIR_24 -m Mesh24 -M $MASKFILE --inmesh SAT1km_mesh"
 
-if [[ $WEEKDAY -eq 1 ]]; then
+if [[ $WEEKDAY -eq 0 ]]; then
 opa_prex "python aveSat.py -i $CHECKDIR -o $WEEKLY_DIR1km -m SAT1km_mesh -t weekly_monday -d $WEEKLYDATES "
 
 opa_prex "python  interpolator.py -i $WEEKLY_DIR1km -o $WEEKLY_DIR_24 -m Mesh24 -M $MASKFILE --inmesh SAT1km_mesh " 
@@ -158,7 +158,7 @@ WEEKLY_DIR_24=${ONLINE_REPO}/SAT/MULTISENSOR/1Km/DT/WEEKLY_1_24/
 opa_prex "python sat_check.py -i $ORIGDIR -o $CHECK_BASEDIR -c $CLIM_FILE -m SAT1km_mesh -s $DIR_SUBMASK -w ${CHECK_BASEDIR}/STATISTICS "
 opa_prex " python interpolator.py -i $CHECKDIR -o $DAILY_DIR_24 -m Mesh24 -M $MASKFILE --inmesh SAT1km_mesh "
 
-if [[ $WEEKDAY -eq 1 ]]; then
+if [[ $WEEKDAY -eq 0 ]]; then
 opa_prex "python aveSat.py -i $CHECKDIR -o $WEEKLY_DIR1km -m SAT1km_mesh -t weekly_monday -d $WEEKLYDATES "
 opa_prex "python interpolator.py -i $WEEKLY_DIR1km -o $WEEKLY_DIR_24 -m Mesh24 -M $MASKFILE --inmesh SAT1km_mesh "
 
