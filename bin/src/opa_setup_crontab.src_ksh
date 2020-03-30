@@ -80,6 +80,7 @@ typeset -i errors=0
 
 opa_download_start_hour_crontab_utc=$($OPA_BINDIR/date --utc --date="$OPA_TODAY $OPA_START_HOUR_UTC UTC $OPA_GET_ADVANCE_MIN minutes ago" +"%M %H")
 opa_chain_start_hour_crontab_utc=$($OPA_BINDIR/date --utc --date="$OPA_TODAY $OPA_START_HOUR_UTC UTC" +"%M %H")
+opa_chain_start_forecast_hour_crontab_utc=$($OPA_BINDIR/date --utc --date="$OPA_TODAY $OPA_START_FORECAST_HOUR_UTC UTC" +"%M %H")
 opa_download_hour_crontab_utc=$($OPA_BINDIR/date --utc --date="$OPA_TODAY $OPA_DOWNLOAD_HOUR_UTC UTC" +"%M %H")
 
 
@@ -101,7 +102,11 @@ fi
 opa_start=$( time_sum $OPA_START_HOUR_UTC $cron_deltatime f )
 opa_start=$( time_sum $opa_start $backup_deltatime f )
 
+opa_start_forecast=$( time_sum $OPA_START_FORECAST_HOUR_UTC $cron_deltatime f )
+opa_start_forecast=$( time_sum $opa_start_forecast $backup_deltatime f )
+
 opa_chain_start_hour_crontab_tz=$($OPA_BINDIR/date        --date="$OPA_TODAY $opa_start UTC" +"%M %H")
+opa_chain_start_forecast_hour_crontab_tz=$($OPA_BINDIR/date        --date="$OPA_TODAY $opa_start_forecast UTC" +"%M %H")
 
 opa_chain_check_hour_crontab_utc=$($OPA_BINDIR/date --utc --date="$OPA_TODAY $opa_start UTC ${OPA_CHECK_HOURS_OFFSET} hours" +"%M %H")
 opa_chain_check_hour_crontab_tz=$($OPA_BINDIR/date        --date="$OPA_TODAY $opa_start UTC ${OPA_CHECK_HOURS_OFFSET} hours" +"%M %H")
@@ -171,8 +176,10 @@ function _sed_tpl {
 	-e "s%@@(C:OPA_DOWNLOAD_HOUR_CRONTAB_UTC)%${opa_download_hour_crontab_utc}%g"			\
 	-e "s%@@(C:OPA_DOWNLOAD_HOUR_CRONTAB_TZ)%${opa_download_hour_crontab_tz}%g"			\
 	-e "s%@@(C:OPA_CHAIN_START_HOUR_CRONTAB_UTC)%${opa_chain_start_hour_crontab_utc}%g"		\
+	-e "s%@@(C:OPA_CHAIN_START_FORECAST_HOUR_CRONTAB_UTC)%${opa_chain_start_forecast_hour_crontab_utc}%g"		\
 	-e "s%@@(C:OPA_CHAIN_CHECK_HOUR_CRONTAB_UTC)%${opa_chain_check_hour_crontab_utc}%g"		\
 	-e "s%@@(C:OPA_CHAIN_START_HOUR_CRONTAB_TZ)%${opa_chain_start_hour_crontab_tz}%g"		\
+	-e "s%@@(C:OPA_CHAIN_START_FORECAST_HOUR_CRONTAB_TZ)%${opa_chain_start_forecast_hour_crontab_tz}%g"		\
 	-e "s%@@(C:OPA_CHAIN_CHECK_HOUR_CRONTAB_TZ)%${opa_chain_check_hour_crontab_tz}%g"		\
 	-e "s%@@(C:OPA_CRON_COMMENT)%${cron_comment}%g"		\
 	-e "s%@@(C:OPA_SUBMIT_WEEKDAY)%${opa_submit_weekday}%g"						\

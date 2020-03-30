@@ -41,7 +41,6 @@ virtualenv $VENV_PATH
 
 source $VENV_PATH/bin/activate
 pip install --upgrade pip
-pip install cftime==1.1.1
 CFLAGS+="-L/cineca/prod/opt/compilers/intel/pe-xe-2018/binary/lib/intel64 -lsvml -limf -lirc" CC=mpiicc pip install netcdf4 --global-option=build_ext
 pip install ipython
 pip install mpi4py

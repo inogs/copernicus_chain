@@ -55,11 +55,12 @@ OPA_OGS_REMOTE_HOST='poseidon.inogs.it'
 OPA_OGS_REMOTE_USER='opaopech'
 OPA_OGS_REMOTE_DIR='/home/opaopech/MERSEA/'
 
-OPA_START_HOUR_UTC="04:00:00"					# UTC time for chain submission
+OPA_START_HOUR_UTC="00:00:00"					# UTC time for chain submission (analysis)
+OPA_START_FORECAST_HOUR_UTC="14:00:00"				# UTC time for chain submission (forecast)
 OPA_GET_ADVANCE_MIN="90"					# minutes for advance execution of opa_get
 OPA_GET_TARGET_TIME="04:00:00"
 OPA_TEST=false
-OPA_DOWNLOAD_HOUR_UTC="03:00:00"
+OPA_DOWNLOAD_HOUR_UTC="20:00:00"
 
 # These values can eventually be changed by opa_profile__${I_OPA_HOSTNAME}.inc:
 OPA_ODD_ALPHA="${RT_OPA_ODD_ALPHA:-0.75}"			# Alpha correction for ODD algorithm
@@ -241,7 +242,7 @@ typeset -i OPA_NEXT_RUNDATE_OFFSET=0		# Number of days to be added to $OPA_RUNDA
 typeset -i OPA_PREV_RUNDATE_OFFSET=0		# Number of days to be subtracted to $OPA_RUNDATE to get the prev run
 OPA_PRODDATE=''					# Production date YYYYMMDD (set by opa_set_run)
 OPA_WEEKDAY=''					# Run date weekday (0 is sunday)
-OPA_WEEKDAYS=' 2 5 '				# Weekdays to run
+OPA_WEEKDAYS='2'				# Weekdays to run
 OPA_RESTART_WEEKDAY=''				# Restart from weekday run
 OPA_RESTART_RUNDATE=''				# Restart from rundate
 OPA_RESTART_ARCHIVE_OFFSETS=' 0 '		# Offset in days with respect to the $OPA_RUNDATE for

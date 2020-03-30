@@ -43,12 +43,12 @@ OPA_HOST_PRO_UHD_LIST="${USER}:${OPA_HOST_PRIMARY_LOGIN_NODE}:$_opa_pro_dir ${US
 OPA_HOST_PRO_FTP_LIST="${I_OPA_HOME}/etc/nc-config/.meteo.ncconfig:/"
 
 OPA_CORES_PER_NODE=36
-OPA_DOMAIN=20nodes-bdw                                  #Folder to take for domain (depends on number of used nodes)
+OPA_DOMAIN=10nodes-bdw                                  #Folder to take for domain (depends on number of used nodes)
 
 OPA_DEFAULT_WALL_CLOCK_LIMIT=06:00:00			# Default wall clock limit [[hh:]mm:]ss
 OPA_DEFAULT_WALL_CLOCK_LIMIT_SER=06:00:00			# Default wall clock limit [[hh:]mm:]ss
 OPA_DEFAULT_WALL_CLOCK_LIMIT_PAR=06:00:00			# Default wall clock limit [[hh:]mm:]ss
-OPA_DEFAULT_TASKS=720					# Default tasks' number WARNING: 1 node is not enough
+OPA_DEFAULT_TASKS=360					# Default tasks' number WARNING: 1 node is not enough
 OPA_DEFAULT_QUEUE="gll_meteo_prod"                                      # Default queue
 OPA_DEFAULT_QUEUE_PAR="gll_meteo_prod"                                  # Default queue par
 #OPA_DEFAULT_QUEUE_SER="serial"                                 # Default queue ser
