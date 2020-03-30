@@ -1,5 +1,5 @@
    # Daily forecast:
-@@(C:OPA_CHAIN_START_FORECAST_HOUR_CRONTAB_TZ) * * * @@(C:OPA_SCRDIR)/opa_is_login_node.ksh && @@(C:OPA_SCRDIR)/opa_start.ksh --pass --job-multiple --runtype forecast --force --with-timeout --try-resume 1> @@(C:OPA_VARDIR)/log/forecast/$(hostname).$(date +\%Y\%m\%d).opa_start.out 2>&1
+@@(C:OPA_CHAIN_START_FORECAST_HOUR_CRONTAB_TZ) * * * @@(C:OPA_SCRDIR)/opa_is_login_node.ksh && @@(C:OPA_SCRDIR)/opa_start.ksh --pass --job-multiple --runtype forecast --force --try-resume 1> @@(C:OPA_VARDIR)/log/forecast/$(hostname).$(date +\%Y\%m\%d).opa_start.out 2>&1
 
    # Daily download:
 @@(C:OPA_DOWNLOAD_HOUR_CRONTAB_TZ) * * * @@(C:OPA_SCRDIR)/opa_is_login_node.ksh && @@(C:OPA_SCRDIR)/opa_downloader.ksh > @@(C:OPA_VARDIR)/log/$(hostname).$(date +\%Y\%m\%d).opa_download.out 2>&1
