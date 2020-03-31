@@ -38,6 +38,14 @@ if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
 else # forecast case
    if [[ $OPA_WEEKDAY -eq 2 ]] ; then
       restart_arc_dir="$OPA_ARCDIR_ROOT/analysis/$OPA_RESTART_RUNDATE/MODEL"
+      if [[ -d $restart_arc_dir ]] ; then
+         echo "OK, analysis restart found"
+      else
+         OPA_RESTART_RUNDATE=$($OPA_BINDIR/date --utc --date="${OPA_RUNDATE} 1 days ago" +"%Y%m%d")
+         echo "WARNING: analysis restarts not found. Forecast ones will be taken."
+         echo "WARNING: quality of prediction will be affected "
+         restart_arc_dir="$OPA_ARCDIR_ROOT/forecast/$OPA_RESTART_RUNDATE/MODEL"
+      fi
    else
       restart_arc_dir="$OPA_ARCDIR_ROOT/forecast/$OPA_RESTART_RUNDATE/MODEL"
    fi
