@@ -338,7 +338,8 @@ OPA_DA_VARIABLES='P1l P2l P3l P4l P1n P2n P3n P4n P1c P2c P3c P4c P1p P2p P3p P4
 
 
 OPA_SUBMIT_DAY_OFFSET=0 				# number of days after rundate for submission
-OPA_CHECK_HOURS_OFFSET=6				# number of hours for opa_check_run after run submission
+OPA_CHECK_HOURS_OFFSET=6				# number of hours for opa_check_run after run submission (analysis)
+OPA_CHECK_FORECAST_HOURS_OFFSET=3			# number of hours for opa_check_run after run submission (forecast)
 
 export LD_LIBRARY_PATH="${OPA_LIBDIR}:${LD_LIBRARY_PATH}"
 

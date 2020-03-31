@@ -418,6 +418,14 @@ def main():
 			default=None,
 			help='parse to date',
 		),
+		optparse.make_option(   '-y','--runtype',
+			dest='runtype',
+ 			type='string',
+                        action='store',
+ 			nargs=1,
+			default=None,
+			help='specify runtype (forecast/analysis)',
+		),
 		optparse.make_option(   '-u','--units',
 			dest='units',
  			type='choice',
@@ -694,9 +702,11 @@ Per invalidare una cache esistente, si puo' usare l'opzione -r/--refresh.
 cat <<EOFCAT
 OPA_WEEKDAYS=$OPA_WEEKDAYS
 OPA_START_HOUR_UTC=$OPA_START_HOUR_UTC
+OPA_START_FORECAST_HOUR_UTC=$OPA_START_FORECAST_HOUR_UTC
 OPA_SUBMIT_DAY_OFFSET=$OPA_SUBMIT_DAY_OFFSET
 EOFCAT
 """
+
   command = "ksh -c '%s'" % source
   #print command
   c_stdin, c_stdout_and_stderr = os.popen4(command)
@@ -712,6 +722,15 @@ EOFCAT
         opa_weekdays = [int(e.strip())-1 for e in val.strip().split()]
       elif var == 'OPA_SUBMIT_DAY_OFFSET':
         opa_submit_day_offset = int(val)
+      elif var == 'OPA_START_FORECAST_HOUR_UTC':
+        ll = val.split(':')
+        if len(ll) == 1:
+          hh, mm, ss = int(ll[0]), 0, 0
+        elif len(ll) == 2:
+          hh, mm, ss = int(ll[0]), int(ll[1]), 0
+        else:
+          hh, mm, ss = int(ll[0]), int(ll[1]), int(ll[2])
+        opa_start_forecast_hour_utc = datetime.time(hh, mm, ss)
       elif var == 'OPA_START_HOUR_UTC':
         ll = val.split(':')
         if len(ll) == 1:
@@ -722,6 +741,8 @@ EOFCAT
           hh, mm, ss = int(ll[0]), int(ll[1]), int(ll[2])
         opa_start_hour_utc = datetime.time(hh, mm, ss)
   opa_submit_offset = datetime.timedelta(days=opa_submit_day_offset)
+  if options.runtype == 'forecast':
+     opa_start_hour_utc = opa_start_forecast_hour_utc
   #print "opa_weekdays=%s" % opa_weekdays
   #print "opa_start_hour_utc=%s" % opa_start_hour_utc
   #print "opa_submit_day_offset=%s" % opa_submit_day_offset
@@ -771,7 +792,8 @@ EOFCAT
       #else:
       #  derr(sd,"missing valid log dir for date %s" % sd)
       #  sys.exit(1)
-      date_log_dir = os.path.join(log_dir,sd)
+      date_log_dir = os.path.join(log_dir,options.runtype,sd)
+      print date_log_dir
       if not os.path.isdir(date_log_dir):
         continue
         #derr(sd,"missing log dir %s" % date_log_dir)
