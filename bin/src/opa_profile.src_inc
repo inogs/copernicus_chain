@@ -1054,41 +1054,15 @@ function _opa_get_default_run {
       opa_exit 1
   fi
 
+  if [[ $_opa_rundate == '' ]] ; then    # TODAY RUN
+       _opa_rundate=${OPA_TODAY}
+   fi
+
   case $_opa_runtype in
      'analysis')
-        if [[ $_opa_rundate == '' ]] ; then
-            if [[ $_opa_weekday == '' ]] ; then
-               echo "ERR: rundate or weekday must be defined"
-               opa_exit 1
-             else ####################### weekday defined
-
-		      typeset _opa_submit_weekday=$(( $_opa_weekday + $_opa_submit_day_offset ))
-
-		      typeset _opa_today_weekday=$($OPA_BINDIR/date +%w --utc --date="$_opa_today")
-		      typeset _opa_day_offset
-		      # the opa_rundate is the previous Tuesday;
-		      # * $_opa_today_weekday - $_opa_submit_weekday is the number of days since the last $submit_weekday
-		      # * $_opa_today_weekday - $_opa_submit_weekday + $_opa_submit_day_offset is the number of days since the last $opa_weekday
-		      # * ( $_opa_today_weekday - $_opa_submit_weekday + 7 + $_opa_submit_day_offset ) % 7 ) is normalized between 0 and 6
-		      # * 1 offset day is added because opa_rundate is Tuesday, not Wednesday
-		      _opa_day_offset=$(( ( ( $_opa_today_weekday - $_opa_submit_weekday + 7 ) % 7 ) + $_opa_submit_day_offset ))
-		      _opa_rundate=$( $OPA_BINDIR/date --utc --date="$_opa_today 00:00:00 $_opa_day_offset days ago" +%Y%m%d)
-		      echo "DEBUG:**** _opa_submit_weekday='$_opa_submit_weekday', _opa_today_weekday='$_opa_today_weekday', _opa_day_offset='$_opa_day_offset', _opa_rundate='$_opa_rundate'"
-             fi
-        fi
-        if [[ $_opa_weekday == '' ]] ; then
-            if [[ $_opa_rundate == '' ]] ; then
-               echo "ERR: rundate or weekday must be defined"
-               opa_exit 1
-             fi
-        fi
-        ;;
-
-    'forecast' )
-      if [[ $_opa_rundate == '' ]] ; then    # TODAY RUN
-           _opa_rundate=${OPA_TODAY}
-      fi
-      ;;
+        typeset _opa_today_weekday=$($OPA_BINDIR/date +%w --utc --date="$_opa_today");;
+        # maybe we can add here a control, but it might be redundant
+      'forecast' ) ;;
     * ) echo "ERR: unsupported runtype"
         opa_exit 1
        ;;
