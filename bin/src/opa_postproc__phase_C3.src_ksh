@@ -17,13 +17,40 @@ opa_prex "source $OPA_VENV_1/bin/activate"
 export PYTHONPATH=${PYTHONPATH}:$OPA_BITSEA
 
 OPA_POSTPROC=${OPA_WRKDIR}/POSTPROC
+    MODELDIR=${OPA_WRKDIR}/MODEL
 export ONLINE_REPO=${I_OPA_HOME}/inpdir/ONLINE
 export MASKFILE=${OPA_WRKDIR}/MODEL/meshmask.nc
 export ROOT_DIR=$OPA_BITSEA
 
 
 opa_prex "cd $OPA_BITSEA/validation/online"
+ONLINE_VALIDATION_DIR=${OPA_POSTPROC}/AVE_FREQ_1/online_validation
 
+## step 1 -  section Postproc DA   ##################
+LOCAL__FLOAT_STATS=${ONLINE_VALIDATION_DIR}/DA/FLOAT/OUTSTATS
+         FLOAT_IMG=${ONLINE_VALIDATION_DIR}/DA/FLOAT/IMG
+INPDIR_FLOAT_STATS=$I_OPA_HOME/inpdir/analysis/VALIDATION/POSTPROC_DA/FLOAT/STATS
+
+
+opa_mkdir ${ONLINE_VALIDATION_DIR}/DA
+opa_mkdir ${ONLINE_VALIDATION_DIR}/DA/FLOAT/
+opa_mkdir ${LOCAL__FLOAT_STATS}
+opa_mkdir ${FLOAT_IMG}
+
+opa_prex "python post_check_float.py -i $OPA_WRKDIR/DA -d $MODELDIR/DA__FREQ_1 -o $LOCAL__FLOAT_STATS"
+opa_prex "cp ${LOCAL__FLOAT_STATS}/* $INPDIR_FLOAT_STATS"
+opa_prex "python plot_post_check_float.py         -i $INPDIR_FLOAT_STATS -o $FLOAT_IMG"
+
+exit 0
+
+
+##### step 2 -- unzip from archive for SAT validation   ###########
+
+
+
+
+
+# step 2 -- unzip from archive
 STARTTIME_a=$( date -d " $OPA_RUNDATE -11 days " +%Y%m%d )
 END__TIME_a=$( date -d " $OPA_RUNDATE  -9 days " +%Y%m%d )
 
@@ -33,10 +60,10 @@ STARTTIME_f=$( date -d " $OPA_RUNDATE  -8 days " +%Y%m%d )
 END__TIME_f=$( date -d " $OPA_RUNDATE  -5 days " +%Y%m%d )
 
 
-# step 1 -- unzip from archive
+
 ARCHIVE_DIR=$I_OPA_HOME/archive/analysis
 
-ONLINE_VALIDATION_DIR=${OPA_POSTPROC}/AVE_FREQ_1/online_validation
+
 
 TMP_DIR=${ONLINE_VALIDATION_DIR}/PREVIOUS/TMP
 PROFILERDIRP=${ONLINE_VALIDATION_DIR}/PREVIOUS/PROFILATORE
@@ -106,7 +133,7 @@ opa_prex "cp $PROFILERDIRP/PROFILES/*nc $I_OPA_HOME/inpdir/analysis/VALIDATION/F
 opa_prex "cp $PROFILERDIRP/PUNTI/*dat   $I_OPA_HOME/inpdir/analysis/VALIDATION/FLOAT/PROFILATORE/PUNTI"
 
 
-if [ 1 == 0 ] ; then #is a forecast section 
+if [ 1 == 0 ] ; then #is a forecast section
 #Matchup forecasts on previous
 opa_prex "python float_extractor.py -st ${STARTTIME_f} -et ${END__TIME_f} -i $TMP_DIR_PREV -b $PROFILERDIRP  -o $IMG_DIR_PREV -m $MASKFILE"
 # Matchup analysis on actual
