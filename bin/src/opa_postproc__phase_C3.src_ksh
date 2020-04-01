@@ -41,13 +41,26 @@ opa_prex "python post_check_float.py -i $OPA_WRKDIR/DA -d $MODELDIR/DA__FREQ_1 -
 opa_prex "cp ${LOCAL__FLOAT_STATS}/* $INPDIR_FLOAT_STATS"
 opa_prex "python plot_post_check_float.py         -i $INPDIR_FLOAT_STATS -o $FLOAT_IMG"
 
-exit 0
 
 
 ##### step 2 -- unzip from archive for SAT validation   ###########
 
+opa_mkdir ${ONLINE_VALIDATION_DIR}/ARCHIVE_FC_FOR_SAT/
+DELAY=-15
+for (( RUNDAY=1; RUNDAY<8; RUNDAY++ )) ; do
 
+   archive_date=`date -d "$OPA_RUNDATE $(( $DELAY + $RUNDAY )) days" +%Y%m%d  `
+   opa_mkdir $VALIDATION_DIR/SAT/$archive_date
 
+   for fc_day in 0 1 2 ; do
+       day=`date -d "$archive_date + $fc_day days" +%Y%m%d  `
+       avefile=ave.${day}-12:00:00.P_l.nc.gz
+       opa_prex_or_die "   gzip -dc $OPA_ARCDIR_ROOT/forecast/$archive_date/${avefile}  $VALIDATION_DIR/ARCHIVE_FC_FOR_SAT/$archive_date/${avefile%.gz}"
+   done
+
+done
+
+exit 0
 
 
 # step 2 -- unzip from archive
