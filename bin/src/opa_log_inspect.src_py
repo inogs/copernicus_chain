@@ -756,8 +756,11 @@ EOFCAT
 
   d = options.date_from
   while d <= options.date_to:
-    if d.weekday() in opa_weekdays:
-      dates.append(d)
+    if options.runtype == 'analysis':
+       if d.weekday() in opa_weekdays:
+          dates.append(d)
+    else:
+       dates.append(d)
     d+=increment
 
   date_begin = dates[0]
