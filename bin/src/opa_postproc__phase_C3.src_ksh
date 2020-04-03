@@ -18,7 +18,7 @@ export PYTHONPATH=${PYTHONPATH}:$OPA_BITSEA
 
 OPA_POSTPROC=${OPA_WRKDIR}/POSTPROC
     MODELDIR=${OPA_WRKDIR}/MODEL
-export ONLINE_REPO=${I_OPA_HOME}/inpdir/ONLINE
+export ONLINE_REPO=${OPA_INPDIR_ROOT}/ONLINE
 export MASKFILE=${OPA_WRKDIR}/MODEL/meshmask.nc
 export ROOT_DIR=$OPA_BITSEA
 
@@ -43,22 +43,48 @@ opa_prex "python plot_post_check_float.py         -i $INPDIR_FLOAT_STATS -o $FLO
 
 
 
-##### step 2 -- unzip from archive for SAT validation   ###########
+##### step 2.0  SAT validation - unzip from archive  ###########
 
 opa_mkdir ${ONLINE_VALIDATION_DIR}/ARCHIVE_FC_FOR_SAT/
 DELAY=-15
+
 for (( RUNDAY=1; RUNDAY<8; RUNDAY++ )) ; do
 
-   archive_date=`date -d "$OPA_RUNDATE $(( $DELAY + $RUNDAY )) days" +%Y%m%d  `
-   opa_mkdir $VALIDATION_DIR/SAT/$archive_date
+   FC_RUNDATE=`date -d "$OPA_RUNDATE $(( $DELAY + $RUNDAY )) days" +%Y%m%d  `
+   opa_mkdir $ONLINE_VALIDATION_DIR/ARCHIVE_FC_FOR_SAT/$FC_RUNDATE
 
-   for fc_day in 0 1 2 ; do
-       day=`date -d "$archive_date + $fc_day days" +%Y%m%d  `
+   for fc_day in 1 2 3 ; do
+       day=`date -d "$FC_RUNDATE + $(( $fc_day -1 ))  days" +%Y%m%d  `
        avefile=ave.${day}-12:00:00.P_l.nc.gz
-       opa_prex_or_die "   gzip -dc $OPA_ARCDIR_ROOT/forecast/$archive_date/${avefile}  $VALIDATION_DIR/ARCHIVE_FC_FOR_SAT/$archive_date/${avefile%.gz}"
+       ARCH_FILE=$OPA_ARCDIR_ROOT/forecast/${FC_RUNDATE}/POSTPROC/AVE_FREQ_1/ARCHIVE/${avefile}
+       LOCAL_FC=${ONLINE_VALIDATION_DIR}/ARCHIVE_FC_FOR_SAT/${FC_RUNDATE}/${avefile%.gz}
+       opa_prex_or_die "gzip -dc $ARCH_FILE > $LOCAL_FC"
    done
 
 done
+
+##### step 2.1  SAT validation - stat generation  ###########
+
+SAT_WEEKLY_DIR=${ONLINE_REPO}/SAT/MULTISENSOR/1Km/NRT/WEEKLY_1_24
+ SAT_DAILY_DIR=${ONLINE_REPO}/SAT/MULTISENSOR/1Km/NRT/DAILY/CHECKED_24
+
+for (( RUNDAY=1; RUNDAY<8; RUNDAY++ )) ; do
+   FC_RUNDATE=`date -d "$OPA_RUNDATE $(( $DELAY + $RUNDAY )) days" +%Y%m%d  `
+   for fc_day in 1 2 3; do
+      day=`date -d "$FC_RUNDATE + $(( $fc_day -1 ))  days" +%Y%m%d  `
+      avefile=ave.${day}-12:00:00.P_l.nc.gz
+      LOCAL_FC=${ONLINE_VALIDATION_DIR}/ARCHIVE_FC_FOR_SAT/${FC_RUNDATE}/${avefile%.gz}
+      SAT_FILE=${SAT_DAILY_DIR}/${day}_d-OC_CNR-L3-CHL-MedOC4AD4_MULTI_1KM-MED-NRT-v02.nc
+      f_name=${ONLINE_VALIDATION_DIR}/Validation_f${fc_day}_${FC_RUNDATE}_on_daily_Sat.${day}.nc
+      opa_prex_or_die "python SatValidation.py -f $LOCAL_FC -s ${SAT_FILE} -o ${f_name}  -m $MASKFILE"
+   done
+done
+
+
+opa_prex "cp ${ONLINE_VALIDATION_DIR}/Validation_*nc ${OPA_INPDIR_ROOT}/analysis/VALIDATION/SAT"
+opa_prex "python sat_plotter.py  -i ${OPA_INPDIR_ROOT}/analysis/VALIDATION/SAT -o ${ONLINE_VALIDATION_DIR}   -d $OPA_RUNDATE "
+
+
 
 exit 0
 
