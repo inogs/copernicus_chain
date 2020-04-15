@@ -200,8 +200,33 @@ opa_prex "cp $OPA_BITSEA/postproc/Plotlist_bio.xml ${MAPS_DIR}"
 
 opa_prex "cd $MAPS_DIR/MAP_COMPRESSED"
 opa_prex "tar -cf $OPA_POSTPROC/AVE_FREQ_1/maps.tar * "
+STAT_PROFILES=${OPA_INPDIR_ROOT}/analysis/VALIDATION/MODEL/AVE_FREQ_1/STAT_PROFILES/
+opa_prex "cp $OPA_WRKDIR/POSTPROC/AVE_FREQ_1/STAT_PROFILES/ave*nc ${STAT_PROFILES}"
 
-opa_prex "cp $OPA_WRKDIR/POSTPROC/AVE_FREQ_1/STAT_PROFILES/ave*nc $I_OPA_HOME/inpdir/analysis/VALIDATION/MODEL/AVE_FREQ_1/STAT_PROFILES/"
+
+########### spaghetti section  ###########
+END_YEAR=$(  $OPA_BINDIR/date --utc --date="$OPA_RUNDATE" +"%Y"  )
+START_YEAR=$(( $END_YEAR - 3 ))
+
+
+PKL_DIR=$OPA_POSTPROC/AVE_FREQ_1/PKL
+opa_mkdir $PKL_DIR
+for year in `seq $START_YEAR $END_YEAR `; do
+    YEAR_DIR=$PKL_DIR/PKL${year}
+    opa_mkdir $YEAR_DIR
+    cd $YEAR_DIR
+    opa_prex "ln -s $STAT_PROFILES/ave.${year}*nc ."
+    opa_prex "mpirun -np 15 python $OPA_POSTPROCDIR/compact_profiles.py -i $YEAR_DIR -o $YEAR_DIR"
+done
+
+ONLINE_VALIDATION_DIR=${OPA_POSTPROC}/AVE_FREQ_1/online_validation
+IMG_DIR=${ONLINE_VALIDATION_DIR}/spaghetti
+opa_mkdir $IMG_DIR
+opa_prex "mpirun -np 15 python $OPA_BITSEA/validation/online/profiles_plotter_season.py -i $PKL_DIR -o $IMG_DIR -v $OPA_BITSEA/postproc/Plotlist_bio.xml -m $MASK_FILE -d $OPA_RUNDATE"
+
+
+
+
 
 
 opa_log 0 "postprocess_C1 done [$(opa_exitcode $ec)]"
