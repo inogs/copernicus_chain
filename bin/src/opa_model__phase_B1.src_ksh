@@ -297,7 +297,7 @@ if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
   DATIMES_WRKDIR="$OPA_WRKDIR/DA"
   OUTDIR=$wrkdir/DA__FREQ_1
   OUTFILE=$wrkdir/daTimes
-
+  END___TIME=$( set_spec_data -date ${OPA_RUNDATE} -days "-2" -hours 0 )
 
   cd $OPA_BITSEA/Float/daTimes
 
