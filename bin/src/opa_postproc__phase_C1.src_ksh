@@ -1,6 +1,12 @@
 #!/bin/ksh
-# This script executes the postprocess
-# phase C1: packing output data 
+# This script executes the parallel postprocess
+# phase C1:
+# 1. aveScan
+# 2. Products generation
+# 3. packing output data
+# 4. Monthly products
+# 5. Maps
+# 6. Spaghetti
 
 # Load common profile
 . @@(I:OPA_HOME)/bin/opa_profile.inc
@@ -215,7 +221,7 @@ for year in `seq $START_YEAR $END_YEAR `; do
     YEAR_DIR=$PKL_DIR/PKL${year}
     opa_mkdir $YEAR_DIR
     cd $YEAR_DIR
-    opa_prex "ln -s $STAT_PROFILES/ave.${year}*nc ."
+    opa_prex "ln -fs $STAT_PROFILES/ave.${year}*nc ."
     opa_prex "mpirun -np 15 python $OPA_POSTPROCDIR/compact_profiles.py -i $YEAR_DIR -o $YEAR_DIR"
 done
 
