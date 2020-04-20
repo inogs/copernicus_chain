@@ -4,6 +4,7 @@
 . @@(I:OPA_HOME)/bin/opa_profile.inc
 opa_prex "source $OPA_VENV_1/bin/activate"
 PYTHONPATH=${PYTHONPATH}:$OPA_BITSEA
+PATH=$PATH:$OPA_BINDIR
 
 function print_help {
   cat <<EofCat
@@ -58,16 +59,43 @@ while [[ ${#@} -ne 0 ]] ; do
   esac
 done
 
+function decide_action {
+   # arg1 = local product file
+   # arg2 = remote product file
+   # returns in the exit_status a code for the actions to do
+
+   # 1 means nothing to do
+   # 2 means send
+   # 3 means send and delete
+   # 4 means error
+
+   local_file=$1
+   remotefile=$2
+
+   remotebul_time=${remotefile:34:8}
+   local_bul_time=${local_file:34:8}
+   local_type=${local_file:43:2}
+
+   if [[ $local_type == fc ]] || [[ $local_type == sm ]]  ; then return 4 ; fi
+   if [[ $remotefile == $local_file ]]   ; then return 1 ; fi
+   if [[ $remotefile == "" ]]            ; then return 2 ; fi
+
+
+   if [[ $local_bul_time > $remotebul_time ]]   ; then return 3 ; fi
+   if [[ $local_bul_time < $remotebul_time ]]   ; then return 4 ; fi
+
+}
+
+
 
 # Rundate definition
 opa_prex "opa_set_default_run $opa_set_default_run_options"
-opa_prex "opa_set_run $OPA_DEFAULT_RUNDATE"
+opa_prex "opa_set_run"
 
 # start
 opa_start
 
 #Directory settings (they need the above opa_start)
-BINDIR=$OPA_BINDIR
 PROD_DIR=$OPA_WRKDIR/POSTPROC/MONTHLY/PRODUCTS
 ARCHIVE_DIR=$I_OPA_HOME/archive
 RUNDATE=$OPA_RUNDATE
@@ -87,7 +115,7 @@ else
   opa_exit 1
 fi
 
-dataset=med-ogs-${type}-an-fc-m_201904
+dataset=med00-ogs-${type}-an-fc-m_202003
 FILES_TO_SEND="*${_TYPE}*.nc"
 
 #DNT file definitions
@@ -128,46 +156,61 @@ done
 #error counter
 errs=0
 filecount=0
+upload_xml=False
 for file in `ls ${PROD_DIR}/${FILES_TO_SEND}` ; do
     filecount=$(( $filecount + 1 ))
     echo "Processing file no. $filecount: $file"
 
-#launche the rolling_archive.py to check what files have to be deleted
-    basename=`basename $file`
+    basefile=`basename $file`
+    yyyy=${basefile:0:4}
+      mm=${basefile:4:2}
 
-#setup the remote directory and check the md5s of the files to send
-    remotedir=/${product}/${dataset}/
-    remotefile="${basename}"
+    # -------------------------------------
+    echo DEBUG get_monthly_product_in_DU.sh -d ${yyyy}${mm} -t $_TYPE
+    remote_name=`${OPA_BINDIR}/get_monthly_product_in_DU.sh -d ${yyyy}${mm} -t $_TYPE `
+    decide_action $basefile $remote_name
+    ACTION=$?
+    # -------------------------------------
+
+ case $ACTION in
+   1) echo "$basefile already in DU" ;;
+   2|3) echo "$basefile has to be sent"
+    upload_xml=True
+    if [ $ACTION -eq 3 ]; then echo " and $remote_name will be removed "; fi
+
+    #setup the remote directory and check the md5s of the files to send
+    remotedir=/${product}/${dataset}/$yyyy
+    remotefile="${yyyy}/${basefile}"
     md5s=`md5sum $file|awk '{print $1}'`
 	StarTime=`date --utc +%Y%m%dT%H%M%SZ`
 	EndTime=${StarTime}
 	NumberOfAttempts=1
 	errCod=0
-	
-	#TOTAL_RESEND_STR= 
 
-#actual send of the file
+    to_remove_file=$yyyy/$remote_name
+    DELETE_STR="<file FileName=\"${to_remove_file}\" > <KeyWord>Delete</KeyWord> </file>"
+
+
+
+  #actual send of the file
 	for i in `seq 1 $_MAX_TRIES`;do
-	      put_command="$BINDIR/ncftpput -u ${ogs_user} -p ${ogs_pass} -T .tmp. ${ogs_host} $remotedir ${file} 2>&1"
+	      put_command="ncftpput -u ${ogs_user} -p ${ogs_pass} -T .tmp. ${ogs_host} $remotedir ${file} 2>&1"
               if $_DRY_RUN ; then
                 echo "SIMULATE: >>> $put_command"
                 success=true
                 break
               else
- 	        #echo $put_command
- 	        opa_prex_with_output "$BINDIR/ncftpput -u ${ogs_user} -p ${ogs_pass} -T .tmp. ${ogs_host} $remotedir ${file} 2>&1"; errCod=$?
-   		stderr=$my_var
-		#echo "${errCod}"
-	        if [ ${errCod} -eq 0 ];then
-      	           EndTime=`date --utc +%Y%m%dT%H%M%SZ`
-		   break
-	 	else
+                opa_prex_with_output "$OPA_BINDIR/ncftpput -u ${ogs_user} -p ${ogs_pass} -T .tmp. ${ogs_host} $remotedir ${file} 2>&1"; errCod=$?
+                stderr=$my_var
+                if [ ${errCod} -eq 0 ];then
+                   EndTime=`date --utc +%Y%m%dT%H%M%SZ`
+                   break
+                else
 # storage on arrays for future use  ##########
-                   ERRCOD[$NumberOfAttempts]=${errCod}
-                   STDERR[$NumberOfAttempts]=${stderr}
-		      
-		   lastErrCod=${errCod}
-		   lastError=${stderr}
+                  ERRCOD[$NumberOfAttempts]=${errCod}
+                  STDERR[$NumberOfAttempts]=${stderr}
+                  lastErrCod=${errCod}
+                  lastError=${stderr}
 		   ((NumberOfAttempts++))	    
 		 fi
 
@@ -193,13 +236,24 @@ for file in `ls ${PROD_DIR}/${FILES_TO_SEND}` ; do
 #Write transfer info to XML file
 	FINAL_STR="<file FileName=\"${remotefile}\" StartUploadTime=\"${StarTime}\"  StopUploadTime=\"${EndTime}\" Checksum=\"${md5s}\"  FinalStatus=\"${status}\"${close}>"
 	echo "             $FINAL_STR" >> $DNT_FILE
-	
+
 	if [[ ${NumberOfAttempts} -ne 1 ]]; then
 	    close=""
 	    RESEND_STR="<resendAttempt DueToErrorCode=\"${lastErrCod}\" DueToErrorMsg=\"${lastError}\" NumberOfAttempts=\"${NumberOfAttempts}\"/>"
 	    echo "                         $RESEND_STR" >> $DNT_FILE
 	    echo "                </file>" >> $DNT_FILE
 	fi
+        if [[ $status == Delivered ]] && [[ $ACTION -eq 3 ]] ; then
+            echo "             $DELETE_STR"  >> $DNT_FILE
+        fi
+     ;;
+
+   4) echo "ERROR in send algorithm "
+      echo "You are trying to replace: a product with a lower quality one"
+      ;;
+   *) echo "wrong decide_action exit status"; exit 1 ;;
+ esac
+
 done
 
 #XML file delivery
@@ -210,12 +264,12 @@ if $_NO_DNT; then
 elif $_DRY_RUN; then
   echo "SIMULATING: not delivering XML file"
 else
-  opa_prex "$BINDIR/ncftpput -u ${ogs_user} -p ${ogs_pass} -T .tmp. ${ogs_host} /${product}/DNT $DNT_FILE"
-  opa_prex "$BINDIR/ncftpput -u ${ogs_user_dnt} -p ${ogs_pass_dnt} -P ${ogs_port_dnt}  -T .tmp. ${ogs_host_dnt} /${product}/DNT $DNT_FILE  "
-  
-  #caso di backup
-  #OGS_USER=bio_b
 
+if [ $upload_xml == "True" ] ; then
+  opa_prex "$OPA_BINDIR/ncftpput -u ${ogs_user} -p ${ogs_pass} -T .tmp. ${ogs_host} /${product}/DNT $DNT_FILE"
+else
+   echo "$DNT_FILE will not uploaded"
+fi
 fi
 
 
