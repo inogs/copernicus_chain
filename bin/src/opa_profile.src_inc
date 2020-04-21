@@ -601,9 +601,9 @@ function opa_dump_run {
   cat <<EOFCAT
 ### OPA_RUNDATE ...................... '${OPA_RUNDATE}'
 ### OPA_WEEKDAY ...................... '${OPA_WEEKDAY}'
-###  OPA_TODAY ....................... '${OPA_TODAY}
-###  OPA_DEFAULT_RUNDATE ............. '${OPA_DEFAULT_RUNDATE}'
-###  OPA_PRODDATE .................... '${OPA_PRODDATE}
+### OPA_TODAY ........................ '${OPA_TODAY}'
+### OPA_DEFAULT_RUNDATE .............. '${OPA_DEFAULT_RUNDATE}'
+### OPA_PRODDATE ..................... '${OPA_PRODDATE}'
 ### OPA_RESTART_RUNDATE .............. '${OPA_RESTART_RUNDATE}'
 ### OPA_RESTART_WEEKDAY .............. '${OPA_RESTART_WEEKDAY}'
 EOFCAT
