@@ -36,6 +36,7 @@ SCRIPTS=	opa_archive.ksh					\
 		opa_rm.inc					\
 		opa_rm__pbs.inc					\
                 opa_rm__slurm.inc				\
+                opa_remove_DU_prod.ksh                          \
 		opa_job.ksh					\
 		opa_run_setup.ksh				\
 		opa_setup_crontab.ksh				\

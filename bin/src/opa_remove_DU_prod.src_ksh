@@ -1,0 +1,171 @@
+#!/bin/ksh
+
+# Load common profile
+. @@(I:OPA_HOME)/bin/opa_profile.inc
+opa_prex "source $OPA_VENV_1/bin/activate"
+PYTHONPATH=${PYTHONPATH}:$OPA_BITSEA
+PATH=$PATH:$OPA_BINDIR
+
+function print_help {
+  cat <<EofCat
+Generates DNT files for removing product files from DU
+Generated DNT removes both daily and associated monthly files
+Usage: $OPA_PROGNAME [options]
+[options]
+        --help|-h                               show this help
+
+        --year|-y                               [ YEAR ]
+        --month|-m                              [ MONTH ]                                                
+        --type|-t                               mandatory from V2C onwards; specifies the type
+                                                of files to send ("BIOL","NUTR","CARB","PFTC","CO2F")
+EofCat
+}
+
+
+
+while [[ ${#@} -ne 0 ]] ; do
+  arg="$1"
+  shift 1
+  case "$arg" in
+    --help|-h)
+      print_help
+      exit 0
+      ;;
+    --type|-t)
+      TYPE="$1"
+      shift 1
+      ;;
+    --year|-y)
+      YEAR="$1"
+      shift 1
+      ;;
+    --month|-m)
+      MONTH="$1"
+      shift 1
+      ;;       
+    *)
+      echo "ERROR: wrong command line option <$arg>" 1>&2
+      exit 2
+      ;;
+  esac
+done
+
+function decide_action {
+   # arg1 = remote product file
+   # returns in the exit_status a code for the actions to do
+
+   # 1 means nothing to do
+   # 2 means delete
+   # 3 means error
+
+   remotefile=$1
+
+   remotebul_time=${remotefile:34:8}
+       remotetype=${remotefile:43:2}
+
+   if [[ $remotefile == "" ]]            ; then return 1 ; fi
+   if ( [[ $remotetype == fc ]] || [[ $remotetype == sm ]]  )  ; then return 3 ; fi
+   return 2
+}
+
+# Rundate definition
+opa_prex "opa_set_default_run $opa_set_default_run_options"
+opa_prex "opa_set_run"
+
+# start
+opa_start
+
+product=MEDSEA_ANALYSIS_FORECAST_BIO_006_014
+PushingEntity="MED-OGS-TRIESTE-IT"
+PROD_DIR=${OPA_WRKDIR}/POSTPROC/MONTHLY/PRODUCTS
+
+case $TYPE in
+   "BIOL" ) dataset=med00-ogs-bio-an-fc-d_202003 ;;
+   "CARB" ) dataset=med00-ogs-car-an-fc-d_202003 ;;
+   "NUTR" ) dataset=med00-ogs-nut-an-fc-d_202003 ;;
+   "PFTC" ) dataset=med00-ogs-pft-an-fc-d_202003 ;;
+   "CO2F" ) dataset=med00-ogs-co2-an-fc-d_202003 ;;
+   * )  echo Wrong type ; usage; exit 1 ;;
+esac
+
+
+#Set up the ncftp credentials from the .cmems.ncconfig file (filepath indicated in opa_profile)
+OPA_NCCONFIGS_FILE=$OPA_PRO_REMOTE_SERVER_NCCONFIGS_PHASE_2
+for ncconfig in $OPA_NCCONFIGS_FILE ; do
+    ogs_host=$(cat $ncconfig|grep -e "host"|cut -d " " -f2)
+    ogs_user=$(cat $ncconfig|grep -e "user"|cut -d " " -f2)
+#             echo "xxx${ogs_user}xxx"
+    ogs_pass=$(cat $ncconfig|grep -e "pass"|cut -d " " -f2)
+done
+
+DntTime=`date --utc +%Y%m%dT%H%M%SZ`
+DNT_FILE=${PROD_DIR}/${product}_${DntTime}.xml
+
+echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" >  $DNT_FILE
+echo "<delivery product=\"${product}\" PushingEntity=\"${PushingEntity}\" date=\"${DntTime}\">" >> $DNT_FILE
+echo "    <dataset DatasetName=\"${dataset}\">" >> $DNT_FILE
+
+
+upload_xml=False
+
+DATELIST=$( python ${OPA_POSTPROCDIR}/prodotti/monthly_timelist_generator.py -y $YEAR -m $MONTH )
+
+for day in $DATELIST ; do
+  #---------------------------------------------------------
+  remote_name=`${OPA_BINDIR}/get_daily_product_in_DU.sh -d $day -t $TYPE`
+  decide_action $remote_name
+  ACTION=$?
+  #---------------------------------------------------------
+  
+  case $ACTION in
+  1) echo "$day $TYPE not in DU" ;;
+  2) echo "$remote_name has to be deleted"
+     upload_xml=True
+  	 to_remove_file=$YEAR/$MONTH/$remote_name
+	 DELETE_STR="<file FileName=\"${to_remove_file}\" > <KeyWord>Delete</KeyWord> </file>"
+	 echo "             $DELETE_STR"  >> $DNT_FILE
+	 ;;
+  3) echo "ERROR: only analysis files are supposed to be removable" ;;
+   *) echo "wrong decide_action exit status"; exit 1 ;;
+ esac
+  
+done
+
+echo "    </dataset>"  >> $DNT_FILE
+echo "Daily section completed"
+########   Monthly Section     ###########
+
+case $TYPE in
+   "BIOL" ) dataset=med00-ogs-bio-an-fc-m_202003 ;;
+   "CARB" ) dataset=med00-ogs-car-an-fc-m_202003 ;;
+   "NUTR" ) dataset=med00-ogs-nut-an-fc-m_202003 ;;
+   "PFTC" ) dataset=med00-ogs-pft-an-fc-m_202003 ;;
+   "CO2F" ) dataset=med00-ogs-co2-an-fc-m_202003 ;;
+   * )  echo Wrong type ; usage; exit 1 ;;
+esac
+echo "    <dataset DatasetName=\"${dataset}\">" >> $DNT_FILE
+echo "DEBUG: ${OPA_BINDIR}/get_monthly_product_in_DU.sh -d ${YEAR}${MONTH} -t $TYPE"
+remote_name=`${OPA_BINDIR}/get_monthly_product_in_DU.sh -d ${YEAR}${MONTH} -t $TYPE`
+decide_action $remote_name
+ACTION=$?
+case $ACTION in
+   1) echo "${YEAR}${MONTH}01 $TYPE not in DU" ;;
+   2) echo "$remote_name has to be deleted"
+      upload_xml=True
+      to_remove_file=$YEAR/$remote_name
+	  DELETE_STR="<file FileName=\"${to_remove_file}\" > <KeyWord>Delete</KeyWord> </file>"
+	  echo "             $DELETE_STR"  >> $DNT_FILE
+	  ;;
+   3) echo "ERROR: only analysis files are supposed to be removable" ;;
+   *) echo "wrong decide_action exit status"; exit 1 ;;
+esac
+
+echo "    </dataset>"  >> $DNT_FILE
+echo "</delivery>" >> $DNT_FILE
+
+if [ $upload_xml == "True" ] ; then
+   opa_prex "$OPA_BINDIR/ncftpput -u ${ogs_user} -p ${ogs_pass} -T .tmp. ${ogs_host} /${product}/DNT $DNT_FILE"
+else
+   echo "Don't upload $DNT_FILE"
+fi
+

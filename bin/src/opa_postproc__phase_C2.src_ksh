@@ -28,12 +28,12 @@ opa_prex "@@(I:OPA_HOME)/bin/opa_put_phase_2.ksh -y CARB 1>> $_logfile 2>&1"    
 opa_prex "@@(I:OPA_HOME)/bin/opa_put_phase_2.ksh -y PFTC 1>> $_logfile 2>&1"            || errors=$(( $errors + 1 ))
 opa_prex "@@(I:OPA_HOME)/bin/opa_put_phase_2.ksh -y CO2F 1>> $_logfile 2>&1"            || errors=$(( $errors + 1 ))
 
-opa_exit "$errors"
+
   DAY=$( date --date="$OPA_RUNDATE" +%d )
  YEAR=$( date --date="$OPA_RUNDATE" +%Y )
 MONTH=$( date --date="$OPA_RUNDATE" +%m )
 
-if [[ $DAY > 7 ]] && [[ $DAY < 15 ]] ; then
+if [[ $DAY -gt 7 ]] && [[ $DAY -lt 15 ]] ; then
 
 	# Deliver monthly products to CMEMS
 	PRODUCTS_DIR=$OPA_WRKDIR/POSTPROC/MONTHLY/PRODUCTS
@@ -47,12 +47,18 @@ if [[ $DAY > 7 ]] && [[ $DAY < 15 ]] ; then
 
     if [ $errors -eq 0 ] ;then
 
-    YEAR_TO_REMOVE=$( $YEAR - 2 )
-    opa_prex "@@(I:OPA_HOME)/bin/opa_remove_DU_prod.ksh -y $YEAR_TO_REMOVE -m $MONTH -t NUTR 1>> $_logfile 2>&1"  || errors=$(( $errors + 1 ))
-    opa_prex "@@(I:OPA_HOME)/bin/opa_remove_DU_prod.ksh -y $YEAR_TO_REMOVE -m $MONTH -t BIOL 1>> $_logfile 2>&1"  || errors=$(( $errors + 1 ))
-    opa_prex "@@(I:OPA_HOME)/bin/opa_remove_DU_prod.ksh -y $YEAR_TO_REMOVE -m $MONTH -t CARB 1>> $_logfile 2>&1"  || errors=$(( $errors + 1 ))
-    opa_prex "@@(I:OPA_HOME)/bin/opa_remove_DU_prod.ksh -y $YEAR_TO_REMOVE -m $MONTH -t PFTC 1>> $_logfile 2>&1"  || errors=$(( $errors + 1 ))
-    opa_prex "@@(I:OPA_HOME)/bin/opa_remove_DU_prod.ksh -y $YEAR_TO_REMOVE -m $MONTH -t CO2F 1>> $_logfile 2>&1"  || errors=$(( $errors + 1 ))
+    YEAR_TO_REMOVE=$(( $YEAR  - 2 ))
+    m=$(( $MONTH - 1 ))
+    if [ $m -eq 0 ]; then # we have to remove december
+       m=12
+       YEAR_TO_REMOVE=$(( $YEAR  - 3 ))
+    fi
+    MONTH_TO_REMOVE=`printf %02d $m`
+    opa_prex "@@(I:OPA_HOME)/bin/opa_remove_DU_prod.ksh -y $YEAR_TO_REMOVE -m $MONTH_TO_REMOVE -t NUTR 1>> $_logfile 2>&1"  || errors=$(( $errors + 1 ))
+    opa_prex "@@(I:OPA_HOME)/bin/opa_remove_DU_prod.ksh -y $YEAR_TO_REMOVE -m $MONTH_TO_REMOVE -t BIOL 1>> $_logfile 2>&1"  || errors=$(( $errors + 1 ))
+    opa_prex "@@(I:OPA_HOME)/bin/opa_remove_DU_prod.ksh -y $YEAR_TO_REMOVE -m $MONTH_TO_REMOVE -t CARB 1>> $_logfile 2>&1"  || errors=$(( $errors + 1 ))
+    opa_prex "@@(I:OPA_HOME)/bin/opa_remove_DU_prod.ksh -y $YEAR_TO_REMOVE -m $MONTH_TO_REMOVE -t PFTC 1>> $_logfile 2>&1"  || errors=$(( $errors + 1 ))
+    opa_prex "@@(I:OPA_HOME)/bin/opa_remove_DU_prod.ksh -y $YEAR_TO_REMOVE -m $MONTH_TO_REMOVE -t CO2F 1>> $_logfile 2>&1"  || errors=$(( $errors + 1 ))
 
     fi
 fi
