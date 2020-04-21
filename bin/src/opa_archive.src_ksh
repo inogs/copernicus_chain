@@ -319,6 +319,16 @@ if has_dataset POSTPROC ; then
      stage_out --output-subdir "$ARCHIVE_VALIDATION_FLOAT_DIR"  "POSTPROC/AVE_FREQ_1/online_validation/ANALYSIS_PROFILES_1week/*nc" || par_errors=$(( $par_errors + 1 ))
      stage_out --output-subdir "$ARCHIVE_VALIDATION_SAT_DIR"    "POSTPROC/AVE_FREQ_1/online_validation/Validation*.nc"       || par_errors=$(( $par_errors + 1 ))
      stage_out --output-subdir "POSTPROC/AVE_FREQ_1/validation" "POSTPROC/AVE_FREQ_1/online_validation/medeaf_pub.tar "      || par_errors=$(( $par_errors + 1 ))
+
+
+     DAY=$( date --date="$OPA_RUNDATE" +%d )
+
+     if [[ $DAY -gt 7 ]] && [[ $DAY -lt 15 ]] ; then
+     opa_mkdir "$OPA_ARCDIR/POSTPROC/MONTHLY/"
+     opa_mkdir "$OPA_ARCDIR/POSTPROC/MONTHLY/PRODUCTS/"
+     stage_out --output-subdir "POSTPROC/MONTHLY/PRODUCTS/"  POSTPROC/MONTHLY/PRODUCTS/*nc"         || par_errors=$(( $par_errors + 1 ))
+     stage_out --output-subdir "POSTPROC/MONTHLY/PRODUCTS/"  POSTPROC/MONTHLY/PRODUCTS/*xml"        || par_errors=$(( $par_errors + 1 ))
+     fi
   fi 
 
   opa_log 0 "Archiving POSTPROC in [${OPA_ARCDIR}]... done [$(opa_exitcode $par_errors)]"
