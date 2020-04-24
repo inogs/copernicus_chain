@@ -30,6 +30,7 @@ opa_mkdir "$ONLINE_VALIDATION_DIR/MEDEAF_PUB"
 opa_mkdir "$ONLINE_VALIDATION_DIR/MEDEAF_PUB/Sat_validation"
 opa_mkdir "$ONLINE_VALIDATION_DIR/MEDEAF_PUB/Single_Float_validation"
 opa_mkdir "$ONLINE_VALIDATION_DIR/MEDEAF_PUB/Weekly_Float_validation"
+opa_mkdir "$ONLINE_VALIDATION_DIR/MEDEAF_PUB/Float_Hov"
 
 opa_prex "echo $OPA_RUNDATE > $ONLINE_VALIDATION_DIR/MEDEAF_PUB/lastbio"
 
@@ -142,17 +143,29 @@ opa_prex "cp $PROFILERDIR_AN/PUNTI/*dat   ${OPA_INPDIR_ROOT}/analysis/VALIDATION
 
 opa_prex "tar -cf  ${ONLINE_VALIDATION_DIR}/matchup_outputs/forecast.tar ${IMG_DIR_FC}/* "
 opa_prex "tar -cf  ${ONLINE_VALIDATION_DIR}/matchup_outputs/analysis.tar ${IMG_DIR_AN}/* "
+
 ##### step 3.2 BIOFLOATS WEEKLY SECTION   #######################
 
 opa_mkdir ${ONLINE_VALIDATION_DIR}/biofloat_ms
 
-NRT_biofloat_out_name=${ONLINE_VALIDATION_DIR}/AN_FOR_FLOATS/BioFloat_Weekly_validation_${STARTTIME_s}.nc
-opa_prex "python biofloats_ms.py -d $MID__TIME_a -m $MASKFILE -b ${ONLINE_VALIDATION_DIR}/AN_FOR_FLOATS/PROFILATORE -o ${NRT_biofloat_out_name} "
+NRT_biofloat_out_name=${ONLINE_VALIDATION_DIR}/FC_FOR_FLOATS/BioFloat_Weekly_validation_${MID__TIME_a}.nc
+opa_prex "python biofloats_ms.py -d $MID__TIME_a -m $MASKFILE -b ${ONLINE_VALIDATION_DIR}/FC_FOR_FLOATS/PROFILATORE -o ${NRT_biofloat_out_name} "
 opa_prex "cp ${NRT_biofloat_out_name} ${OPA_INPDIR_ROOT}/analysis/VALIDATION/FLOAT/WEEKLY " # updating inpdir
 
 opa_prex "python biofloats_ms_plotter.py  -o ${ONLINE_VALIDATION_DIR}/biofloat_ms  -a ${OPA_INPDIR_ROOT}/analysis/VALIDATION/FLOAT/WEEKLY -d $OPA_RUNDATE"
 opa_prex "cp ${ONLINE_VALIDATION_DIR}/biofloat_ms/*png $ONLINE_VALIDATION_DIR/MEDEAF_PUB/Weekly_Float_validation"
+##### step 3.3 Float Hovmoeller section #######################
 
+BASEDIR=${OPA_INPDIR_ROOT}/analysis/VALIDATION/FLOAT/PROFILATORE
+NCDIR=${ONLINE_VALIDATION_DIR}/tmp_nc
+OUTDIR=${ONLINE_VALIDATION_DIR}/Fig_Hovmoeller_Stat
+
+opa_mkdir $NCDIR
+opa_mkdir $OUTDIR
+
+opa_prex_or_die "python SingleFloat_vs_Model_Stat_Timeseries.py -m $MASKFILE -b $BASEDIR -o $NCDIR -d $OPA_RUNDATE"
+opa_prex_or_die "python Hov_Stat_plot.py -m $MASKFILE -i $NCDIR -o $OUTDIR -b $BASEDIR -d $OPA_RUNDATE "
+opa_prex_or_die "cp $OUTDIR/*png  $ONLINE_VALIDATION_DIR/MEDEAF_PUB/Float_Hov "
 
 opa_prex "cd $ONLINE_VALIDATION_DIR "
 opa_prex "tar -cf $ONLINE_VALIDATION_DIR/medeaf_pub.tar MEDEAF_PUB"
