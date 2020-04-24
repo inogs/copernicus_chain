@@ -20,7 +20,7 @@ opa_step_has_phase pre SETUP && {
 
 ### PHASE get
 opa_step_has_phase pre GET && {
-  opa_exec_and_log opa_get			|| { errors=$(( $errors + 1 ))
+  opa_exec_and_log opa_get			|| {
     opa_exec_and_log opa_get_recovery 		|| errors=$(( $errors + 1 ))
   }
 }
