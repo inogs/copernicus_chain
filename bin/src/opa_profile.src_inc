@@ -263,8 +263,8 @@ OPA_INPUT_ABORT_ON_ERRORS=${RT_OPA_INPUT_ABORT_ON_ERRORS:-true}	# Input abort on
 OPA_MAIL_ADDRESS="service.med.ogs@ogs.trieste.it"		# OGS Address used for notification
 
 OPA_REPORT_NOTIFY_ADDRESSES="service.med.ogs@ogs.trieste.it"
-OPA_NOTIFY_ADDRESSES="myocean-support@list.cineca.it"
-OPA_REPORT_ADDRESSES="myocean-support@list.cineca.it, service.med.ogs@ogs.trieste.it"
+OPA_NOTIFY_ADDRESSES="myocean-support@list.cineca.it,service.med.ogs@inogs.it"
+OPA_REPORT_ADDRESSES="myocean-support@list.cineca.it service.med.ogs@inogs.it"
 OPA_MONITORING_ADDRESSES="service.med@bo.ingv.it, myocean-support@LIST.CINECA.IT, service.med.ogs@ogs.trieste.it"
 OPA_DEBUG_ADDRESSES="myocean-support@LIST.CINECA.IT"
 						# Addresses used for notification
