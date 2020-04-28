@@ -36,21 +36,34 @@ opa_prex "echo $OPA_RUNDATE > $ONLINE_VALIDATION_DIR/MEDEAF_PUB/lastbio"
 
 
 ## step 1 -  section Postproc DA   ##################
+
+  LOCAL__SAT_STATS=${ONLINE_VALIDATION_DIR}/DA/SAT/OUTSTATS
+           SAT_IMG=${ONLINE_VALIDATION_DIR}/DA/SAT/IMG
 LOCAL__FLOAT_STATS=${ONLINE_VALIDATION_DIR}/DA/FLOAT/OUTSTATS
          FLOAT_IMG=${ONLINE_VALIDATION_DIR}/DA/FLOAT/IMG
-INPDIR_FLOAT_STATS=$I_OPA_HOME/inpdir/analysis/VALIDATION/POSTPROC_DA/FLOAT/STATS
-
+INPDIR_FLOAT_STATS=${OPA_INPDIR_ROOT}/analysis/VALIDATION/POSTPROC_DA/FLOAT/STATS
+  INPDIR_SAT_STATS=${OPA_INPDIR_ROOT}/analysis/VALIDATION/POSTPROC_DA/SAT/STATS
+   SAT_DAILY_STATS=${ONLINE_REPO}/SAT/MULTISENSOR/1Km/NRT/DAILY/STATISTICS/
 
 opa_mkdir ${ONLINE_VALIDATION_DIR}/DA
 opa_mkdir ${ONLINE_VALIDATION_DIR}/DA/FLOAT/
 opa_mkdir ${LOCAL__FLOAT_STATS}
 opa_mkdir ${FLOAT_IMG}
 
+opa_mkdir ${ONLINE_VALIDATION_DIR}/DA/SAT/
+opa_mkdir ${LOCAL__SAT_STATS}
+opa_mkdir ${SAT_IMG}
+
+###### step 1.1    Float  section  ##########
 opa_prex "python post_check_float.py -i $OPA_WRKDIR/DA -d $MODELDIR/DA__FREQ_1 -o $LOCAL__FLOAT_STATS"
 opa_prex "cp ${LOCAL__FLOAT_STATS}/* $INPDIR_FLOAT_STATS"
 opa_prex "python plot_post_check_float.py         -i $INPDIR_FLOAT_STATS -o $FLOAT_IMG"
 
-
+###### step 1.2    SAT section  ##########
+opa_prex "python post_check_sat.py -d $MODELDIR/DA__FREQ_1 -m $MASKFILE -o $LOCAL__SAT_STATS"
+opa_prex "cp ${LOCAL__SAT_STATS}/* $INPDIR_SAT_STATS"
+opa_prex "tar -xf $OPA_ETCDIR/static-data/POSTPROC/SUBMASKsat.tar.gz -C $ONLINE_VALIDATION_DIR "
+opa_prex "python plot_check_sat.py -i $INPDIR_SAT_STATS -o $SAT_IMG -s $SAT_DAILY_STATS -b ${ONLINE_VALIDATION_DIR}/SUBMASKsat"
 
 ##### step 2.0  SAT validation - unzip from archive  ###########
 
