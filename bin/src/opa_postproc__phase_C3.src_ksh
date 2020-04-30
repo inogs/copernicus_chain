@@ -31,9 +31,13 @@ opa_mkdir "$ONLINE_VALIDATION_DIR/MEDEAF_PUB/Sat_validation"
 opa_mkdir "$ONLINE_VALIDATION_DIR/MEDEAF_PUB/Single_Float_validation"
 opa_mkdir "$ONLINE_VALIDATION_DIR/MEDEAF_PUB/Weekly_Float_validation"
 opa_mkdir "$ONLINE_VALIDATION_DIR/MEDEAF_PUB/Float_Hov"
+opa_mkdir "$ONLINE_VALIDATION_DIR/MEDEAF_PUB/DA_Float"
+opa_mkdir "$ONLINE_VALIDATION_DIR/MEDEAF_PUB/DA_Sat"
+opa_mkdir "$ONLINE_VALIDATION_DIR/MEDEAF_PUB/Model_profiles"
+
 
 opa_prex "echo $OPA_RUNDATE > $ONLINE_VALIDATION_DIR/MEDEAF_PUB/lastbio"
-
+opa_prex "${ONLINE_VALIDATION_DIR}/spaghetti/*png $ONLINE_VALIDATION_DIR/MEDEAF_PUB/Model_profiles"
 
 ## step 1 -  section Postproc DA   ##################
 
@@ -58,12 +62,14 @@ opa_mkdir ${SAT_IMG}
 opa_prex "python post_check_float.py -i $OPA_WRKDIR/DA -d $MODELDIR/DA__FREQ_1 -o $LOCAL__FLOAT_STATS"
 opa_prex "cp ${LOCAL__FLOAT_STATS}/* $INPDIR_FLOAT_STATS"
 opa_prex "python plot_post_check_float.py         -i $INPDIR_FLOAT_STATS -o $FLOAT_IMG"
+opa_prex "cp $FLOAT_IMG/*png $ONLINE_VALIDATION_DIR/MEDEAF_PUB/DA_Float/"
 
 ###### step 1.2    SAT section  ##########
 opa_prex "python post_check_sat.py -d $MODELDIR/DA__FREQ_1 -m $MASKFILE -o $LOCAL__SAT_STATS"
 opa_prex "cp ${LOCAL__SAT_STATS}/* $INPDIR_SAT_STATS"
 opa_prex "tar -xf $OPA_ETCDIR/static-data/POSTPROC/SUBMASKsat.tar.gz -C $ONLINE_VALIDATION_DIR "
 opa_prex "python plot_check_sat.py -i $INPDIR_SAT_STATS -o $SAT_IMG -s $SAT_DAILY_STATS -b ${ONLINE_VALIDATION_DIR}/SUBMASKsat"
+opa_prex "cp $SAT_IMG/*png $ONLINE_VALIDATION_DIR/MEDEAF_PUB/DA_Sat/"
 
 ##### step 2.0  SAT validation - unzip from archive  ###########
 
