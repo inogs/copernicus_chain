@@ -161,13 +161,14 @@ fi
 
 function opa_check_input_file {
   # This function checks if the input file is correct
-  # !!!WARNING!!! this is not implemented yet
   # input file name is: yymmdd_variable.nc
 
   #typeset _input_file="$1"
   #typeset _date=$( echo "$_input_file" | cut -c1-6 )			# yymmdd
   #typeset _var=$( echo "$_input_file" | cut -d_ -f2 | cut -d. -f1 ) 	# Variable name
-  return 0
+
+  opa_prex "$OPA_BINDIR/ncdump -h $1 > /dev/null"
+  return $?
 }
 
 function opa_copy_attributes {
@@ -483,11 +484,10 @@ EOFCAT
       # file check:
       #   if chec fails, tries again to download forever;
       #   this is to prevent downloading incomplete or corrupted files
-      #   THIS CHECK HAS NOT BEEN IMPLEMENTED YET, AND WILL ALWAYS PASS!
       if $_file_found ; then
         # some code to check if $_decompressed_lfile is correct
-        if ! opa_check_input_file ${_decompressed_lfile} ; then
-          opa_log 1 "file [${_decompressed_lfile}] : check failed!"
+        if ! opa_check_input_file $_lidir_download/$_compressed_rfile ; then
+          opa_log 1 "file [${_compressed_rfile}] : check failed!"
           _file_found=false
         fi
         opa_prex "mv    $_lidir_download/$_compressed_rfile $_lidir"
@@ -495,7 +495,7 @@ EOFCAT
         # opa_cp -p $_lidir/$_compressed_rfile $_lidir/$_decompressed_lfile # cp orig in inpdir/analysis/20200218/OPAOPER_A/20200209_T.nc
         # opa_cp -p $_lidir/$_decompressed_lfile $_lwdir                    # cp inpdir/analysis/20200218/OPAOPER_A/20200209_T.nc wrkdir/analysis/2/OPAOPER_A
 
-        opa_prex_or_die "ln -s $_lidir/$_compressed_rfile $_lwdir/$_decompressed_lfile "
+        opa_prex_or_die "ln -fs $_lidir/$_compressed_rfile $_lwdir/$_decompressed_lfile "
 
       fi
 
