@@ -27,9 +27,6 @@ if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
   opa_prex "echo $OPA_RUNDATE > @@(I:OPA_HOME)/log/current/last"
   opa_prex "cp $OPA_WRKDIR/POSTPROC/AVE_FREQ_1/maps.tar                         $I_OPA_HOME/archive/analysis/current/"
   opa_prex "cp $OPA_WRKDIR/POSTPROC/AVE_FREQ_1/online_validation/medeaf_pub.tar $I_OPA_HOME/archive/analysis/current/"
-  opa_prex "echo $OPA_RUNDATE > @@(I:OPA_HOME)/log/analysis/current/lastbio"
-  opa_prex "cp  $OPA_WRKDIR/POSTPROC/AVE_FREQ_1/online_validation/BioFloats_Descriptor.xml  @@(I:OPA_HOME)/log/analysis/current/ "
-
 
 fi
 
