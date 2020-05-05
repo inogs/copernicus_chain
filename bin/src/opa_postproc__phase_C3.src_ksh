@@ -37,7 +37,7 @@ opa_mkdir "$ONLINE_VALIDATION_DIR/MEDEAF_PUB/Model_profiles"
 
 
 opa_prex "echo $OPA_RUNDATE > $ONLINE_VALIDATION_DIR/MEDEAF_PUB/lastbio"
-opa_prex "${ONLINE_VALIDATION_DIR}/spaghetti/*png $ONLINE_VALIDATION_DIR/MEDEAF_PUB/Model_profiles"
+opa_prex "cp ${ONLINE_VALIDATION_DIR}/spaghetti/*png $ONLINE_VALIDATION_DIR/MEDEAF_PUB/Model_profiles"
 
 ## step 1 -  section Postproc DA   ##################
 
