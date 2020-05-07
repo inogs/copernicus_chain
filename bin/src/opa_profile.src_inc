@@ -56,7 +56,7 @@ OPA_OGS_REMOTE_USER='opaopech'
 OPA_OGS_REMOTE_DIR='/home/opaopech/MERSEA/'
 
 OPA_START_HOUR_UTC="00:00:00"					# UTC time for chain submission (analysis)
-OPA_START_FORECAST_HOUR_UTC="14:00:00"				# UTC time for chain submission (forecast)
+OPA_START_FORECAST_HOUR_UTC="12:30:00"				# UTC time for chain submission (forecast)
 OPA_GET_ADVANCE_MIN="90"					# minutes for advance execution of opa_get
 OPA_GET_TARGET_TIME="04:00:00"
 OPA_TEST=false
