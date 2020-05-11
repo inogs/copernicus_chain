@@ -64,7 +64,19 @@ echo "restart_arc_dir=$restart_arc_dir"
     fi
   fi
 
-opa_prex_or_die "mpirun -np 26 python $OPA_POSTPROCDIR/archive/uncompress.py -i $restart_arc_dir -o $wrkdir/RESTARTS -l RST*.nc.gz "
+if [[ $I_OPA_HOSTNAME = "meucci" ]]
+  then
+   export I_MPI_FABRICS=shm:tcp
+fi
+
+case $I_OPA_HOSTNAME in
+   meucci)
+     opa_prex_or_die "mpirun -np 26 -iface ens6 python $OPA_POSTPROCDIR/archive/uncompress.py -i $restart_arc_dir -o $wrkdir/RESTARTS -l RST*.nc.gz "
+     ;;
+   *)
+     opa_prex_or_die "mpirun -np 26 python $OPA_POSTPROCDIR/archive/uncompress.py -i $restart_arc_dir -o $wrkdir/RESTARTS -l RST*.nc.gz "
+     ;;
+esac
 
 
 
@@ -185,7 +197,16 @@ done
 
 opa_mkdir "$wrkdir/DeltaT"
 opa_stage_in "$wrkdir/DeltaT" "$OPA_ETCDIR/static-data/MED24_141/meshmask.nc"
-opa_prex_or_die "mpirun -np 18 python $OPA_BITSEA/preproc/delta_t_from_uvw.py -i $wrkdir/FORCINGS/ -o $wrkdir/DeltaT -m  $wrkdir/DeltaT/meshmask.nc "
+
+case $I_OPA_HOSTNAME in
+   meucci)
+         opa_prex_or_die "mpirun -np 18 -iface ens6 python $OPA_BITSEA/preproc/delta_t_from_uvw.py -i $wrkdir/FORCINGS/ -o $wrkdir/DeltaT -m  $wrkdir/DeltaT/meshmask.nc "
+     ;;
+   *)
+         opa_prex_or_die "mpirun -np 18 python $OPA_BITSEA/preproc/delta_t_from_uvw.py -i $wrkdir/FORCINGS/ -o $wrkdir/DeltaT -m  $wrkdir/DeltaT/meshmask.nc "
+     ;;
+esac
+
 opa_prex_or_die "python $OPA_BITSEA/preproc/decision_deltat.py -i $wrkdir/DeltaT "
 
 NAMELIST_INIT=$( python $OPA_BITSEA/preproc/decision_deltat.py -i $wrkdir/DeltaT )
