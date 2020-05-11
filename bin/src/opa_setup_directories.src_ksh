@@ -22,6 +22,8 @@ for directory in $OPA_VARDIR/log $OPA_VARDIR/tmp $OPA_ARCDIR $I_OPA_HOME/HOST/$I
   echo "### Create directory '$directory'"
   opa_mkdir $directory
 done
+opa_mkdir $OPA_VARDIR/log/forecast
+opa_mkdir $OPA_VARDIR/log/analysis
 
 setup_link "$OPA_ARCDIR_ROOT"	"$OPA_ARCDIR_ROOT_LINK"
 setup_link "$OPA_WRKDIR_ROOT"	"$OPA_WRKDIR_ROOT_LINK"
