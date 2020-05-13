@@ -5,3 +5,4 @@ Istruzioni per la compilazione degli eseguibili della catena e per la copia degl
 3. builder_ogstm_bfm.sh: controllare alla riga 37 che il source al file $cluster.intel sia corretto e poi lanciare.
 4. copiare le cartelle "bitsea" e "preproc" in HOST/$cluster
 5. cp postproc/prodotti/get_daily_product_in_DU.sh ../../HOST/$cluster/bin
+6. cp postproc/prodotti/get_monthly_product_in_DU.sh ../../HOST/$cluster/bin
