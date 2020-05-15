@@ -56,11 +56,11 @@ echo "restart_arc_dir=$restart_arc_dir"
 
 
   if $I_OPA_BACKUP; then
-    if (ssh $OPA_NOMINAL_LOGIN [ -d $OPA_NOMINAL_HOME/archive/$OPA_RESTART_RUNDATE ]); then
+    if (ssh $OPA_NOMINAL_LOGIN [ -d $OPA_NOMINAL_HOME/archive/forecast/$OPA_RESTART_RUNDATE ]); then
       print "Backup system; downloading from nominal archive"
-      opa_prex "scp -r $OPA_NOMINAL_LOGIN:$OPA_NOMINAL_HOME/archive/$OPA_RESTART_RUNDATE $I_OPA_HOME/archive"
+      opa_prex "scp -r $OPA_NOMINAL_LOGIN:$OPA_NOMINAL_HOME/archive/forecast/$OPA_RESTART_RUNDATE $I_OPA_HOME/archive/forecast"
     else
-      print "Error with $OPA_NOMINAL_HOME/archive/$OPA_RESTART_RUNDATE on $OPA_NOMINAL_LOGIN: directory not existing. Continuing from backup archive"
+      print "Error with $OPA_NOMINAL_HOME/archive/forecast/$OPA_RESTART_RUNDATE on $OPA_NOMINAL_LOGIN: directory not existing. Continuing from backup archive"
     fi
   fi
 
