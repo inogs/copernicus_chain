@@ -36,13 +36,11 @@ opa_prex "cp $OPA_WRKDIR/POSTPROC/AVE_FREQ_1/MAP_GEN/MAP_COMPRESSED/* ."
 opa_prex "tar -cf $OPA_ARCDIR_ROOT/current/maps.tar *"
 
 if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
-  #opa_mkdir "$I_OPA_HOME/archive/analysis/current"
   opa_mkdir "@@(I:OPA_HOME)/log/current"
 
 
   #opa_prex "echo $OPA_RUNDATE > @@(I:OPA_HOME)/log/current/last"
-  #opa_prex "cp $OPA_WRKDIR/POSTPROC/AVE_FREQ_1/maps.tar                         $I_OPA_HOME/archive/analysis/current/"
-  opa_prex "cp $OPA_WRKDIR/POSTPROC/AVE_FREQ_1/online_validation/medeaf_pub.tar $I_OPA_HOME/archive/analysis/current/"
+  opa_prex "cp $OPA_WRKDIR/POSTPROC/AVE_FREQ_1/online_validation/medeaf_pub.tar $OPA_ARCDIR_ROOT/current/"
 
 fi
 
