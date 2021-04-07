@@ -51,7 +51,6 @@ INDEXER_CORIOLIS=$ONLINE_REPO/CORIOLIS/download/Med_floats.txt
 
 opa_mkdir $LOCALDIR
 #rename old syntetic_profile file and old output file
-# opa_prex "cp $DIR/argo_synthetic-profile_index_CORR.txt $DIR/argo_synthetic-profile_index_CORR_OLD.txt"
 opa_prex "cp $INDEXER_CORIOLIS $DIR/Med_floats_OLD.txt"
 
 
@@ -86,17 +85,20 @@ for I in `ls *nc ` ; do
 done
 
 
+################   2. Update of sat  datasets  ##################################
 
+opa_prex "python downloader/downloader.py -l $OPA_LOGDIR/daily/$DATE.log -a $OPA_NOTIFY_ADDRESSES -d ${ONLINE_REPO} -v 3"
 
+################   3. Update of Float Indexes and superfloat  ############################
 
 opa_prex "cd $OPA_BITSEA/Float"
 INDEXER_0=$ONLINE_REPO/CORIOLIS/Float_Index_0.txt
 INDEXER=$ONLINE_REPO/CORIOLIS/Float_Index.txt
+
 opa_prex "python  dump_index_from_txt.py -i $INDEXER_CORIOLIS -o ${INDEXER_0}"
 opa_prex "python  check_time_pos.py -i ${INDEXER_0} -o ${INDEXER}"
 
 
-# superfloat section
 DATASET=$ONLINE_REPO/SUPERFLOAT
 opa_mkdir $DATASET
 # removing SUPERFLOAT files before regeneration
@@ -113,46 +115,13 @@ export CANYONB_TRAINING_DIR=$OPA_ETCDIR/static-data/FLOAT/CANYON-B
 opa_prex "python superfloat_chla.py     -o $DATASET -u $UPDATE_FILE"
 opa_prex "python superfloat_oxygen.py   -o $DATASET -u $UPDATE_FILE"
 opa_prex "python superfloat_nitrate.py  -o $DATASET -u $UPDATE_FILE"
+#opa_prex "python superfloat_par.py      -o $DATASET -u $UPDATE_FILE"
+#opa_prex "python superfloat_bbp700.py   -o $DATASET -u $UPDATE_FILE"
+#opa_prex "python superfloat_ph.py       -o $DATASET -u $UPDATE_FILE"
 
 opa_prex "python dump_index.py -i $DATASET -o $DATASET/Float_Index.txt -t superfloat"
 
 
-################   2. Update of sat  datasets  ##################################
-exit 0
-opa_prex "python downloader/downloader.py -l $OPA_LOGDIR/daily/$DATE.log -a $OPA_NOTIFY_ADDRESSES -d ${ONLINE_REPO} -v 3"
-
-################   3. Update of Float Indexes and superfloat  ############################
-
-
-opa_prex "cd $OPA_BITSEA"
-
-DATASET=${ONLINE_REPO}/FLOAT_BIO
-GSS_RAW_INDEX=${DATASET}/Float_Index.0.txt
-GSS_SEL_INDEX=${DATASET}/Float_Index.txt
-
-opa_prex "python Float/dump_index.py -i ${DATASET} -f ${GSS_SEL_INDEX} -o ${GSS_RAW_INDEX} --type coriolis"
-opa_prex "python Float/check_time_pos.py -i ${GSS_RAW_INDEX} -o ${GSS_SEL_INDEX}"
-
-DATASET=${ONLINE_REPO}/FLOAT_LOVBIO
-GSS_RAW_INDEX=${DATASET}/Float_Index.0.txt
-GSS_SEL_INDEX=${DATASET}/Float_Index.txt
-opa_prex "python Float/dump_index.py -i ${DATASET} -f ${GSS_SEL_INDEX} -o ${GSS_RAW_INDEX} --type lov"
-opa_prex "python Float/check_time_pos.py -i ${GSS_RAW_INDEX} -o ${GSS_SEL_INDEX} "
-
-DATASET=${ONLINE_REPO}/SUPERFLOAT
-GSS_RAW_INDEX=${DATASET}/Float_Index.0.txt
-GSS_SEL_INDEX=${DATASET}/Float_Index.txt
-OFFSET_DAYS=-15
-DATESTART=$( opa_date_day_offset $OPA_TODAY $OFFSET_DAYS )
-opa_prex "python Float/superfloat_chla.py    -s $DATESTART -e $OPA_TODAY -o $DATASET -f"
-opa_prex "python Float/superfloat_nitrate.py -s $DATESTART -e $OPA_TODAY -o $DATASET -f"
-opa_prex "python Float/superfloat_oxygen.py  -s $DATESTART -e $OPA_TODAY -o $DATASET -f"
-opa_prex "python Float/superfloat_par.py     -s $DATESTART -e $OPA_TODAY -o $DATASET -f"
-opa_prex "python Float/superfloat_bbp700.py  -s $DATESTART -e $OPA_TODAY -o $DATASET -f"
-opa_prex "python Float/superfloat_ph.py      -s $DATESTART -e $OPA_TODAY -o $DATASET -f"
-
-opa_prex "python Float/dump_index.py -i ${DATASET} -o ${GSS_RAW_INDEX} --type superfloat "
-opa_prex "python Float/check_time_pos.py -i ${GSS_RAW_INDEX} -o ${GSS_SEL_INDEX} "
 
 ################   4. Update of SAT NRT derived datasets  ############################
 
@@ -183,6 +152,7 @@ opa_prex "python  interpolator.py -i $WEEKLY_DIR1km -o $WEEKLY_DIR_24 -m Mesh24 
 
 fi
 
+opa_exit 0
 ################   5. Update of inpdir/ONLINE from gss  ############################
 
 if [ $SYNCRONIZE_INPDIR -eq 1 ] ; then
