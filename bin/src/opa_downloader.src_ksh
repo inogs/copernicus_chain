@@ -5,26 +5,12 @@
 . @@(I:OPA_HOME)/bin/opa_profile.inc
 
 case $I_OPA_HOSTNAME in
-    pico)
-      opa_prex "module purge"
-      opa_prex "module load autoload intelmpi netcdf/4.1.3--intel--cs-xe-2015--binary python/2.7.9 numpy/1.9.2--python--2.7.9 matplotlib/1.4.3--python--2.7.9"
-      ;;
     galileo)
       PYTHONPATH=" "
       opa_prex "module purge"
       opa_prex "module load autoload intelmpi python/2.7.12"
       ONLINE_REPO=/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ONLINE_V7C
-      ONLINE_REPO=$I_OPA_HOME/inpdir/ONLINE/
-        CLIM_FILE=/gss/gss_work/DRES_OGS_BiGe/Observations/CLIMATOLOGY/SAT/CCI_1km/SatClimatology.nc
-      DIR_SUBMASK=/gss/gss_work/DRES_OGS_BiGe/Observations/CLIMATOLOGY/SAT/CCI_1km/SUBMASKsat
-      SYNCRONIZE_INPDIR=1      
-      ;;
-    marconi)
-      PYTHONPATH=" "
-      opa_prex "module purge"
-      opa_prex "module load autoload intelmpi python/2.7.12 numpy/1.11.2--python--2.7.12 scipy/0.18.1--python--2.7.12"
-      PYTHONPATH=$PYTHONPATH:/cineca/prod/opt/compilers/python/2.7.12/none/lib/python2.7/site-packages/
-      ONLINE_REPO=/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ONLINE
+      #ONLINE_REPO=$OPA_INPDIR_ROOT/ONLINE
         CLIM_FILE=/gss/gss_work/DRES_OGS_BiGe/Observations/CLIMATOLOGY/SAT/CCI_1km/SatClimatology.nc
       DIR_SUBMASK=/gss/gss_work/DRES_OGS_BiGe/Observations/CLIMATOLOGY/SAT/CCI_1km/SUBMASKsat
       SYNCRONIZE_INPDIR=1      
@@ -49,7 +35,7 @@ opa_prex "source $OPA_VENV_1/bin/activate"
 opa_prex "cd $OPA_BITSEA"
 export PYTHONPATH=$OPA_BITSEA:${PYTHONPATH}
 
-################   1. Update of wmo list  ###########################################
+################   1. Update of coriolis dataset  ###########################################
 
 
 DATE=`date +%Y%m%d`
@@ -73,6 +59,7 @@ opa_prex "cp $INDEXER_CORIOLIS $DIR/Med_floats_OLD.txt"
 HOST=ftp.ifremer.fr
 USER=anonymous
 REMOTEDIR=/ifremer/argo/
+opa_prex "rm -f $DIR/argo_synthetic-profile_index.txt.gz"
 opa_prex "$OPA_BINDIR/ncftpget -u $USER $HOST $DIR $REMOTEDIR/argo_synthetic-profile_index.txt.gz"
 opa_prex "gzip -dc $DIR/argo_synthetic-profile_index.txt.gz > $DIR/argo_synthetic-profile_index.txt"
 #correct file from blank parts
@@ -99,14 +86,19 @@ for I in `ls *nc ` ; do
 done
 
 
-DATASET=$ONLINE_REPO/SUPERFLOAT
-opa_mkdir $DATASET
+
+
 
 opa_prex "cd $OPA_BITSEA/Float"
-
 INDEXER_0=$ONLINE_REPO/CORIOLIS/Float_Index_0.txt
 INDEXER=$ONLINE_REPO/CORIOLIS/Float_Index.txt
+opa_prex "python  dump_index_from_txt.py -i $INDEXER_CORIOLIS -o ${INDEXER_0}"
+opa_prex "python  check_time_pos.py -i ${INDEXER_0} -o ${INDEXER}"
 
+
+# superfloat section
+DATASET=$ONLINE_REPO/SUPERFLOAT
+opa_mkdir $DATASET
 # removing SUPERFLOAT files before regeneration
 for I in `awk --field-separator=, '{print $1}'  $UPDATE_FILE `
  do
@@ -118,8 +110,6 @@ for I in `awk --field-separator=, '{print $1}'  $UPDATE_FILE `
 export              WOA_DIR=$OPA_ETCDIR/static-data/FLOAT/WOA/
 export CANYONB_TRAINING_DIR=$OPA_ETCDIR/static-data/FLOAT/CANYON-B
 
-opa_prex "python  dump_index_from_txt.py -i $INDEXER_CORIOLIS -o ${INDEXER_0}"
-opa_prex "python  check_time_pos.py -i ${INDEXER_0} -o ${INDEXER}"
 opa_prex "python superfloat_chla.py     -o $DATASET -u $UPDATE_FILE"
 opa_prex "python superfloat_oxygen.py   -o $DATASET -u $UPDATE_FILE"
 opa_prex "python superfloat_nitrate.py  -o $DATASET -u $UPDATE_FILE"
@@ -127,8 +117,7 @@ opa_prex "python superfloat_nitrate.py  -o $DATASET -u $UPDATE_FILE"
 opa_prex "python dump_index.py -i $DATASET -o $DATASET/Float_Index.txt -t superfloat"
 
 
-
-################   2. Update of original datasets  ##################################
+################   2. Update of sat  datasets  ##################################
 exit 0
 opa_prex "python downloader/downloader.py -l $OPA_LOGDIR/daily/$DATE.log -a $OPA_NOTIFY_ADDRESSES -d ${ONLINE_REPO} -v 3"
 
