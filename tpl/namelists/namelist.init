@@ -13,7 +13,8 @@
 /
 
 &natnum     
-            rdt           =   300,
+            rdt           =   360,
+            variable_rdt  = .true.
             rsc           =    1.,
             rtrn          = 1.e-25,
             ndttrc        = 1.0,
@@ -37,16 +38,16 @@
 &General_IO
 
    nwritetrc = 10000,
-   freq_ave_phys        = 1 ! 0 = none, 1=group 1, 2 = group 2
-   freq_flux_dump       = 1 ! 1=group 1, 2 = group 2
-   save_bkp_group2      = .false.
+   freq_ave_phys        = 2 ! 0 = none, 1=group 1, 2 = group 2
+   freq_flux_dump       = 2 ! 1=group 1, 2 = group 2
+   save_bkp_group2      = .true.
    deflate_ave          = 0
    deflate_level_ave    = 4
    deflate_rst          = 0
    deflate_level_rst    = 4
    isCheckLOG = .false.
-   read_W_from_file = .false.
-   internal_sponging = .true.
+   read_W_from_file = .true.
+   internal_sponging = .false.
    ingv_files_direct_reading = .true.
    ingv_lon_shift   = 222
 /
@@ -58,7 +59,9 @@
 /
 
 &DA_setup
-    DA_Nprocs = 12,
+    DA_Nprocs = 52,
+    TREd_procs_per_node = 4,
+    max_procs_per_one_node = 9,
     satfile_suffix = "_d-OC_CNR-L3-CHL-MedOC4AD4_MULTI_1KM-MED-NRT-v02.nc"
     satvarname     = "CHL"
     AssimilationLevels_sat = 36
