@@ -1,6 +1,6 @@
 &VARS_DIMENSION
 
-    n_vars = 7
+    n_vars = 6
 
 /
 
@@ -12,7 +12,6 @@
     vars(4) = "N5s"
     vars(5) = "O3c"
     vars(6) = "O3h"
-    vars(7) = "N6r"
 
     var_names_idx(1) = 1
     var_names_idx(2) = 2
@@ -20,7 +19,6 @@
     var_names_idx(4) = 6
     var_names_idx(5) = 49
     var_names_idx(6) = 50
-    var_names_idx(7) = 7
 
     alpha = 4.0d0
     reduction_value_t = 1.0d-6
@@ -30,7 +28,7 @@
 
 &NUDGING_VARS_DIMENSION
 
-    n_vars = 7
+    n_vars = 6
 
 /
 
@@ -44,7 +42,6 @@
     vars(4) = "N5s"
     vars(5) = "O3c"
     vars(6) = "O3h"
-    vars(7) = "N6r"
 
     var_names_idx(1) = 1
     var_names_idx(2) = 2
@@ -52,7 +49,6 @@
     var_names_idx(4) = 6
     var_names_idx(5) = 49
     var_names_idx(6) = 50
-    var_names_idx(7) = 7
 
     rst_corr(1) = 1.0d0
     rst_corr(2) = 1.0d0
@@ -60,6 +56,5 @@
     rst_corr(4) = 1.0d0
     rst_corr(5) = 2.0d0
     rst_corr(6) = 2.0d0
-    rst_corr(7) = 2.0d0
 
 /

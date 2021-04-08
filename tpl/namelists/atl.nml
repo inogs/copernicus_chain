@@ -1,0 +1,116 @@
+&VARS_DIMENSION
+
+    n_vars = 51
+
+/
+
+&CORE
+
+    vars(1) = "O2o"
+    vars(2) = "N1p"
+    vars(3) = "N3n"
+    vars(4) = "N4n"
+    vars(5) = "O4n"
+    vars(6) = "N5s"
+    vars(7) = "N6r"
+    vars(8) = "B1c"
+    vars(9) = "B1n"
+    vars(10) = "B1p"
+    vars(11) = "P1c"
+    vars(12) = "P1n"
+    vars(13) = "P1p"
+    vars(14) = "P1l"
+    vars(15) = "P1s"
+    vars(16) = "P2c"
+    vars(17) = "P2n"
+    vars(18) = "P2p"
+    vars(19) = "P2l"
+    vars(20) = "P3c"
+    vars(21) = "P3n"
+    vars(22) = "P3p"
+    vars(23) = "P3l"
+    vars(24) = "P4c"
+    vars(25) = "P4n"
+    vars(26) = "P4p"
+    vars(27) = "P4l"
+    vars(28) = "Z3c"
+    vars(29) = "Z3n"
+    vars(30) = "Z3p"
+    vars(31) = "Z4c"
+    vars(32) = "Z4n"
+    vars(33) = "Z4p"
+    vars(34) = "Z5c"
+    vars(35) = "Z5n"
+    vars(36) = "Z5p"
+    vars(37) = "Z6c"
+    vars(38) = "Z6n"
+    vars(39) = "Z6p"
+    vars(40) = "R1c"
+    vars(41) = "R1n"
+    vars(42) = "R1p"
+    vars(43) = "R2c"
+    vars(44) = "R3c"
+    vars(45) = "R6c"
+    vars(46) = "R6n"
+    vars(47) = "R6p"
+    vars(48) = "R6s"
+    vars(49) = "O3c"
+    vars(50) = "O3h"
+    vars(51) = "O5c"
+
+    var_names_idx(1) = 1
+    var_names_idx(2) = 2
+    var_names_idx(3) = 3
+    var_names_idx(4) = 4
+    var_names_idx(5) = 5
+    var_names_idx(6) = 6
+    var_names_idx(7) = 7
+    var_names_idx(8) = 8
+    var_names_idx(9) = 9
+    var_names_idx(10) = 10
+    var_names_idx(11) = 11
+    var_names_idx(12) = 12
+    var_names_idx(13) = 13
+    var_names_idx(14) = 14
+    var_names_idx(15) = 15
+    var_names_idx(16) = 16
+    var_names_idx(17) = 17
+    var_names_idx(18) = 18
+    var_names_idx(19) = 19
+    var_names_idx(20) = 20
+    var_names_idx(21) = 21
+    var_names_idx(22) = 22
+    var_names_idx(23) = 23
+    var_names_idx(24) = 24
+    var_names_idx(25) = 25
+    var_names_idx(26) = 26
+    var_names_idx(27) = 27
+    var_names_idx(28) = 28
+    var_names_idx(29) = 29
+    var_names_idx(30) = 30
+    var_names_idx(31) = 31
+    var_names_idx(32) = 32
+    var_names_idx(33) = 33
+    var_names_idx(34) = 34
+    var_names_idx(35) = 35
+    var_names_idx(36) = 36
+    var_names_idx(37) = 37
+    var_names_idx(38) = 38
+    var_names_idx(39) = 39
+    var_names_idx(40) = 40
+    var_names_idx(41) = 41
+    var_names_idx(42) = 42
+    var_names_idx(43) = 43
+    var_names_idx(44) = 44
+    var_names_idx(45) = 45
+    var_names_idx(46) = 46
+    var_names_idx(47) = 47
+    var_names_idx(48) = 48
+    var_names_idx(49) = 49
+    var_names_idx(50) = 50
+    var_names_idx(51) = 51
+
+    geometry = 3
+    damping_coeff = 3000.0d0
+
+/
