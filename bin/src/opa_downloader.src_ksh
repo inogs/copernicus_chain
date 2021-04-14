@@ -69,6 +69,12 @@ opa_prex "python $OPA_BITSEA/Float/argo_reader.py -i $DIR/argo_synthetic-profile
 opa_prex "python $OPA_BITSEA/Float/argo_difference.py -N $INDEXER_CORIOLIS -O $DIR/Med_floats_OLD.txt -o $UPDATE_FILE"
 opa_prex "cp $UPDATE_FILE $OPA_LOGDIR/daily/DIFF_floats.$(date +\%Y\%m\%d-\%H:\%M:\%S).txt"
 
+#### working in interactive mode, it is possible to select a specific update file, saved in log/daily ####
+
+# UPDATE_FILE=/galileo/home/usera07ogs/a07ogs00/OPA/V7C-dev/log/daily/DIFF_floats.20210407-15:58:19.txt
+
+##########################################################################################################
+
 ## download netcdf files in a tmp directory
 REMOTEDIR=/ifremer/argo/dac/
 for I in `awk --field-separator=, '{print $1}'  $UPDATE_FILE ` ; do
@@ -86,7 +92,7 @@ done
 
 
 ################   2. Update of sat  datasets  ##################################
-
+cd $OPA_BITSEA
 opa_prex "python downloader/downloader.py -l $OPA_LOGDIR/daily/$DATE.log -a $OPA_NOTIFY_ADDRESSES -d ${ONLINE_REPO} -v 3"
 
 ################   3. Update of Float Indexes and superfloat  ############################
@@ -138,7 +144,7 @@ WEEKLY_DIR1km=${ONLINE_REPO}/SAT/MULTISENSOR/1Km/NRT/WEEKLY_1_1km/
 WEEKLY_DIR_24=${ONLINE_REPO}/SAT/MULTISENSOR/1Km/NRT/WEEKLY_1_24/
  DAILY_DIR_24=${ONLINE_REPO}/SAT/MULTISENSOR/1Km/NRT/DAILY/CHECKED_24
 
-opa_prex "cd Sat"
+opa_prex "cd $OPA_BITSEA/Sat"
 opa_prex "python sat_check.py -i $ORIGDIR -o $CHECK_BASEDIR -c $CLIM_FILE -m SAT1km_mesh -s $DIR_SUBMASK -w ${CHECK_BASEDIR}/STATISTICS "
 opa_prex " python interpolator.py -i $CHECKDIR -o $DAILY_DIR_24 -m Mesh24 -M $MASKFILE --inmesh SAT1km_mesh"
 
@@ -152,7 +158,6 @@ opa_prex "python  interpolator.py -i $WEEKLY_DIR1km -o $WEEKLY_DIR_24 -m Mesh24 
 
 fi
 
-opa_exit 0
 ################   5. Update of inpdir/ONLINE from gss  ############################
 
 if [ $SYNCRONIZE_INPDIR -eq 1 ] ; then
@@ -160,8 +165,7 @@ if [ $SYNCRONIZE_INPDIR -eq 1 ] ; then
 	SAT/MULTISENSOR/1Km/NRT/WEEKLY_1_24/
 	SAT/MULTISENSOR/1Km/NRT/DAILY/CHECKED_24/
 	SAT/MULTISENSOR/1Km/NRT/DAILY/STATISTICS/
-	FLOAT_BIO/
-        FLOAT_LOVBIO/
+	CORIOLIS/
         SUPERFLOAT/
 
 	"
