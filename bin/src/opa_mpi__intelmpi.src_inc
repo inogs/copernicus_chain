@@ -10,7 +10,7 @@ function opa_mpi_run {
      ;;
   marconi|galileo)
      MPI_RANKS=$(wc -l $OPA_WRKDIR/MODEL/domdec.txt | awk '{print $1 }')
-     opa_prex "time mpiexec.hydra -np $MPI_RANKS $_args"
+     opa_prex "time mpirun -np $MPI_RANKS $_args"
      #opa_prex "time mpiexec.hydra -np $MPI_RANKS -genv I_MPI_FABRICS=shm:ofa -genv I_MPI_DYNAMIC_CONNECTION  0 $_args"
      ;;
   meucci)
