@@ -91,10 +91,12 @@ opa_stage_in	"$wrkdir"						\
                 "$nml_dir/Pelagic_Environment.nml"                      \
                 "$nml_dir/Standalone.nml"                               \
                 "$nml_dir/boundaries.nml"                               \
+                "$nml_dir/atl.nml"                                      \
                 "$nml_dir/dar.nml"                                      \
                 "$nml_dir/gib.nml"                                      \
                 "$nml_dir/riv.nml"                                      \
                 "$nml_dir/namelist.passivetrc"				\
+                "$nml_dir/namelist.init"                                \
                 "$nml_dir/var_3d_nml"			|| {
   errors=$(( $errors + $? ))
 }
@@ -127,20 +129,16 @@ aux_files=' '
 
 opa_stage_in	"$wrkdir/BC/" \
                   "$OPA_ETCDIR/static-data/MODEL/BC/OPE_yyyy0630-00:00:00.nc" \
-                  "$OPA_ETCDIR/static-data/MODEL/BC/CO2_20150702-12:00:00.nc" \
-                  "$OPA_ETCDIR/static-data/MODEL/BC/CO2_20160702-12:00:00.nc" \
-                  "$OPA_ETCDIR/static-data/MODEL/BC/CO2_20170702-12:00:00.nc" \
+                  "$OPA_ETCDIR/static-data/MODEL/BC/ATL_yyyy0630-00:00:00.nc" \
                   "$OPA_ETCDIR/static-data/MODEL/BC/CO2_20180702-12:00:00.nc" \
                   "$OPA_ETCDIR/static-data/MODEL/BC/CO2_20190702-12:00:00.nc" \
                   "$OPA_ETCDIR/static-data/MODEL/BC/CO2_20200702-12:00:00.nc" \
                   "$OPA_ETCDIR/static-data/MODEL/BC/CO2_20210702-12:00:00.nc" \
                   "$OPA_ETCDIR/static-data/MODEL/BC/CO2_20220702-12:00:00.nc" \
                   "$OPA_ETCDIR/static-data/MODEL/BC/CO2_20230702-12:00:00.nc" \
+                  "$OPA_ETCDIR/static-data/MODEL/BC/CO2_20240702-12:00:00.nc" \
                   "$OPA_ETCDIR/static-data/MODEL/BC/ATM_yyyy0630-00:00:00.nc" \
-                  "$OPA_ETCDIR/static-data/MODEL/BC/GIB_yyyy0215-12:00:00.nc" \
-                  "$OPA_ETCDIR/static-data/MODEL/BC/GIB_yyyy0515-12:00:00.nc" \
-                  "$OPA_ETCDIR/static-data/MODEL/BC/GIB_yyyy0815-12:00:00.nc" \
-                  "$OPA_ETCDIR/static-data/MODEL/BC/GIB_yyyy1115-12:00:00.nc" \
+                  "$OPA_ETCDIR/static-data/MODEL/BC/GIB_yyyy0630-00:00:00.nc" \
                   "$OPA_ETCDIR/static-data/MODEL/BC/TIN_yyyy0115-00:00:00.nc" \
                   "$OPA_ETCDIR/static-data/MODEL/BC/TIN_yyyy0215-00:00:00.nc" \
                   "$OPA_ETCDIR/static-data/MODEL/BC/TIN_yyyy0315-00:00:00.nc" \
@@ -194,24 +192,18 @@ for I in `ls $OPA_WRKDIR/CMCC_PHYS/* ` ; do
 done
 
 
-
-opa_mkdir "$wrkdir/DeltaT"
-opa_stage_in "$wrkdir/DeltaT" "$OPA_ETCDIR/static-data/MED24_141/meshmask.nc"
+DELTA_T_DIR="$wrkdir/DELTA_T"
+opa_mkdir $DELTA_T_DIR
+opa_stage_in "$DELTA_T_DIR" "$OPA_ETCDIR/static-data/MED24_141/meshmask.nc"
 
 case $I_OPA_HOSTNAME in
    meucci)
-         opa_prex_or_die "mpirun -np 18 -iface ens6 python $OPA_BITSEA/preproc/delta_t_from_uvw.py -i $wrkdir/FORCINGS/ -o $wrkdir/DeltaT -m  $wrkdir/DeltaT/meshmask.nc "
+         opa_prex_or_die "mpirun -np 18 -iface ens6 python $OPA_BITSEA/preproc/delta_t_from_uvw.py -i $wrkdir/FORCINGS/ -o $DELTA_T_DIR -m  $DELTA_T_DIR/meshmask.nc "
      ;;
    *)
-         opa_prex_or_die "mpirun -np 18 python $OPA_BITSEA/preproc/delta_t_from_uvw.py -i $wrkdir/FORCINGS/ -o $wrkdir/DeltaT -m  $wrkdir/DeltaT/meshmask.nc "
+         opa_prex_or_die "mpirun -np 18 python $OPA_BITSEA/preproc/delta_t_from_uvw.py -i $wrkdir/FORCINGS/ -o $DELTA_T_DIR -m  $DELTA_T_DIR/meshmask.nc "
      ;;
 esac
-
-opa_prex_or_die "python $OPA_BITSEA/preproc/decision_deltat.py -i $wrkdir/DeltaT "
-
-NAMELIST_INIT=$( python $OPA_BITSEA/preproc/decision_deltat.py -i $wrkdir/DeltaT )
-
-opa_cp "$nml_dir/${NAMELIST_INIT} $wrkdir/namelist.init"
 
 if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
 opa_prex_or_die "ln -fs $OPA_WRKDIR/DA/SATELLITE      -t $wrkdir" || errors=$(( $errors + 1 ))
@@ -244,6 +236,7 @@ done
 }
 
 cd $wrkdir
+opa_prex_or_die  "datelist_MB BC/ATL_       > files_namelist_atl.dat" || errors=$(( $errors + 1 ))
 opa_prex_or_die  "datelist_MB BC/TIN_       > files_namelist_riv.dat" || errors=$(( $errors + 1 ))
 opa_prex_or_die  "datelist_MB BC/GIB_       > files_namelist_gib.dat" || errors=$(( $errors + 1 ))
 opa_prex_or_die  "datelist_MB BC/OPE_       > files_namelist_dar.dat" || errors=$(( $errors + 1 ))
