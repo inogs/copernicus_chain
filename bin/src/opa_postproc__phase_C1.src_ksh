@@ -154,7 +154,8 @@ if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
 # monthly products
 
 DAY=$( date --date="$OPA_RUNDATE" +%d )
-if [[ $DAY -gt 7 ]] && [[ $DAY -lt 15 ]] ; then
+if [ 1 == 0 ] ; then
+# if [[ $DAY -gt 7 ]] && [[ $DAY -lt 15 ]] ; then
 ARCHIVE_DIR=$I_OPA_HOME/archive
 
    ZIPPED_DIR=$OPA_POSTPROC/MONTHLY/ZIPPED
