@@ -22,10 +22,30 @@ for directory in $OPA_VARDIR/log $OPA_VARDIR/tmp $OPA_ARCDIR $I_OPA_HOME/HOST/$I
   echo "### Create directory '$directory'"
   opa_mkdir $directory
 done
+opa_mkdir $OPA_LOGDIR/daily
+opa_mkdir $OPA_LOGDIR/forecast/report
+opa_mkdir $OPA_LOGDIR/analysis/report
 opa_mkdir $OPA_VARDIR/log/forecast
 opa_mkdir $OPA_VARDIR/log/analysis
+
+ETC_DIRS="
+FLOAT/WOA
+FLOAT/CANYON-B
+MODEL
+MODEL/FORCINGS
+MODEL/BC
+MED24_125
+MED24_141
+"
+for directory in $ETC_DIRS; do
+    cd $OPA_ETCDIR/static-data/$directory
+    echo "Decompressing $OPA_ETCDIR/static-data/$directory  " 
+    for I in `ls *gz `; do 
+        gzip -dc $I > ${I%.gz} ; 
+    done
+done
+
 
 setup_link "$OPA_ARCDIR_ROOT"	"$OPA_ARCDIR_ROOT_LINK"
 setup_link "$OPA_WRKDIR_ROOT"	"$OPA_WRKDIR_ROOT_LINK"
 setup_link "$OPA_INPDIR_ROOT"	"$OPA_INPDIR_ROOT_LINK"
-

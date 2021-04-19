@@ -55,12 +55,12 @@ OPA_OGS_REMOTE_HOST='poseidon.inogs.it'
 OPA_OGS_REMOTE_USER='opaopech'
 OPA_OGS_REMOTE_DIR='/home/opaopech/MERSEA/'
 
-OPA_START_HOUR_UTC="00:00:00"					# UTC time for chain submission (analysis)
+OPA_START_HOUR_UTC="06:00:00"					# UTC time for chain submission (analysis)
 OPA_START_FORECAST_HOUR_UTC="12:30:00"				# UTC time for chain submission (forecast)
 OPA_GET_ADVANCE_MIN="90"					# minutes for advance execution of opa_get
 OPA_GET_TARGET_TIME="04:00:00"
 OPA_TEST=false
-OPA_DOWNLOAD_HOUR_UTC="20:00:00"
+OPA_DOWNLOAD_HOUR_UTC="21:30:00"
 
 # These values can eventually be changed by opa_profile__${I_OPA_HOSTNAME}.inc:
 OPA_ODD_ALPHA="${RT_OPA_ODD_ALPHA:-0.75}"			# Alpha correction for ODD algorithm
