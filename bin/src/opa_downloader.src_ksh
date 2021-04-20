@@ -121,9 +121,9 @@ export CANYONB_TRAINING_DIR=$OPA_ETCDIR/static-data/FLOAT/CANYON-B
 opa_prex "python superfloat_chla.py     -o $DATASET -u $UPDATE_FILE"
 opa_prex "python superfloat_oxygen.py   -o $DATASET -u $UPDATE_FILE"
 opa_prex "python superfloat_nitrate.py  -o $DATASET -u $UPDATE_FILE"
-#opa_prex "python superfloat_par.py      -o $DATASET -u $UPDATE_FILE"
-#opa_prex "python superfloat_bbp700.py   -o $DATASET -u $UPDATE_FILE"
-#opa_prex "python superfloat_ph.py       -o $DATASET -u $UPDATE_FILE"
+opa_prex "python superfloat_par.py      -o $DATASET -u $UPDATE_FILE"
+opa_prex "python superfloat_bbp700.py   -o $DATASET -u $UPDATE_FILE"
+opa_prex "python superfloat_ph.py       -o $DATASET -u $UPDATE_FILE"
 
 opa_prex "python dump_index.py -i $DATASET -o $DATASET/Float_Index.txt -t superfloat"
 
