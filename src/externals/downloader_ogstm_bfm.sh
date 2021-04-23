@@ -2,9 +2,9 @@
 
 
   BFM_version=bfmv5   #  BFMv2 or bfmv5
-  BFM_RELEASE=ogs_release-5.0.1
+  BFM_RELEASE=ogs_release-5.1.0
 
- OGSTM_BRANCH=release-4.2
+ OGSTM_BRANCH=release-4.3
  VAR3D_BRANCH=release-4.0
 
 SVN_USER=svnogs01  # user on https://hpc-forge.cineca.it/
@@ -16,6 +16,7 @@ git clone https://github.com/CMCC-Foundation/BiogeochemicalFluxModel.git bfm
 cd bfm
 git checkout -b $BFM_RELEASE $BFM_RELEASE
 #maranicineca Rk3tfe181085
+#github token: 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
 
 cd $OGSTM_HOME
 git clone https://gitlab.hpc.cineca.it/OGS/ogstm.git
