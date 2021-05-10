@@ -12,7 +12,6 @@ opa_set_run
 opa_start
 
 typeset -i errors=0
-
 opa_prex "source $OPA_VENV_1/bin/activate"
 export PYTHONPATH=${PYTHONPATH}:$OPA_BITSEA
 
@@ -38,6 +37,23 @@ opa_mkdir "$ONLINE_VALIDATION_DIR/MEDEAF_PUB/Model_profiles"
 
 opa_prex "echo $OPA_RUNDATE > $ONLINE_VALIDATION_DIR/MEDEAF_PUB/lastbio"
 opa_prex "cp ${ONLINE_VALIDATION_DIR}/spaghetti/*png $ONLINE_VALIDATION_DIR/MEDEAF_PUB/Model_profiles"
+
+
+opa_mkdir "$ONLINE_VALIDATION_DIR/CHL_CLIM/"
+opa_mkdir "$ONLINE_VALIDATION_DIR/CHL_CLIM/3D"
+opa_mkdir "$ONLINE_VALIDATION_DIR/CHL_CLIM/2D"
+
+mon_start=$( $OPA_BINDIR/date -d "$OPA_RUNDATE 15 days ago"    +"%m" )
+mon_end=$(   $OPA_BINDIR/date -d "$OPA_RUNDATE" +"%m" )
+
+for opa_month in $mon_start $mon_end ; do
+   climfile=ave.yyyy${opa_month}15-00:00:00.nc
+   opa_stage_in "$ONLINE_VALIDATION_DIR/CHL_CLIM/3D" "$OPA_ETCDIR/static-data/POSTPROC/VALIDATION/$climfile"
+   opa_prex_or_die "$OPA_BINDIR/ncks -d depth,0,0 $ONLINE_VALIDATION_DIR/CHL_CLIM/3D/$climfile -O $ONLINE_VALIDATION_DIR/CHL_CLIM/2D/$climfile"
+done
+
+
+
 
 ## step 1 -  section Postproc DA   ##################
 
@@ -65,7 +81,7 @@ opa_prex "python plot_post_check_float.py         -i $INPDIR_FLOAT_STATS -o $FLO
 opa_prex "cp $FLOAT_IMG/*png $ONLINE_VALIDATION_DIR/MEDEAF_PUB/DA_Float/"
 
 ###### step 1.2    SAT section  ##########
-opa_prex "python post_check_sat.py -d $MODELDIR/DA__FREQ_1 -m $MASKFILE -o $LOCAL__SAT_STATS"
+opa_prex_or_die "python post_check_sat.py -d $MODELDIR/DA__FREQ_1 -m $MASKFILE -o $LOCAL__SAT_STATS"
 opa_prex "cp ${LOCAL__SAT_STATS}/* $INPDIR_SAT_STATS"
 opa_prex "tar -xf $OPA_ETCDIR/static-data/POSTPROC/SUBMASKsat.tar.gz -C $ONLINE_VALIDATION_DIR "
 opa_prex "python plot_check_sat.py -i $INPDIR_SAT_STATS -o $SAT_IMG -s $SAT_DAILY_STATS -b ${ONLINE_VALIDATION_DIR}/SUBMASKsat"
@@ -81,7 +97,7 @@ for (( RUNDAY=1; RUNDAY<8; RUNDAY++ )) ; do
    FC_RUNDATE=`date -d "$OPA_RUNDATE $(( $DELAY + $RUNDAY )) days" +%Y%m%d  `
    opa_mkdir $ONLINE_VALIDATION_DIR/ARCHIVE_FC_FOR_SAT/$FC_RUNDATE
 
-   for fc_day in 1 2 3 ; do
+   for fc_day in 0 1 2 3 ; do
        day=`date -d "$FC_RUNDATE + $(( $fc_day -1 ))  days" +%Y%m%d  `
        avefile=ave.${day}-12:00:00.P_l.nc.gz
        ARCH_FILE=$OPA_ARCDIR_ROOT/forecast/${FC_RUNDATE}/POSTPROC/AVE_FREQ_1/ARCHIVE/${avefile}
@@ -100,12 +116,24 @@ for (( RUNDAY=1; RUNDAY<8; RUNDAY++ )) ; do
    FC_RUNDATE=`date -d "$OPA_RUNDATE $(( $DELAY + $RUNDAY )) days" +%Y%m%d  `
    for fc_day in 1 2 3; do
       day=`date -d "$FC_RUNDATE + $(( $fc_day -1 ))  days" +%Y%m%d  `
-      avefile=ave.${day}-12:00:00.P_l.nc.gz
-      LOCAL_FC=${ONLINE_VALIDATION_DIR}/ARCHIVE_FC_FOR_SAT/${FC_RUNDATE}/${avefile%.gz}
+      month=${day:4:2}
+      avefile=ave.${day}-12:00:00.P_l.nc
+      LOCAL_FC=${ONLINE_VALIDATION_DIR}/ARCHIVE_FC_FOR_SAT/${FC_RUNDATE}/${avefile}
       SAT_FILE=${SAT_DAILY_DIR}/${day}_d-OC_CNR-L3-CHL-MedOC4AD4_MULTI_1KM-MED-NRT-v02.nc
+      CLIMFILE=${ONLINE_VALIDATION_DIR}/CHL_CLIM/2D/ave.yyyy${month}15-00:00:00.nc
       f_name=${ONLINE_VALIDATION_DIR}/Validation_f${fc_day}_${FC_RUNDATE}_on_daily_Sat.${day}.nc
-      opa_prex_or_die "python SatValidation.py -f $LOCAL_FC -s ${SAT_FILE} -o ${f_name}  -m $MASKFILE"
+      opa_prex_or_die "python SatValidation.py -f $LOCAL_FC -s ${SAT_FILE} -o ${f_name}  -m $MASKFILE -c $CLIMFILE"
    done
+   # PERSISTENCY  
+   day=`date -d "$FC_RUNDATE -1  days" +%Y%m%d `
+   month=${day:4:2}
+   avefile=ave.${day}-12:00:00.P_l.nc
+   LOCAL_FC=${ONLINE_VALIDATION_DIR}/ARCHIVE_FC_FOR_SAT/${FC_RUNDATE}/${avefile}
+   SAT_FILE=${SAT_DAILY_DIR}/${FC_RUNDATE}_d-OC_CNR-L3-CHL-MedOC4AD4_MULTI_1KM-MED-NRT-v02.nc
+   CLIMFILE=${ONLINE_VALIDATION_DIR}/CHL_CLIM/2D/ave.yyyy${month}15-00:00:00.nc
+   f_name=${ONLINE_VALIDATION_DIR}/Validation_pers_${FC_RUNDATE}_on_daily_Sat.${FC_RUNDATE}.nc
+   
+   opa_prex_or_die "python SatValidation.py -f $LOCAL_FC -s ${SAT_FILE} -o ${f_name}  -m $MASKFILE -c $CLIMFILE"
 done
 
 
@@ -194,12 +222,4 @@ opa_log 0 "postprocess_C3 done [$(opa_exitcode $ec)]"
 
 opa_exit "$errors"
 
-
-SAT_WEEKLY_DIR=${ONLINE_REPO}/SAT/MULTISENSOR/1Km/NRT/WEEKLY_1_24/
-
-
-f0_name=${ONLINE_VALIDATION_DIR}/Validation_f0_${PREVIOUS_TUE_RUNDIR}_on_weekly_Sat.${STARTTIME_s}.nc
-opa_prex_or_die "python SatValidation.py -d ${STARTTIME_s} -f $TMP_DIR_PREV -s ${SAT_WEEKLY_DIR} -o $f0_name -m $MASKFILE " # MISFIT
-a0_name=${ONLINE_VALIDATION_DIR}/Validation_a0_${OPA_RUNDATE}_on_weekly_Sat.${STARTTIME_s}.nc
-opa_prex_or_die "python SatValidation.py -d ${STARTTIME_s} -f $TMP_DIR__ACT -s ${SAT_WEEKLY_DIR} -o $a0_name  -m $MASKFILE "  # MISFIT
 
