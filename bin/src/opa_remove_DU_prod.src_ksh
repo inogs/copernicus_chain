@@ -75,16 +75,16 @@ opa_prex "opa_set_run"
 # start
 opa_start
 
-product=MEDSEA_ANALYSIS_FORECAST_BIO_006_014
+product=MEDSEA_ANALYSISFORECAST_BGC_006_014
 PushingEntity="MED-OGS-TRIESTE-IT"
 PROD_DIR=${OPA_WRKDIR}/POSTPROC/MONTHLY/PRODUCTS
 
 case $TYPE in
-   "BIOL" ) dataset=med00-ogs-bio-an-fc-d_202003 ;;
-   "CARB" ) dataset=med00-ogs-car-an-fc-d_202003 ;;
-   "NUTR" ) dataset=med00-ogs-nut-an-fc-d_202003 ;;
-   "PFTC" ) dataset=med00-ogs-pft-an-fc-d_202003 ;;
-   "CO2F" ) dataset=med00-ogs-co2-an-fc-d_202003 ;;
+   "BIOL" ) dataset=med-ogs-bio-an-fc-d_202105 ;;
+   "CARB" ) dataset=med-ogs-car-an-fc-d_202105 ;;
+   "NUTR" ) dataset=med-ogs-nut-an-fc-d_202105 ;;
+   "PFTC" ) dataset=med-ogs-pft-an-fc-d_202105 ;;
+   "CO2F" ) dataset=med-ogs-co2-an-fc-d_202105 ;;
    * )  echo Wrong type ; usage; exit 1 ;;
 esac
 
@@ -136,11 +136,11 @@ echo "Daily section completed"
 ########   Monthly Section     ###########
 
 case $TYPE in
-   "BIOL" ) dataset=med00-ogs-bio-an-fc-m_202003 ;;
-   "CARB" ) dataset=med00-ogs-car-an-fc-m_202003 ;;
-   "NUTR" ) dataset=med00-ogs-nut-an-fc-m_202003 ;;
-   "PFTC" ) dataset=med00-ogs-pft-an-fc-m_202003 ;;
-   "CO2F" ) dataset=med00-ogs-co2-an-fc-m_202003 ;;
+   "BIOL" ) dataset=med-ogs-bio-an-fc-m_202105 ;;
+   "CARB" ) dataset=med-ogs-car-an-fc-m_202105 ;;
+   "NUTR" ) dataset=med-ogs-nut-an-fc-m_202105 ;;
+   "PFTC" ) dataset=med-ogs-pft-an-fc-m_202105 ;;
+   "CO2F" ) dataset=med-ogs-co2-an-fc-m_202105 ;;
    * )  echo Wrong type ; usage; exit 1 ;;
 esac
 echo "    <dataset DatasetName=\"${dataset}\">" >> $DNT_FILE

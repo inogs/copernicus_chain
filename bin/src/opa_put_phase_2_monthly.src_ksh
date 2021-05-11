@@ -24,7 +24,7 @@ EofCat
 
 
 ###CONFIGURE THE LINES BELOW
-product=MEDSEA_ANALYSIS_FORECAST_BIO_006_014
+product=MEDSEA_ANALYSISFORECAST_BGC_006_014
 PushingEntity="MED-OGS-TRIESTE-IT"
 
 _NO_DNT=false
@@ -115,7 +115,7 @@ else
   opa_exit 1
 fi
 
-dataset=med00-ogs-${type}-an-fc-m_202003
+dataset=med-ogs-${type}-an-fc-m_202105
 FILES_TO_SEND="*${_TYPE}*.nc"
 
 #DNT file definitions
