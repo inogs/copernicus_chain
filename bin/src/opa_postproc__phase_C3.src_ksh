@@ -22,7 +22,6 @@ export MASKFILE=${OPA_WRKDIR}/MODEL/meshmask.nc
 export ROOT_DIR=$OPA_BITSEA
 
 
-opa_prex "cd $OPA_BITSEA/validation/online"
 ONLINE_VALIDATION_DIR=${OPA_POSTPROC}/AVE_FREQ_1/online_validation
 
 opa_mkdir "$ONLINE_VALIDATION_DIR/MEDEAF_PUB"
@@ -36,24 +35,35 @@ opa_mkdir "$ONLINE_VALIDATION_DIR/MEDEAF_PUB/Model_profiles"
 
 
 opa_prex "echo $OPA_RUNDATE > $ONLINE_VALIDATION_DIR/MEDEAF_PUB/lastbio"
-opa_prex "cp ${ONLINE_VALIDATION_DIR}/spaghetti/*png $ONLINE_VALIDATION_DIR/MEDEAF_PUB/Model_profiles"
+opa_cp " ${ONLINE_VALIDATION_DIR}/spaghetti/*png $ONLINE_VALIDATION_DIR/MEDEAF_PUB/Model_profiles"
 
 
 opa_mkdir "$ONLINE_VALIDATION_DIR/CHL_CLIM/"
 opa_mkdir "$ONLINE_VALIDATION_DIR/CHL_CLIM/3D"
 opa_mkdir "$ONLINE_VALIDATION_DIR/CHL_CLIM/2D"
+opa_mkdir "$ONLINE_VALIDATION_DIR/CHL_CLIM/3D_LINKS"
 
 mon_start=$( $OPA_BINDIR/date -d "$OPA_RUNDATE 15 days ago"    +"%m" )
 mon_end=$(   $OPA_BINDIR/date -d "$OPA_RUNDATE" +"%m" )
 
+
+opa_stage_in "$ONLINE_VALIDATION_DIR" "$OPA_ETCDIR/static-data/POSTPROC/VarDescriptor_P_l.xml"
+ 
+opa_cp "$OPA_ETCDIR/static-data/POSTPROC/VALIDATION/ave.yyyy*"  "$ONLINE_VALIDATION_DIR/CHL_CLIM/3D"  #  "$OPA_ETCDIR/static-data/POSTPROC/VALIDATION/ave.yyyy*"
+
 for opa_month in $mon_start $mon_end ; do
    climfile=ave.yyyy${opa_month}15-00:00:00.nc
-   opa_stage_in "$ONLINE_VALIDATION_DIR/CHL_CLIM/3D" "$OPA_ETCDIR/static-data/POSTPROC/VALIDATION/$climfile"
+#   opa_stage_in "$ONLINE_VALIDATION_DIR/CHL_CLIM/3D" "$OPA_ETCDIR/static-data/POSTPROC/VALIDATION/$climfile"
    opa_prex_or_die "$OPA_BINDIR/ncks -d depth,0,0 $ONLINE_VALIDATION_DIR/CHL_CLIM/3D/$climfile -O $ONLINE_VALIDATION_DIR/CHL_CLIM/2D/$climfile"
 done
 
-
-
+cd $ONLINE_VALIDATION_DIR/CHL_CLIM/3D_LINKS
+for year in `seq 2012 2023`; do
+    for m in `seq 1 12 ` ; do
+       month=`printf %02d $m`
+       ln -fs $ONLINE_VALIDATION_DIR/CHL_CLIM/3D/ave.yyyy${month}15-00:00:00.nc ave.${year}${month}15-00:00:00.P_l.nc
+    done
+done
 
 ## step 1 -  section Postproc DA   ##################
 
@@ -65,6 +75,7 @@ INPDIR_FLOAT_STATS=${OPA_INPDIR_ROOT}/analysis/VALIDATION/POSTPROC_DA/FLOAT/STAT
   INPDIR_SAT_STATS=${OPA_INPDIR_ROOT}/analysis/VALIDATION/POSTPROC_DA/SAT/STATS
    SAT_DAILY_STATS=${ONLINE_REPO}/SAT/MULTISENSOR/1Km/NRT/DAILY/STATISTICS/
 
+opa_prex "cd $OPA_BITSEA/validation/online"
 opa_mkdir ${ONLINE_VALIDATION_DIR}/DA
 opa_mkdir ${ONLINE_VALIDATION_DIR}/DA/FLOAT/
 opa_mkdir ${LOCAL__FLOAT_STATS}
@@ -76,16 +87,16 @@ opa_mkdir ${SAT_IMG}
 
 ###### step 1.1    Float  section  ##########
 opa_prex "python post_check_float.py -i $OPA_WRKDIR/DA -d $MODELDIR/DA__FREQ_1 -o $LOCAL__FLOAT_STATS"
-opa_prex "cp ${LOCAL__FLOAT_STATS}/* $INPDIR_FLOAT_STATS"
+opa_cp "${LOCAL__FLOAT_STATS}/* $INPDIR_FLOAT_STATS"
 opa_prex "python plot_post_check_float.py         -i $INPDIR_FLOAT_STATS -o $FLOAT_IMG"
-opa_prex "cp $FLOAT_IMG/*png $ONLINE_VALIDATION_DIR/MEDEAF_PUB/DA_Float/"
+opa_cp "$FLOAT_IMG/*png $ONLINE_VALIDATION_DIR/MEDEAF_PUB/DA_Float/"
 
 ###### step 1.2    SAT section  ##########
 opa_prex_or_die "python post_check_sat.py -d $MODELDIR/DA__FREQ_1 -m $MASKFILE -o $LOCAL__SAT_STATS"
-opa_prex "cp ${LOCAL__SAT_STATS}/* $INPDIR_SAT_STATS"
+opa_cp "${LOCAL__SAT_STATS}/* $INPDIR_SAT_STATS"
 opa_prex "tar -xf $OPA_ETCDIR/static-data/POSTPROC/SUBMASKsat.tar.gz -C $ONLINE_VALIDATION_DIR "
 opa_prex "python plot_check_sat.py -i $INPDIR_SAT_STATS -o $SAT_IMG -s $SAT_DAILY_STATS -b ${ONLINE_VALIDATION_DIR}/SUBMASKsat"
-opa_prex "cp $SAT_IMG/*png $ONLINE_VALIDATION_DIR/MEDEAF_PUB/DA_Sat/"
+opa_cp "$SAT_IMG/*png $ONLINE_VALIDATION_DIR/MEDEAF_PUB/DA_Sat/"
 
 ##### step 2.0  SAT validation - unzip from archive  ###########
 
@@ -137,9 +148,9 @@ for (( RUNDAY=1; RUNDAY<8; RUNDAY++ )) ; do
 done
 
 
-opa_prex "cp ${ONLINE_VALIDATION_DIR}/Validation_*nc ${OPA_INPDIR_ROOT}/analysis/VALIDATION/SAT"
+opa_cp "${ONLINE_VALIDATION_DIR}/Validation_*nc ${OPA_INPDIR_ROOT}/analysis/VALIDATION/SAT"
 opa_prex "python sat_plotter.py  -i ${OPA_INPDIR_ROOT}/analysis/VALIDATION/SAT -o ${ONLINE_VALIDATION_DIR}   -d $OPA_RUNDATE "
-opa_prex "cp ${ONLINE_VALIDATION_DIR}/*png $ONLINE_VALIDATION_DIR/MEDEAF_PUB/Sat_validation"
+opa_cp " ${ONLINE_VALIDATION_DIR}/*png $ONLINE_VALIDATION_DIR/MEDEAF_PUB/Sat_validation"
 
 
 ##### step 3.0 Float validation - unzip from archive  #####
@@ -165,14 +176,20 @@ done
 
 PROFILERDIR_FC=${ONLINE_VALIDATION_DIR}/FC_FOR_FLOATS/PROFILATORE
 PROFILERDIR_AN=${ONLINE_VALIDATION_DIR}/AN_FOR_FLOATS/PROFILATORE
+PROFILERDIR_CL=${ONLINE_VALIDATION_DIR}/CL_FOR_FLOATS/PROFILATORE
+
 IMG_DIR_FC=${ONLINE_VALIDATION_DIR}/FC_FOR_FLOATS/IMG
 IMG_DIR_AN=${ONLINE_VALIDATION_DIR}/AN_FOR_FLOATS/IMG
 DIR_FC=${ONLINE_VALIDATION_DIR}/FC_FOR_FLOATS/AVE
 DIR_AN=$MODELDIR/AVE_FREQ_1
+DIR_CL=$ONLINE_VALIDATION_DIR/CHL_CLIM/3D_LINKS
+XML_CHL=$ONLINE_VALIDATION_DIR/VarDescriptor_P_l.xml
 
 STARTTIME_a=$( date -d " $OPA_RUNDATE -8 days " +%Y%m%d )
 END__TIME_a=$( date -d " $OPA_RUNDATE -2 days " +%Y%m%d )
 MID__TIME_a=$( date -d " $OPA_RUNDATE -5 days " +%Y%m%d )
+STARTTIME_c=$( date -d " $STARTTIME_a " +%Y%m )15
+END__TIME_c=$( date -d " $STARTTIME_a  + 1 months " +%Y%m )15
 
 mkdir -p $IMG_DIR_FC
 mkdir -p $IMG_DIR_AN
@@ -180,13 +197,14 @@ mkdir -p $ONLINE_VALIDATION_DIR/matchup_outputs
 
 opa_prex "python float_extractor.py -st ${STARTTIME_a} -et ${END__TIME_a} -i $DIR_FC -b $PROFILERDIR_FC  -o $IMG_DIR_FC -m $MASKFILE"
 opa_prex "python float_extractor.py -st ${STARTTIME_a} -et ${END__TIME_a} -i $DIR_AN -b $PROFILERDIR_AN  -o $IMG_DIR_AN -m $MASKFILE"
+opa_prex "python float_extractor.py -st ${STARTTIME_c} -et ${END__TIME_c} -i $DIR_CL -b $PROFILERDIR_CL  -x $XML_CHL    -m $MASKFILE"
 
 opa_prex " python profileplotter_3.py -p $IMG_DIR_FC -a $IMG_DIR_AN -o  ${ONLINE_VALIDATION_DIR}/matchup_outputs  -f  ${ONLINE_VALIDATION_DIR}/BioFloats_Descriptor.xml "
-opa_prex "cp  $OPA_WRKDIR/POSTPROC/AVE_FREQ_1/online_validation/BioFloats_Descriptor.xml  $ONLINE_VALIDATION_DIR/MEDEAF_PUB/ "
-opa_prex "cp ${ONLINE_VALIDATION_DIR}/matchup_outputs/*png $ONLINE_VALIDATION_DIR/MEDEAF_PUB/Single_Float_validation"
+opa_cp " $OPA_WRKDIR/POSTPROC/AVE_FREQ_1/online_validation/BioFloats_Descriptor.xml  $ONLINE_VALIDATION_DIR/MEDEAF_PUB/ "
+opa_cp " ${ONLINE_VALIDATION_DIR}/matchup_outputs/*png $ONLINE_VALIDATION_DIR/MEDEAF_PUB/Single_Float_validation"
 
-opa_prex "cp $PROFILERDIR_AN/PROFILES/*nc ${OPA_INPDIR_ROOT}/analysis/VALIDATION/FLOAT/PROFILATORE/PROFILES" # updating inpdir
-opa_prex "cp $PROFILERDIR_AN/PUNTI/*dat   ${OPA_INPDIR_ROOT}/analysis/VALIDATION/FLOAT/PROFILATORE/PUNTI"
+opa_cp "$PROFILERDIR_AN/PROFILES/*nc ${OPA_INPDIR_ROOT}/analysis/VALIDATION/FLOAT/PROFILATORE/PROFILES" # updating inpdir
+opa_cp  "$PROFILERDIR_AN/PUNTI/*dat   ${OPA_INPDIR_ROOT}/analysis/VALIDATION/FLOAT/PROFILATORE/PUNTI"
 
 opa_prex "tar -cf  ${ONLINE_VALIDATION_DIR}/matchup_outputs/forecast.tar ${IMG_DIR_FC}/* "
 opa_prex "tar -cf  ${ONLINE_VALIDATION_DIR}/matchup_outputs/analysis.tar ${IMG_DIR_AN}/* "
@@ -197,10 +215,15 @@ opa_mkdir ${ONLINE_VALIDATION_DIR}/biofloat_ms
 
 NRT_biofloat_out_name=${ONLINE_VALIDATION_DIR}/FC_FOR_FLOATS/BioFloat_Weekly_validation_${MID__TIME_a}.nc
 opa_prex "python biofloats_ms.py -d $MID__TIME_a -m $MASKFILE -b ${ONLINE_VALIDATION_DIR}/FC_FOR_FLOATS/PROFILATORE -o ${NRT_biofloat_out_name} "
-opa_prex "cp ${NRT_biofloat_out_name} ${OPA_INPDIR_ROOT}/analysis/VALIDATION/FLOAT/WEEKLY " # updating inpdir
+opa_cp "${NRT_biofloat_out_name} ${OPA_INPDIR_ROOT}/analysis/VALIDATION/FLOAT/WEEKLY " # updating inpdir
+
+NRT_biofloat_out_name=${ONLINE_VALIDATION_DIR}/CL_FOR_FLOATS/BioFloat_Weekly_validation_${MID__TIME_a}.nc
+opa_prex "python biofloats_ms_MVR.py -d $MID__TIME_a -m $MASKFILE -b ${ONLINE_VALIDATION_DIR}/FC_FOR_FLOATS/PROFILATORE -o ${NRT_biofloat_out_name} -c ${ONLINE_VALIDATION_DIR}/CL_FOR_FLOATS/PROFILATORE "
+opa_cp "${NRT_biofloat_out_name} ${OPA_INPDIR_ROOT}/analysis/VALIDATION/FLOAT/WEEKLY_CLIM " # updating inpdir
+
 
 opa_prex "python biofloats_ms_plotter.py  -o ${ONLINE_VALIDATION_DIR}/biofloat_ms  -a ${OPA_INPDIR_ROOT}/analysis/VALIDATION/FLOAT/WEEKLY -d $OPA_RUNDATE"
-opa_prex "cp ${ONLINE_VALIDATION_DIR}/biofloat_ms/*png $ONLINE_VALIDATION_DIR/MEDEAF_PUB/Weekly_Float_validation"
+opa_cp "${ONLINE_VALIDATION_DIR}/biofloat_ms/*png $ONLINE_VALIDATION_DIR/MEDEAF_PUB/Weekly_Float_validation"
 ##### step 3.3 Float Hovmoeller section #######################
 
 BASEDIR=${OPA_INPDIR_ROOT}/analysis/VALIDATION/FLOAT/PROFILATORE
@@ -212,7 +235,7 @@ opa_mkdir $OUTDIR
 
 opa_prex_or_die "python SingleFloat_vs_Model_Stat_Timeseries.py -m $MASKFILE -b $BASEDIR -o $NCDIR -d $OPA_RUNDATE"
 opa_prex_or_die "python Hov_Stat_plot.py -m $MASKFILE -i $NCDIR -o $OUTDIR -b $BASEDIR -d $OPA_RUNDATE "
-opa_prex_or_die "cp $OUTDIR/*png  $ONLINE_VALIDATION_DIR/MEDEAF_PUB/Float_Hov "
+opa_cp "$OUTDIR/*png  $ONLINE_VALIDATION_DIR/MEDEAF_PUB/Float_Hov "
 
 opa_prex "cd $ONLINE_VALIDATION_DIR "
 opa_prex "tar -cf $ONLINE_VALIDATION_DIR/medeaf_pub.tar MEDEAF_PUB"
