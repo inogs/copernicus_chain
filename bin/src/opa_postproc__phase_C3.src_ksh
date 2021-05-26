@@ -188,7 +188,9 @@ XML_CHL=$ONLINE_VALIDATION_DIR/VarDescriptor_P_l.xml
 STARTTIME_a=$( date -d " $OPA_RUNDATE -8 days " +%Y%m%d )
 END__TIME_a=$( date -d " $OPA_RUNDATE -2 days " +%Y%m%d )
 MID__TIME_a=$( date -d " $OPA_RUNDATE -5 days " +%Y%m%d )
-STARTTIME_c=$( date -d " $STARTTIME_a " +%Y%m )15
+DAY_OFMONTH=$( date -d " $STARTTIME_a " +%d )
+if [[ $DAY_OFMONTH > 15 ]] ; then DAY_OFMONTH=15 ; fi
+STARTTIME_c=$( date -d " $STARTTIME_a " +%Y%m )$DAY_OFMONTH
 END__TIME_c=$( date -d " $STARTTIME_a  + 1 months " +%Y%m )15
 
 mkdir -p $IMG_DIR_FC
