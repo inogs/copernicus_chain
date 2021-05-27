@@ -147,8 +147,8 @@ for (( RUNDAY=1; RUNDAY<8; RUNDAY++ )) ; do
    opa_prex_or_die "python SatValidation.py -f $LOCAL_FC -s ${SAT_FILE} -o ${f_name}  -m $MASKFILE -c $CLIMFILE"
 done
 
-
-opa_cp "${ONLINE_VALIDATION_DIR}/Validation_*nc ${OPA_INPDIR_ROOT}/analysis/VALIDATION/SAT"
+INPDIR_SAT_V_DAILY=${OPA_INPDIR_ROOT}/analysis/VALIDATION/SAT
+opa_cp "${ONLINE_VALIDATION_DIR}/Validation_*nc $INPDIR_SAT_V_DAILY"
 opa_prex "python sat_plotter.py  -i ${OPA_INPDIR_ROOT}/analysis/VALIDATION/SAT -o ${ONLINE_VALIDATION_DIR}   -d $OPA_RUNDATE "
 opa_cp " ${ONLINE_VALIDATION_DIR}/*png $ONLINE_VALIDATION_DIR/MEDEAF_PUB/Sat_validation"
 
@@ -214,6 +214,7 @@ opa_prex "tar -cf  ${ONLINE_VALIDATION_DIR}/matchup_outputs/analysis.tar ${IMG_D
 ##### step 3.2 BIOFLOATS WEEKLY SECTION   #######################
 
 opa_mkdir ${ONLINE_VALIDATION_DIR}/biofloat_ms
+INPDIR_FLOAT_V_WEEKLY=${OPA_INPDIR_ROOT}/analysis/VALIDATION/FLOAT/WEEKLY_CLIM
 
 NRT_biofloat_out_name=${ONLINE_VALIDATION_DIR}/FC_FOR_FLOATS/BioFloat_Weekly_validation_${MID__TIME_a}.nc
 opa_prex "python biofloats_ms.py -d $MID__TIME_a -m $MASKFILE -b ${ONLINE_VALIDATION_DIR}/FC_FOR_FLOATS/PROFILATORE -o ${NRT_biofloat_out_name} "
@@ -221,7 +222,7 @@ opa_cp "${NRT_biofloat_out_name} ${OPA_INPDIR_ROOT}/analysis/VALIDATION/FLOAT/WE
 
 NRT_biofloat_out_name=${ONLINE_VALIDATION_DIR}/CL_FOR_FLOATS/BioFloat_Weekly_validation_${MID__TIME_a}.nc
 opa_prex "python biofloats_ms_MVR.py -d $MID__TIME_a -m $MASKFILE -b ${ONLINE_VALIDATION_DIR}/FC_FOR_FLOATS/PROFILATORE -o ${NRT_biofloat_out_name} -c ${ONLINE_VALIDATION_DIR}/CL_FOR_FLOATS/PROFILATORE "
-opa_cp "${NRT_biofloat_out_name} ${OPA_INPDIR_ROOT}/analysis/VALIDATION/FLOAT/WEEKLY_CLIM " # updating inpdir
+opa_cp "${NRT_biofloat_out_name} ${INPDIR_FLOAT_V_WEEKLY}" # updating inpdir
 
 
 opa_prex "python biofloats_ms_plotter.py  -o ${ONLINE_VALIDATION_DIR}/biofloat_ms  -a ${OPA_INPDIR_ROOT}/analysis/VALIDATION/FLOAT/WEEKLY -d $OPA_RUNDATE"
@@ -242,6 +243,14 @@ opa_cp "$OUTDIR/*png  $ONLINE_VALIDATION_DIR/MEDEAF_PUB/Float_Hov "
 opa_prex "cd $ONLINE_VALIDATION_DIR "
 opa_prex "tar -cf $ONLINE_VALIDATION_DIR/medeaf_pub.tar MEDEAF_PUB"
 
+DAY=$( date --date="$OPA_RUNDATE" +%d )
+if [[ $DAY -gt 7 ]] && [[ $DAY -lt 15 ]] ; then
+  YYYYMM=$( date --date="$OPA_RUNDATE 1 month ago" +%Y%m )
+  MVR_DIR=${ONLINE_VALIDATION_DIR}/MVR
+  opa_mkdir "$MVR_DIR"
+
+  opa_prex_or_die "python MVR_gen.py -i ${INP_SAT_V_DAILY} -t ${INPDIR_FLOAT_V_WEEKLY} -o $MVR_DIR -m $YYYYMM "
+fi
 
 opa_log 0 "postprocess_C3 done [$(opa_exitcode $ec)]"
 
