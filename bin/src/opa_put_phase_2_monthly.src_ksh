@@ -60,26 +60,6 @@ while [[ ${#@} -ne 0 ]] ; do
 done
 
 
-if [[ $_TYPE == "MVR" ]] ; then
-    ncconfig=$OPA_ETCDIR/nc-config/.cmems.ncconfig
-    ogs_host=$(cat $ncconfig|grep -e "host"|cut -d " " -f2)
-    ogs_user=$(cat $ncconfig|grep -e "user"|cut -d " " -f2)
-    ogs_pass=$(cat $ncconfig|grep -e "pass"|cut -d " " -f2)
-    file=$(ls $OPA_WRKDIR/POSTPROC/AVE_FREQ_1/online_validation/MVR/prod*nc )
-    remotedir=upload/CLASS4/MED/
-    put_command="$OPA_BINDIR/ncftpput -u ${ogs_user} -p ${ogs_pass} -T .tmp. ${ogs_host} $remotedir ${file} 2>&1"
-    for i in `seq 1 $_MAX_TRIES`; do
-        if $_DRY_RUN ; then
-           echo "SIMULATE: >>> $put_command"
-           break
-         else
-         opa_prex "$put_command"
-     done
-
-     opa_exit
-fi
-
-
 function decide_action {
    # arg1 = local product file
    # arg2 = remote product file
@@ -115,6 +95,29 @@ opa_prex "opa_set_run"
 
 # start
 opa_start
+
+if [[ $_TYPE == "MVR" ]] ; then
+    ncconfig=$OPA_ETCDIR/nc-config/.cmems.ncconfig
+    ogs_host=$(cat $ncconfig|grep -e "host"|cut -d " " -f2)
+    ogs_user=$(cat $ncconfig|grep -e "user"|cut -d " " -f2)
+    ogs_pass=$(cat $ncconfig|grep -e "pass"|cut -d " " -f2)
+    file=$(ls $OPA_WRKDIR/POSTPROC/AVE_FREQ_1/online_validation/MVR/prod*nc )
+    remotedir=upload/CLASS4/MED/
+    put_command="$OPA_BINDIR/ncftpput -u ${ogs_user} -p ${ogs_pass} -T .tmp. ${ogs_host} $remotedir ${file} 2>&1"
+    for i in `seq 1 $_MAX_TRIES`; do
+        if $_DRY_RUN ; then
+           echo "SIMULATE: >>> $put_command"
+           break
+        else
+            opa_prex "${put_command}"
+            if [[ $? == 0 ]] ; then break ; fi
+        fi
+     done
+
+     opa_exit
+fi
+
+
 
 #Directory settings (they need the above opa_start)
 PROD_DIR=$OPA_WRKDIR/POSTPROC/MONTHLY/PRODUCTS
