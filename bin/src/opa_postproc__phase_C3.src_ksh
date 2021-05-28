@@ -240,17 +240,17 @@ opa_prex_or_die "python SingleFloat_vs_Model_Stat_Timeseries.py -m $MASKFILE -b 
 opa_prex_or_die "python Hov_Stat_plot.py -m $MASKFILE -i $NCDIR -o $OUTDIR -b $BASEDIR -d $OPA_RUNDATE "
 opa_cp "$OUTDIR/*png  $ONLINE_VALIDATION_DIR/MEDEAF_PUB/Float_Hov "
 
-opa_prex "cd $ONLINE_VALIDATION_DIR "
-opa_prex "tar -cf $ONLINE_VALIDATION_DIR/medeaf_pub.tar MEDEAF_PUB"
-
 DAY=$( date --date="$OPA_RUNDATE" +%d )
 if [[ $DAY -gt 7 ]] && [[ $DAY -lt 15 ]] ; then
   YYYYMM=$( date --date="$OPA_RUNDATE 1 month ago" +%Y%m )
   MVR_DIR=${ONLINE_VALIDATION_DIR}/MVR
   opa_mkdir "$MVR_DIR"
 
-  opa_prex_or_die "python MVR_gen.py -i ${INP_SAT_V_DAILY} -t ${INPDIR_FLOAT_V_WEEKLY} -o $MVR_DIR -m $YYYYMM "
+  opa_prex_or_die "python MVR_gen.py -i ${INPDIR_SAT_V_DAILY} -t ${INPDIR_FLOAT_V_WEEKLY} -o $MVR_DIR -m $YYYYMM "
 fi
+
+opa_prex "cd $ONLINE_VALIDATION_DIR "
+opa_prex "tar -cf $ONLINE_VALIDATION_DIR/medeaf_pub.tar MEDEAF_PUB"
 
 opa_log 0 "postprocess_C3 done [$(opa_exitcode $ec)]"
 

@@ -62,6 +62,8 @@ if [[ $DAY -gt 7 ]] && [[ $DAY -lt 15 ]] ; then
     opa_prex "@@(I:OPA_HOME)/bin/opa_remove_DU_prod.ksh -y $YEAR_TO_REMOVE -m $MONTH_TO_REMOVE -t CO2F 1>> $_logfile 2>&1"  || errors=$(( $errors + 1 ))
 
     fi
+
+    opa_prex "@@(I:OPA_HOME)/bin/opa_put_phase_2_monthly.ksh -y MVR 1>> $_logfile 2>&1"             || errors=$(( $errors + 1 ))
 fi
 fi
 
