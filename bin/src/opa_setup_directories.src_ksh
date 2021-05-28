@@ -28,6 +28,14 @@ opa_mkdir $OPA_LOGDIR/analysis/report
 opa_mkdir $OPA_VARDIR/log/forecast
 opa_mkdir $OPA_VARDIR/log/analysis
 
+opa_mkdir $OPA_INPDIR_ROOT/analysis/VALIDATION/POSTPROC_DA/FLOAT/STATS
+opa_mkdir $OPA_INPDIR_ROOT/analysis/VALIDATION/POSTPROC_DA/SAT/STATS
+opa_mkdir $OPA_INPDIR_ROOT/analysis/VALIDATION/SAT/
+opa_mkdir $OPA_INPDIR_ROOT/analysis/VALIDATION/FLOAT/WEEKLY
+opa_mkdir $OPA_INPDIR_ROOT/analysis/VALIDATION/FLOAT/WEEKLY_CLIM
+opa_mkdir $OPA_INPDIR_ROOT/analysis/VALIDATION/FLOAT/PROFILATORE/PROFILES # from beginning of Transition
+opa_mkdir $OPA_INPDIR_ROOT/analysis/VALIDATION/FLOAT/PROFILATORE/PUNTI/
+
 ETC_DIRS="
 FLOAT/WOA
 FLOAT/CANYON-B
