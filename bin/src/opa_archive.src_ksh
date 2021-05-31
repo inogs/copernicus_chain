@@ -327,9 +327,9 @@ if has_dataset POSTPROC ; then
      opa_mkdir "$OPA_ARCDIR/POSTPROC/MONTHLY/"
      opa_mkdir "$OPA_ARCDIR/POSTPROC/MONTHLY/PRODUCTS/"
      opa_mkdir "$OPA_ARCDIR/POSTPROC/MONTHLY/MVR/"
-     stage_out --output-subdir "POSTPROC/MONTHLY/PRODUCTS/"  POSTPROC/MONTHLY/PRODUCTS/*nc"         || par_errors=$(( $par_errors + 1 ))
-     stage_out --output-subdir "POSTPROC/MONTHLY/PRODUCTS/"  POSTPROC/MONTHLY/PRODUCTS/*xml"        || par_errors=$(( $par_errors + 1 ))
-     stage_out --output-subdir "POSTPROC/MONTHLY/MVR"        POSTPROC/AVE_FREQ_1/online_validation/MVR/*nc"   || par_errors=$(( $par_errors + 1 ))
+     stage_out --output-subdir "POSTPROC/MONTHLY/PRODUCTS/"  "POSTPROC/MONTHLY/PRODUCTS/*nc"         || par_errors=$(( $par_errors + 1 ))
+     stage_out --output-subdir "POSTPROC/MONTHLY/PRODUCTS/"  "POSTPROC/MONTHLY/PRODUCTS/*xml"        || par_errors=$(( $par_errors + 1 ))
+     stage_out --output-subdir "POSTPROC/MONTHLY/MVR"        "POSTPROC/AVE_FREQ_1/online_validation/MVR/*nc"   || par_errors=$(( $par_errors + 1 ))
      fi
   fi 
 
