@@ -752,8 +752,8 @@ function opa_report {
     opa_prex "rm $OPA_REPORTFILE.tmp"
     printf 'EventID:%s , TimeStamp:%s , ProdCycle:%s , TypeRegistration:%s-fail, TargetTime:%s\n' ${_string} | tee -a $OPA_REPORTFILE.tmp
 
-    opa_mail $eventid-fail
-    opa_prex "touch $OPA_RUNDATE.$eventid.fail"
+   # opa_mail $eventid-fail
+   # opa_prex "touch $OPA_RUNDATE.$eventid.fail"
 
   fi
 }
@@ -763,7 +763,7 @@ function opa_mail {
   _eventid=$1
   fileout=$OPA_RUNDATE.${_eventid}.html
 
-  $OPA_SCRDIR/opa_HTML.py --filein $OPA_REPORTFILE.tmp --fileout ${fileout}
+#  $OPA_SCRDIR/opa_HTML.py --filein $OPA_REPORTFILE.tmp --fileout ${fileout}
 
 # |TimeStamp	|TypeRegistration	|ProdCycle	|EventID	|TargetTime|
 
@@ -775,7 +775,7 @@ function opa_mail {
   cat ${fileout}|mail -s "$(echo -e "Catena_BIO: MyOcean Med-MFC realtime monitoring\nContent-Type: text/html")" $addresses
 # $OPA_MONITORING_ADDRESSES
 
-  rm $OPA_REPORTFILE.tmp
+#   rm $OPA_REPORTFILE.tmp
 }
 
 
