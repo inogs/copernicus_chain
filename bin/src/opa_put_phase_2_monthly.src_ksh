@@ -97,7 +97,7 @@ opa_prex "opa_set_run"
 opa_start
 
 if [[ $_TYPE == "MVR" ]] ; then
-    ncconfig=$OPA_ETCDIR/nc-config/.cmems.ncconfig
+    ncconfig=$OPA_ETCDIR/nc-config/.mvr.ncconfig
     ogs_host=$(cat $ncconfig|grep -e "host"|cut -d " " -f2)
     ogs_user=$(cat $ncconfig|grep -e "user"|cut -d " " -f2)
     ogs_pass=$(cat $ncconfig|grep -e "pass"|cut -d " " -f2)
