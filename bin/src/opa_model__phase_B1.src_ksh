@@ -69,14 +69,7 @@ if [[ $I_OPA_HOSTNAME = "meucci" ]]
    export I_MPI_FABRICS=shm:tcp
 fi
 
-case $I_OPA_HOSTNAME in
-   meucci)
-     opa_prex_or_die "mpirun -np 26 -iface ens6 python $OPA_POSTPROCDIR/archive/uncompress.py -i $restart_arc_dir -o $wrkdir/RESTARTS -l RST*.nc.gz "
-     ;;
-   *)
-     opa_prex_or_die "mpirun -np 26 python $OPA_POSTPROCDIR/archive/uncompress.py -i $restart_arc_dir -o $wrkdir/RESTARTS -l RST*.nc.gz "
-     ;;
-esac
+opa_prex_or_die "tar -xf $restart_arc_dir/RST.${OPA_RESTART_RUNDATE}.tar -C $wrkdir/RESTARTS/"
 
 
 

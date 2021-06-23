@@ -282,9 +282,8 @@ if has_dataset MODEL ; then
   opa_log 1 "Archiving MODEL in [${OPA_ARCDIR}]..."
   typeset -i opa_restart_archive_offset
     opa_mkdir "$OPA_ARCDIR/MODEL"
-    stage_out --output-subdir "MODEL"  "POSTPROC/COMPRESSED_FOR_ARCHIVE/RST/RST.*.gz"                     || par_errors=$(( $par_errors + 1 ))
+    stage_out --output-subdir "MODEL"  "POSTPROC/COMPRESSED_FOR_ARCHIVE/RST/RST*.tar"                     || par_errors=$(( $par_errors + 1 ))
 
-  stage_out --gzip "MODEL/ogstm.out"							|| par_errors=$(( $par_errors + 1 ))
   opa_log 0 "Archiving MODEL in [${OPA_ARCDIR}]... done [$(opa_exitcode $par_errors)]"
 fi
 

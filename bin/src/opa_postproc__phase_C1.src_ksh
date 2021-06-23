@@ -107,10 +107,13 @@ if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
 else
    output_restart_date=`set_spec_data -date ${OPA_RUNDATE} -days  "0" -hours 0 `
 fi
-opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/archive/compress.py -i $MODELDIR/RESTARTS -o $ZIPPED_DIR/RST -l RST.${output_restart_date}.*nc"
 
+opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/archive/netcdf4_compress.py -i $MODELDIR/RESTARTS -o $ZIPPED_DIR/RST -l RST.${output_restart_date}*.nc"
 
-opa_prex_or_die "mpirun -np 22 python $OPA_BITSEA/validation/online/reduce_ave_phys.py -i $MODELDIR/AVE_PHYS -o $MODELDIR/AVE_FREQ_1  -m $MASKFILE"
+opa_prex "cd $ZIPPED_DIR/RST"
+opa_prex_or_die "tar -cf RST.${output_restart_date:0:8}.tar RST.${output_restart_date}.*nc"
+
+opa_prex "cd $OPA_POSTPROC"
 opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/archive/compress.py -i $MODELDIR/AVE_FREQ_1 -o $ZIPPED_DIR/AVE_FREQ_1 -l *nc"
 
 if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
