@@ -96,6 +96,7 @@ else
 fi
 
 
+ONLINE_VALIDATION_DIR=${OPA_POSTPROC}/AVE_FREQ_1/online_validation
   ZIPPED_DIR=$OPA_WRKDIR/POSTPROC/COMPRESSED_FOR_ARCHIVE
 
 
@@ -170,6 +171,14 @@ opa_prex_or_die "mpirun -np 14 python $OPA_BITSEA/validation/online/monthly_aver
 opa_prex_or_die "basename $( ls $MONTHLY_DIR/ave*N1p.nc ) |  cut -c 5-12 > timelist_monthly.txt "
 opa_prex_or_die "mpirun -np 1 python ${OPA_POSTPROCDIR}/prodotti/prodotti_copernicus.py -i $MONTHLY_DIR -o $MONTHLY_PROD -t timelist_monthly.txt -d an -m $MASKFILE --tr monthly -b $BULLETIN_DATE "
 
+INPDIR_SAT_V_DAILY=${OPA_INPDIR_ROOT}/analysis/VALIDATION/SAT
+INPDIR_FLOAT_V_WEEKLY=${OPA_INPDIR_ROOT}/analysis/VALIDATION/FLOAT/WEEKLY_CLIM 
+ YYYYMM=$( date --date="$OPA_RUNDATE 1 month ago" +%Y%m )
+ MVR_DIR=${ONLINE_VALIDATION_DIR}/MVR
+ opa_mkdir "$MVR_DIR"
+
+ opa_prex_or_die "python $OPA_BITSEA/validation/online/MVR_gen.py -i ${INPDIR_SAT_V_DAILY} -t ${INPDIR_FLOAT_V_WEEKLY} -o $MVR_DIR -m $YYYYMM "
+
 fi
 fi # analysis
 
@@ -222,7 +231,6 @@ for year in `seq $START_YEAR $END_YEAR `; do
     opa_prex "mpirun -np 17 python $OPA_POSTPROCDIR/compact_profiles.py -i $YEAR_DIR -o $YEAR_DIR"
 done
 
-ONLINE_VALIDATION_DIR=${OPA_POSTPROC}/AVE_FREQ_1/online_validation
 IMG_DIR=${ONLINE_VALIDATION_DIR}/spaghetti
 opa_mkdir $IMG_DIR
 opa_prex "mpirun -np 17 python $OPA_BITSEA/validation/online/profiles_plotter_season.py -i $PKL_DIR -o $IMG_DIR -v $OPA_BITSEA/postproc/Plotlist_bio.xml -m $MASKFILE -d $OPA_RUNDATE"
