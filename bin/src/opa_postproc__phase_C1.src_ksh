@@ -114,15 +114,13 @@ opa_prex "cd $ZIPPED_DIR/RST"
 opa_prex_or_die "tar -cf RST.${output_restart_date:0:8}.tar RST.${output_restart_date}.*nc"
 
 opa_prex "cd $OPA_POSTPROC"
-opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/archive/compress.py -i $MODELDIR/AVE_FREQ_1 -o $ZIPPED_DIR/AVE_FREQ_1 -l *nc"
+opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/archive/netcdf4_compress.py -i $MODELDIR/AVE_FREQ_1 -o $ZIPPED_DIR/AVE_FREQ_1 -l *nc"
 
 if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
      opa_mkdir "$ZIPPED_DIR/AVE_FREQ_2"
-     opa_mkdir "$ZIPPED_DIR/AVE_PHYS"
      opa_mkdir "$ZIPPED_DIR/DA/"
      opa_mkdir "$ZIPPED_DIR/DA/DATIMES"
      opa_mkdir "$ZIPPED_DIR/DA/tar"
-     opa_mkdir "$ZIPPED_DIR/PHYS/"
 
 
      # DA_SECTION ###########
@@ -152,7 +150,7 @@ if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
 
 
      opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/var_aggregator.py -l ave*N1p.nc -i $MODELDIR/AVE_FREQ_2  -d $OPA_POSTPROC/VarDescriptor_2.xml  -t $MODELDIR/AVE_FREQ_2  -c $CHLSUP_DIR -m $MASKFILE"
-     opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/archive/compress.py -i $MODELDIR/AVE_FREQ_2   -o $ZIPPED_DIR/AVE_FREQ_2 -l ave.*.nc"
+     opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/archive/netcdf4_compress.py -i $MODELDIR/AVE_FREQ_2   -o $ZIPPED_DIR/AVE_FREQ_2 -l ave.*.nc"
 
 # monthly products
 
@@ -195,7 +193,7 @@ cd $MAPS_DIR
 LOGO=${OPA_ETCDIR}/static-data/POSTPROC/LogoEchoOGS4.png
 
 opa_prex "mpirun -np 72 python $OPA_BITSEA/build_layer_maps.py -l $LOGO -o $MAPS_DIR/MAP_ORIG -m $MASKFILE -i $OPA_WRKDIR/MODEL/AVE_FREQ_1  -g ave*N1p.nc  -p $OPA_BITSEA/postproc/Plotlist_bio.xml "
-opa_prex "mpirun -np 72 python $OPA_BITSEA/build_layer_maps.py -l $LOGO -o $MAPS_DIR/MAP_ORIG -m $MASKFILE -i $OPA_WRKDIR/MODEL/AVE_PHYS    -g ave*phys.nc -p $OPA_BITSEA/postproc/Plotlist_phys.xml "
+opa_prex "mpirun -np 72 python $OPA_BITSEA/build_layer_maps.py -l $LOGO -o $MAPS_DIR/MAP_ORIG -m $MASKFILE -i $OPA_WRKDIR/MODEL/AVE_FREQ_1  -g ave*N1p.nc  -p $OPA_BITSEA/postproc/Plotlist_phys.xml "
 
 cd $OPA_BITSEA/validation/online
 opa_prex "mpirun -np 36 python map_compressor.py -i $MAPS_DIR/MAP_ORIG -o $MAPS_DIR/MAP_COMPRESSED -b $OPA_BINDIR"

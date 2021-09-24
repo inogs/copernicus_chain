@@ -90,6 +90,7 @@ opa_stage_in	"$wrkdir"						\
                 "$nml_dir/riv.nml"                                      \
                 "$nml_dir/namelist.passivetrc"				\
                 "$nml_dir/namelist.init"                                \
+                "$nml_dir/namelist.phys"                                \
                 "$nml_dir/var_3d_nml"			|| {
   errors=$(( $errors + $? ))
 }
