@@ -110,10 +110,10 @@ for (( RUNDAY=1; RUNDAY<8; RUNDAY++ )) ; do
 
    for fc_day in 0 1 2 3 ; do
        day=`date -d "$FC_RUNDATE + $(( $fc_day -1 ))  days" +%Y%m%d  `
-       avefile=ave.${day}-12:00:00.P_l.nc.gz
+       avefile=ave.${day}-12:00:00.P_l.nc
        ARCH_FILE=$OPA_ARCDIR_ROOT/forecast/${FC_RUNDATE}/POSTPROC/AVE_FREQ_1/ARCHIVE/${avefile}
-       LOCAL_FC=${ONLINE_VALIDATION_DIR}/ARCHIVE_FC_FOR_SAT/${FC_RUNDATE}/${avefile%.gz}
-       opa_prex_or_die "gzip -dc $ARCH_FILE > $LOCAL_FC"
+       LOCAL_FC=${ONLINE_VALIDATION_DIR}/ARCHIVE_FC_FOR_SAT/${FC_RUNDATE}/${avefile}
+       opa_cp "$ARCH_FILE $LOCAL_FC"
    done
 
 done
@@ -123,29 +123,12 @@ done
 SAT_WEEKLY_DIR=${ONLINE_REPO}/SAT/MULTISENSOR/1Km/NRT/WEEKLY_1_24
  SAT_DAILY_DIR=${ONLINE_REPO}/SAT/MULTISENSOR/1Km/NRT/DAILY/CHECKED_24
 
-for (( RUNDAY=1; RUNDAY<8; RUNDAY++ )) ; do
-   FC_RUNDATE=`date -d "$OPA_RUNDATE $(( $DELAY + $RUNDAY )) days" +%Y%m%d  `
-   for fc_day in 1 2 3; do
-      day=`date -d "$FC_RUNDATE + $(( $fc_day -1 ))  days" +%Y%m%d  `
-      month=${day:4:2}
-      avefile=ave.${day}-12:00:00.P_l.nc
-      LOCAL_FC=${ONLINE_VALIDATION_DIR}/ARCHIVE_FC_FOR_SAT/${FC_RUNDATE}/${avefile}
-      SAT_FILE=${SAT_DAILY_DIR}/${day}_d-OC_CNR-L3-CHL-MedOC4AD4_MULTI_1KM-MED-NRT-v02.nc
-      CLIMFILE=${ONLINE_VALIDATION_DIR}/CHL_CLIM/2D/ave.yyyy${month}15-00:00:00.nc
-      f_name=${ONLINE_VALIDATION_DIR}/Validation_f${fc_day}_${FC_RUNDATE}_on_daily_Sat.${day}.nc
-      opa_prex_or_die "python SatValidation.py -f $LOCAL_FC -s ${SAT_FILE} -o ${f_name}  -m $MASKFILE -c $CLIMFILE"
-   done
-   # PERSISTENCY  
-   day=`date -d "$FC_RUNDATE -1  days" +%Y%m%d `
-   month=${day:4:2}
-   avefile=ave.${day}-12:00:00.P_l.nc
-   LOCAL_FC=${ONLINE_VALIDATION_DIR}/ARCHIVE_FC_FOR_SAT/${FC_RUNDATE}/${avefile}
-   SAT_FILE=${SAT_DAILY_DIR}/${FC_RUNDATE}_d-OC_CNR-L3-CHL-MedOC4AD4_MULTI_1KM-MED-NRT-v02.nc
-   CLIMFILE=${ONLINE_VALIDATION_DIR}/CHL_CLIM/2D/ave.yyyy${month}15-00:00:00.nc
-   f_name=${ONLINE_VALIDATION_DIR}/Validation_pers_${FC_RUNDATE}_on_daily_Sat.${FC_RUNDATE}.nc
-   
-   opa_prex_or_die "python SatValidation.py -f $LOCAL_FC -s ${SAT_FILE} -o ${f_name}  -m $MASKFILE -c $CLIMFILE"
-done
+inputdir=${ONLINE_VALIDATION_DIR}/ARCHIVE_FC_FOR_SAT/
+outputdir=${ONLINE_VALIDATION_DIR}
+satdir=${SAT_DAILY_DIR}
+climdir=${ONLINE_VALIDATION_DIR}/CHL_CLIM/2D/
+
+opa_prex_or_die "mpirun -np 7 python RunSatValidation.py -i $inputdir  -o $outputdir -s $satdir  -c $climdir  -m $MASKFILE  -r $OPA_RUNDATE"
 
 INPDIR_SAT_V_DAILY=${OPA_INPDIR_ROOT}/analysis/VALIDATION/SAT
 opa_cp "${ONLINE_VALIDATION_DIR}/Validation_*nc $INPDIR_SAT_V_DAILY"
@@ -161,11 +144,11 @@ DELAY=-9
 for (( RUNDAY=1; RUNDAY<8; RUNDAY++ )) ; do
    FC_RUNDATE=`date -d "$OPA_RUNDATE $(( $DELAY + $RUNDAY )) days" +%Y%m%d `
    for var in  P_l O2o N3n vosaline votemper EIR P_c pH POC ; do
-       avefile=ave.${FC_RUNDATE}-12:00:00.${var}.nc.gz
+       avefile=ave.${FC_RUNDATE}-12:00:00.${var}.nc
 
        ARCH_FILE=$OPA_ARCDIR_ROOT/forecast/${FC_RUNDATE}/POSTPROC/AVE_FREQ_1/ARCHIVE/${avefile}
-       LOCAL_FC=${ONLINE_VALIDATION_DIR}/FC_FOR_FLOATS/AVE/${avefile%.gz}
-       opa_prex_or_die "gzip -dc $ARCH_FILE > $LOCAL_FC"
+       LOCAL_FC=${ONLINE_VALIDATION_DIR}/FC_FOR_FLOATS/AVE/${avefile}
+       opa_cp "$ARCH_FILE $LOCAL_FC"
 
    done
 
