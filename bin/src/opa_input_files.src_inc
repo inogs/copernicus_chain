@@ -66,7 +66,7 @@ _NCCONFIG_SAT="$I_OPA_HOME/etc/nc-config/.sat.ncconfig"
   
 function opa_input_files__setup  {
 
-      OPA_OPAOPER_F_PREFIX="mfs_eas6"
+      OPA_OPAOPER_F_PREFIX="mfs_eas6v71"
       OPA_OPAOPER_A_DATE_FORMAT='%Y%m%d'
       OPA_OPAOPER_S_DATE_FORMAT='%Y%m%d'
       OPA_OPAOPER_F_DATE_FORMAT='%Y%m%d'
@@ -76,8 +76,8 @@ function opa_input_files__setup  {
           # TUESDAY
           OPA_OPAOPER_A_DAY_OFFSET_START=$(( -2 - $OPA_ANALYSES_DAYS ))
           OPA_OPAOPER_A_DAY_OFFSET_END=-2
-          OPA_OPAOPER_A_RDIR="/medsea_oce/nrt/op/out/mfs_eas6/o/"
-          OPA_OPAOPER_A_PREFIX="mfs_eas6"
+          OPA_OPAOPER_A_RDIR="/medsea_oce/nrt/op/out/mfs_eas6v71/o/"
+          OPA_OPAOPER_A_PREFIX="mfs_eas6v71"
           # maybe last 3 can be removed
           OPA_OPAOPER_A_DAY_OFFSET_START__ACTUAL="$OPA_OPAOPER_A_DAY_OFFSET_START"
           OPA_OPAOPER_A_DAY_OFFSET_END__ACTUAL="$OPA_OPAOPER_A_DAY_OFFSET_END"
@@ -97,8 +97,8 @@ function opa_input_files__setup  {
       OPA_OPAOPER_S_DAY_OFFSET_END__ACTUAL="$OPA_OPAOPER_S_DAY_OFFSET_END"
       OPA_OPAOPER_F_DAY_OFFSET_START__ACTUAL="$OPA_OPAOPER_F_DAY_OFFSET_START"
       OPA_OPAOPER_F_DAY_OFFSET_END__ACTUAL="$OPA_OPAOPER_F_DAY_OFFSET_END"
-      OPA_OPAOPER_S_RDIR="/medsea_oce/nrt/op/out/mfs_eas6/o/"
-      OPA_OPAOPER_F_RDIR="/medsea_oce/nrt/op/out/mfs_eas6/o/"
+      OPA_OPAOPER_S_RDIR="/medsea_oce/nrt/op/out/mfs_eas6v71/o/"
+      OPA_OPAOPER_F_RDIR="/medsea_oce/nrt/op/out/mfs_eas6v71/o/"
      fi
 
 }
