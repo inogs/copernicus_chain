@@ -31,8 +31,8 @@ SCRIPTS=	opa_archive.ksh					\
 		opa_preproc__phase_A1.ksh			\
 		opa_preproc__phase_A4.ksh			\
 		opa_profile.inc					\
-		opa_profile__galileo.inc			\
-		opa_profile__meucci.inc				\
+		opa_profile__g100.inc   			\
+		opa_profile__marconi.inc			\
 		opa_rm.inc					\
 		opa_rm__pbs.inc					\
                 opa_rm__slurm.inc				\
