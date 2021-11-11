@@ -1,0 +1,67 @@
+if [[ $__OPA_PROFILE_galileo_IS_DEFINED__ == '' ]] ; then
+  __OPA_PROFILE_galileo_IS_DEFINED__='__defined__'
+
+# Load environment for pbs, modules:
+. /etc/profile.d/modules.sh
+. /etc/profile.d/slurm.sh
+
+    OPA_RM=slurm
+    OPA_MPI=intelmpi
+
+
+
+OPA_HOST_PRIMARY_LOGIN_NODE='login04-ext.g100.cineca.it'
+OPA_HOST_SECONDARY_LOGIN_NODE='login05-ext.galileo.cineca.it'
+
+OPA_HOST_PRIMARY_HOSTNAME='login04'
+OPA_HOST_SECONDARY_HOSTNAME='login05'
+
+#nominal coordinates (if backup)
+if $I_OPA_BACKUP ; then
+  OPA_NOMINAL_HOME='/g100/home/usera07ogs/a07ogs00/OPA/V7C/'
+  OPA_NOMINAL_LOGIN='login.g100.cineca.it'
+else
+  OPA_BACKUP_HOME='/marconi/home/usera07ogs/a07ogs00/OPA/V7C'
+  OPA_BACKUP_LOGIN='login.marconi.cineca.it'
+fi
+
+#For crontab check
+OPA_HOST_CRON_CHECK="login01.meucci.cineca.it login02.meucci.cineca.it"
+
+NODENAME=$(hostname)                    # nome del nodo
+NODE=$( echo "$NODENAME"| cut -d: -f1 ) # prima parte del nome del nodo
+
+OPA_HOST_LOGIN_NODES="$OPA_HOST_PRIMARY_LOGIN_NODE $OPA_HOST_SECONDARY_LOGIN_NODE"
+
+OPA_CORES_PER_NODE=48
+OPA_DOMAIN=5nodes-csl                                  #Folder to take for domain (depends on number of used nodes)
+
+OPA_DEFAULT_WALL_CLOCK_LIMIT=06:00:00			# Default wall clock limit [[hh:]mm:]ss
+OPA_DEFAULT_WALL_CLOCK_LIMIT_SER=06:00:00			# Default wall clock limit [[hh:]mm:]ss
+OPA_DEFAULT_WALL_CLOCK_LIMIT_PAR=06:00:00			# Default wall clock limit [[hh:]mm:]ss
+OPA_DEFAULT_TASKS=240					# Default tasks' number WARNING: 1 node is not enough
+OPA_DEFAULT_QUEUE="g100_meteo_prod"                                      # Default queue
+OPA_DEFAULT_QUEUE_PAR="g100_meteo_prod"                                  # Default queue par
+#OPA_DEFAULT_QUEUE_SER="serial"                                 # Default queue ser
+OPA_DEFAULT_QUEUE_SER="g100_meteo_ser"                                  # Default queue ser
+OPA_DEFAULT_QOS="qos_meteo"
+OPA_DEFAULT_MEM="115gb"
+opa_batch_prex ". /cineca/prod/opt/environment/module/4.7.0/none/init/ksh"
+#opa_batch_prex "module list"
+#opa_batch_prex "module purge"
+opa_batch_prex "module load autoload"
+opa_batch_prex "module load intelmpi/oneapi-2021--binary"
+opa_batch_prex "module load mkl/oneapi-2021--binary"
+
+#opa_batch_prex "module list"
+opa_batch_prex "ulimit -s unlimited"
+
+export PYTHONPATH
+function opa_is_login_node {
+#   ksh /cineca/scripts/ha_login.select ; return $?
+    return 0
+}
+
+
+# end of include guard:
+fi

@@ -66,32 +66,6 @@ OPA_DOWNLOAD_HOUR_UTC="21:30:00"
 OPA_ODD_ALPHA="${RT_OPA_ODD_ALPHA:-0.75}"			# Alpha correction for ODD algorithm
 
 
-# I_OPA_HOSTNAME, OPA_RM and OPA_MPI are set based on hostname
-case "$I_OPA_HOSTNAME" in
-  clx|bcc|bcx|xc3|xc2|a3k)
-    OPA_RM=lsf
-    OPA_MPI=mpich
-    ;;
-  sp5|sp6)
-    OPA_RM=ll
-    OPA_MPI=poe
-    ;;
-  plx)
-    OPA_RM=pbs
-    OPA_MPI=openmpi
-    ;;
-  pico|galileo|marconi|meucci)
-    OPA_RM=slurm
-    OPA_MPI=intelmpi
-    ;;
-  $OPA_UNDEFINED)
-    echo "ERROR: I_OPA_HOSTNAME [${I_OPA_HOSTNAME}] is not supported" 1>&2
-    echo "Only [clx|bcc|xc3|xc2|a3k|sp5|sp6] are supported." 1>&2
-    exit 1
-    ;;
-esac
-
-
 OPA_HOSTDIR=$I_OPA_HOME/HOST/$I_OPA_HOSTNAME
 OPA_BINDIR=$OPA_HOSTDIR/bin					# Directory for binaries
 OPA_LIBDIR=$OPA_HOSTDIR/lib					# Directory for libraries
