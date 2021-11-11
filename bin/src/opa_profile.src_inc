@@ -291,8 +291,6 @@ OPA_PRO_DESCRIPTION_FILE=''			# pro output file names, for myocean
 OPA_PRIMARY_LOGIN_NODE="$OPA_HOST_PRIMARY_LOGIN_NODE"
 OPA_SECONDARY_LOGIN_NODE="$OPA_HOST_SECONDARY_LOGIN_NODE"
 OPA_LOGIN_NODES="$OPA_HOST_LOGIN_NODES"
-OPA_PRO_UHD_LIST="$OPA_HOST_PRO_UHD_LIST"
-OPA_PRO_FTP_LIST="$OPA_HOST_PRO_FTP_LIST"
 
 set -A OPA_VARIABLE -- 'T' 'U' 'V' 'W'
 OPA_VARIABLE_INDICES=' 0 1 2 3 '
@@ -1198,7 +1196,6 @@ function opa_setup_template {
 	-e "s%@@(T:OPA_ETCDIR)%${OPA_ETCDIR}%g"			\
 	-e "s%@@(T:OPA_SCRDIR)%${OPA_SCRDIR}%g"			\
 	-e "s%@@(T:OPA_HOSTNAME)%${I_OPA_HOSTNAME}%g"		\
-	-e "s%@@(T:OPA_GRADS_HOME)%${OPA_GRADS_HOME}%g"		\
 	"$_source" > "$_target"
   typeset _check_pattern='@@(T:[a-zA-Z_0-9]*)'
   # if [[ $($OPA_BINDIR/grep -c "$_check_pattern" "$_target") -ne 0 ]] ; then
