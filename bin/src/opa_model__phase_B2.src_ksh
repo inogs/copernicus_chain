@@ -29,8 +29,35 @@ export OPA_BITSEA
 export OPA_BINDIR
 export OPA_POSTPROCDIR
 
+
+if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
+   cd $OPA_RUNLOGDIR
+          JOB_MODEL=opa.${I_OPA_HOSTNAME}.${RT_OPA_RUNID}.jcf_slurm.multiple.model
+   JOB_MODEL_PYTHON=opa.${I_OPA_HOSTNAME}.${RT_OPA_RUNID}.jcf_slurm.multiple.model_python
+   SBATCH_LINE_ORIG="SBATCH -N5 -n 240 --mem=115gb"
+   SBATCH_LINE__NEW="SBATCH -N1 -n 1 --mem=15gb"
+
+   sed -e "s/$SBATCH_LINE_ORIG/$SBATCH_LINE__NEW/g" \
+       -e "s/SBATCH --time=06:00:00/SBATCH --time=03:00:00/g" \
+       -e "s/\.eo/\.Float_misfit_gen.out/g" \
+       -e "s/OPA_RUNTIME_STEP=model/OPA_RUNTIME_STEP=model_python/g" $JOB_MODEL  > ${JOB_MODEL_PYTHON}
+
+
+          EXE_MODEL=opa.${I_OPA_HOSTNAME}.${RT_OPA_RUNID}.step.model
+   EXE_MODEL_PYTHON=opa.${I_OPA_HOSTNAME}.${RT_OPA_RUNID}.step.model_python
+   lines=`grep -n opa_model_wrapper.ksh ${EXE_MODEL} | cut -d ":" -f 1`
+   opa_prex_or_die "head -$lines ${EXE_MODEL} > ${EXE_MODEL_PYTHON}"
+   opa_prex_or_die "cat ${OPA_TPLDIR}/jcf/opa_jcf.body.model_python >> ${EXE_MODEL_PYTHON}"
+   opa_prex_or_die "chmod 755 ${EXE_MODEL_PYTHON}"
+
+   sbatch $JOB_MODEL_PYTHON
+
+fi
+
+
 opa_prex "cd $wrkdir"
-# opa_prex "ulimit -s 1024000"
+rm -f start.txt
+
 opa_mpi_run "$OPA_BINDIR/ogstm.xx$OPA_DEBUG_EXTENSION" || {
   opa_log 0 "ERR: model failed"
   errors=$(( $errors + 1 ))
