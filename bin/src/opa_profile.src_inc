@@ -108,21 +108,19 @@ function opa_date {
   date +'%Y%m%d-%H:%M:%S'
 }
 
-# function opa_prex {
-#   # PRint a command and EXecutes it;
-#   # after the command has been executed, opa_prex prints its exit_code and returns the same value
-#   typeset -i _ec
-#   printf "PrEx $(opa_date)    > %s\n" "$*"
-#   eval "$1" ; _ec=$?
-#   typeset _status
-#   if [[ $_ec -eq 0 ]] ; then
-#     _status="ok"
-#   else
-#     _status="KO"
-#   fi
-#   printf "PrEx $(opa_date) %3d< %s [%s]\n" "$_ec" "$*" "$_status"
-#   return $_ec
-# }
+
+function opa_args_to_string {
+  # This function is used internally by the MPI-specific implementations
+  # of opa_mpi_run; it returns a string quoting all the arguments
+  # opa_args_to_string string1 string2 returns 'string1' 'string2'
+  typeset _arg
+  typeset _string=' '
+  for _arg in "$@" ; do
+    _string="${_string}'$_arg' "
+  done
+  echo "$_string"
+}
+
 function opa_reportdate {
   # print the date in the forma used by opa_log
   date +'%Y/%m/%d:%H:%M:%S'

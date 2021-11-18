@@ -63,5 +63,12 @@ function opa_is_login_node {
 }
 
 
+
+function opa_mpi_run {
+  # Run a command requiring $OPA_TASKS MPI tasks
+  typeset _args=$( opa_args_to_string "$@" )
+     opa_prex "time mpirun -np $MPI_RANKS $_args"
+}
+
 # end of include guard:
 fi

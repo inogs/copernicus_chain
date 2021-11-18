@@ -57,6 +57,8 @@ fi
 
 opa_prex "cd $wrkdir"
 rm -f start.txt
+export RANKS_PER_NODE=$OPA_CORES_PER_NODE
+MPI_RANKS=$(wc -l $OPA_WRKDIR/MODEL/domdec.txt | awk '{print $1 }')
 
 opa_mpi_run "$OPA_BINDIR/ogstm.xx$OPA_DEBUG_EXTENSION" || {
   opa_log 0 "ERR: model failed"
