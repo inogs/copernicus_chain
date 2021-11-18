@@ -3,13 +3,6 @@
 # Load common profile
 . @@(I:OPA_HOME)/bin/opa_profile.inc
 
-# Load cluster profile (if backup)
-#if $I_OPA_BACKUP; then
-#. @@(I:OPA_HOME)/bin/opa_profile__${I_OPA_HOSTNAME}.inc
-#fi
-
-# Load MPI profile:
-. $OPA_SCRDIR/opa_mpi.inc
 
 # Rundate definition
 opa_set_run
