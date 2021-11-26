@@ -154,9 +154,4 @@ odd_compare:		odd_compare.src_py
 			chmod $(COMP_PYMOD) $@
 			chmod $(SRC_PYMOD) odd_compare.src_py
 
-odd_guess_alpha:	odd_guess_alpha.src_py
-			-@[[ -f $@ ]] && chmod u+w $@ 2>/dev/null || return 0
-			$(COMPILER) odd_guess_alpha.src_py $@
-			chmod $(COMP_PYMOD) $@
-			chmod $(SRC_PYMOD) odd_guess_alpha.src_py
 

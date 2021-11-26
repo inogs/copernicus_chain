@@ -32,14 +32,7 @@ case "$OPA_VERSION" in
     ;;
 esac
 
-OPA_PROD_VERSION_NUMBER=6C					# Production version
-
-OPA_FTPSERVER_SUBDIR="v${OPA_TRUE_VERSION_NUMBER}-med-ogs-forecast"    #MEDSEA_FORECAST_BIO_006_002/myov0${OPA_TRUE_VERSION_NUMBER}-med-ogs-bio-fc
-OPA_PRO_FILE_FMT="%8s_dm-OGS---opatm_bfm4-MED-b%8s_fc-fv0${OPA_TRUE_VERSION_NUMBER}.00.nc"	# format specification for the pro file
-OPA_ANA_FILE_FMT="%8s_dm-OGS---opatm_bfm4-MED-b%8s_an-fv0${OPA_TRUE_VERSION_NUMBER}.00.nc"	# format specification for the ana file
-OPA_SIM_FILE_FMT="%8s_dm-OGS---opatm_bfm4-MED-b%8s_sm-fv0${OPA_TRUE_VERSION_NUMBER}.00.nc"	# format specification for the sim file
-OPA_V2C_FILE_FMT="%8s_d-OGS--%4s-ogstm_bfm4-MED-b%8s_%2s-fv06.00.nc"		#format specification for the V2C file
-OPA_V3C_FILE_FMT="%8s_d-OGS--%4s-MedBFM2-MED-b%8s_%2s-sv03.00.nc"		#format specification for the V3C file
+OPA_PROD_VERSION_NUMBER=8C					# Production version
   
 OPA_TRANSFER_PRO="${RT_OPA_TRANSFER_PRO:-true}"			# enable transfer of pro data
 OPA_UPDATE_TDS_CATALOG="${RT_OPA_UPDATE_TDS_CATALOG:-true}"	# enable update of the thredds catalog
@@ -63,7 +56,7 @@ OPA_TEST=false
 OPA_DOWNLOAD_HOUR_UTC="21:30:00"
 
 # These values can eventually be changed by opa_profile__${I_OPA_HOSTNAME}.inc:
-OPA_ODD_ALPHA="${RT_OPA_ODD_ALPHA:-0.75}"			# Alpha correction for ODD algorithm
+
 
 
 OPA_HOSTDIR=$I_OPA_HOME/HOST/$I_OPA_HOSTNAME

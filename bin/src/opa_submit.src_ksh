@@ -107,8 +107,6 @@ $(opa_set_default_run__print_options)
 						[=> --disable-transfer-pro
 						    --disable-update-tds-catalog
 						    --disable-transfer-images]
-	--alpha|-a				change the alpha value for ODD partitioning
-						[DEFAULT: $opa_oddalpha}]
 EofCat
 }
 
@@ -151,7 +149,7 @@ opa_restart_weekday=""
 opa_batch=true
 opa_debug_mode=$OPA_DEBUG_MODE
 opa_simulate_transfer=$OPA_SIMULATE_TRANSFER
-opa_odd_alpha=$OPA_ODD_ALPHA
+
 while [[ ${#@} -ne 0 ]] ; do
   arg="$1"
   #echo "ARG:> '$arg'"
@@ -291,10 +289,6 @@ while [[ ${#@} -ne 0 ]] ; do
       ;;
     --restart-weekday|-W)
       opa_restart_weekday=$(opa_translate_weekday $1)
-      shift 1
-      ;;
-    --alpha)
-      opa_odd_alpha="$1"
       shift 1
       ;;
     --try-resume)
@@ -514,7 +508,6 @@ function sed_tpl {
 	-e "s%@@(S:OPA_DEBUG_MODE)%${opa_debug_mode}%g"					\
 	-e "s%@@(S:OPA_SIMULATE_TRANSFER)%${opa_simulate_transfer}%g"			\
 	-e "s%@@(S:OPA_RECOVERY_MODE)%${opa_recovery_mode}%g"				\
-	-e "s%@@(S:OPA_ODD_ALPHA)%${opa_odd_alpha}%g"					\
 	-e "s%@@(S:OPA_STEPS)%${opa_steps}%g"
 }
 
