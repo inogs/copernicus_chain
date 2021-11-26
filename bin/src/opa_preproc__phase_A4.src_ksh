@@ -21,7 +21,7 @@ SAT_DATE=$($OPA_BINDIR/date -d "${OPA_RUNDATE} -8 days" +%Y%m%d )
 
 
 
-sat_archive_dir="$I_OPA_HOME/inpdir/ONLINE/SAT/MULTISENSOR/1Km/NRT/WEEKLY_1_24/"
+sat_archive_dir="$I_OPA_HOME/inpdir/ONLINE/SAT/CHL/MULTISENSOR/1Km/NRT/WEEKLY_1_24/"
 sat_file="$sat_archive_dir/${SAT_DATE}_d-OC_CNR-L3-CHL-MedOC4AD4_MULTI_1KM-MED-NRT-v02.nc"
 
 
