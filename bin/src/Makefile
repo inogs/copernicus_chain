@@ -54,7 +54,6 @@ SCRIPTS=	opa_archive.ksh					\
 		opa_check_run.ksh				\
 		opa_recovery.ksh				\
 		opa_test_rundate_options.ksh			\
-		opa_restart_cp.ksh				\
 		opa_clean.ksh					\
 		opa_lists.inc					\
 		opa_test_lists.ksh				\
