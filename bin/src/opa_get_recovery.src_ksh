@@ -13,8 +13,8 @@ for _v in U V W T; do
       previous_filename=${OPA_OPAOPER_F_INPUT_PFILES[i]}
         actual_filename=${OPA_OPAOPER_F_INPUT_RFILES[i]}
          local_filename=${OPA_OPAOPER_F_INPUT_LFILES[i]}
-      [[ ${previous_filename:29:1} != $_v ]] && continue  # to have a cycle on a single var
-      try_1_filename=${OPA_INPDIR_ROOT}/forecast/${OPA_RESTART_RUNDATE}/CMCC_PHYS/$previous_filename
+      [[ ${previous_filename:32:1} != $_v ]] && continue  # to have a cycle on a single var
+      try_1_filename=${OPA_INPDIR_ROOT}/forecast/${OPA_RECOVERY_RUNDATE}/CMCC_PHYS/$previous_filename
       try_2_filename=$LAST_EXISTING
       if [ -f $try_1_filename ] ; then
           LAST_EXISTING=$try_1_filename
@@ -32,33 +32,3 @@ done
 fi
 
 opa_exit 0
-
-
-if  [[ $OPA_RUNTYPE == 'analysis' ]] ; then
-opa_set_input_files__opaoper_a
-
-
-
-echo "#######  CLEANING INPDIR RESIDUALS      ######## "
-opa_prex  "rm -f $OPA_INPDIR/CMCC_PHYS/*nc"
-
-
-
-for i in $OPA_OPAOPER_A_INPUT_FILES_INDICES ; do
-   filename=${OPA_OPAOPER_A_INPUT_LFILES[i]}
-   link_name=$OPA_INPDIR/OPAOPER_A/$filename
-   try_1_filename=${OPA_INPDIR_ROOT}/${OPA_RESTART_RUNDATE}/OPAOPER_A/$filename
-   try_2_filename=${OPA_INPDIR_ROOT}/${OPA_RESTART_RUNDATE}/OPAOPER_F/$filename
-   if [ -f $try_1_filename ] ; then
-        PreviousRun_found_file=$try_1_filename
-   else
-        PreviousRun_found_file=$try_2_filename
-   fi
-
-   opa_prex_or_die " ln -s ${PreviousRun_found_file}  $OPA_INPDIR/OPAOPER_A/$filename "
-   opa_prex_or_die " ln -s ${PreviousRun_found_file}  $OPA_WRKDIR/OPAOPER_A/$filename "
-done
-fi
-
-
-

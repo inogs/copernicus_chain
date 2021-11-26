@@ -527,6 +527,7 @@ function opa_set_run {
 	           ;;
 
 	   'forecast')
+	           OPA_RECOVERY_RUNDATE=$($OPA_BINDIR/date --utc --date="${OPA_RUNDATE} 1 days ago" +"%Y%m%d")
 	           case "$OPA_WEEKDAY" in
 	                   2) # Tuesday
 	                      _opa_restart_weekday=2

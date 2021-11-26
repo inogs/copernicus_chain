@@ -20,9 +20,6 @@ wrkdir=$OPA_WRKDIR/MODEL
 
 
 
-restart_rundate=$($OPA_BINDIR/date --utc --date="$OPA_RUNDATE 00:00:00 8 days ago" +'%Y%m%d')
-restart_rundate_yyyy=$( $OPA_BINDIR/date --utc +'%Y%m%d-%H:%M:%S' --date="$restart_rundate 00:00:00" )
-echo "GFM:DBG:RESTART:$restart_rundate_yyyy"
 ### Copy of restart files:
 
 if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
