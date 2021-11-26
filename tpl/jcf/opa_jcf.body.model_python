@@ -1,0 +1,19 @@
+. $OPA_HOME/bin/opa_profile.inc
+opa_set_run
+opa_start
+typeset -i errors=0
+wrkdir=$OPA_WRKDIR/MODEL
+
+export ONLINE_REPO=$I_OPA_HOME/inpdir/ONLINE
+export MASKFILE=$wrkdir/meshmask.nc
+export OPA_SCRDIR
+export DA_DIR=$OPA_WRKDIR/DA
+export DA__FREQ_1=$wrkdir/DA__FREQ_1
+export OPA_VENV_1
+export OPA_BITSEA
+export OPA_BINDIR
+export OPA_POSTPROCDIR
+
+opa_prex "cd $wrkdir"
+opa_prex "$OPA_BINDIR/Float_misfit_gen.sh"
+
