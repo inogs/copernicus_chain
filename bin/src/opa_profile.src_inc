@@ -1280,26 +1280,6 @@ trap "opa_exit" EXIT
 fi
 
 
-function opa_defdomain {
-  typeset _opa_tasks=$1
-  case "${_opa_tasks}" in
-    48)
-      _domain_suff="${_opa_tasks}x1"
-      ;;
-    96)
-      _domain_suff="48x2"
-      ;;
-   128)
-      _domain_suff="64x2"
-      ;;
-     *)
-      _domain_suff="${_opa_tasks}x1"
-      ;;
-  esac
-#    "${_domain_suff}"
-  printf '%s\n' "${_domain_suff}"
-
-}
 
 secs2hhmmss() {
   # converte $1 secondi in una stringa "hh:mm:ss"

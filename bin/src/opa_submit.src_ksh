@@ -324,7 +324,6 @@ opa_prex "opa_set_default_run $opa_set_default_run_options"
 opa_prex "opa_set_run $OPA_RUNTYPE $OPA_DEFAULT_RUNDATE"
 
 
-domain_suff=$(opa_defdomain "$opa_tasks")
 
 
 opa_steps=$( echo "$opa_steps" | sed -e 's/,/ /g' )

@@ -9,7 +9,6 @@ opa_set_run
 
 # start
 opa_start
-opa_prex "module unload numpy"
 opa_prex "source $OPA_VENV_1/bin/activate"
 PYTHONPATH=${PYTHONPATH}:$OPA_BITSEA
 
@@ -86,8 +85,7 @@ opa_stage_in	"$wrkdir"						\
 }
 
 
-domain_suff=$(opa_defdomain $OPA_TASKS)
-echo "DBG:GFM:$OPA_TASKS---$domain_suff"
+
 ### Copy of domain file:
 opa_cp "$domain_dir/$OPA_DOMAIN/domdec.txt $wrkdir/domdec.txt" || {
   errors=$(( $errors + 1 ))
