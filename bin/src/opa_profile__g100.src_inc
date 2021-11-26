@@ -8,7 +8,8 @@ if [[ $__OPA_PROFILE_galileo_IS_DEFINED__ == '' ]] ; then
     OPA_RM=slurm
     OPA_MPI=intelmpi
 
-
+export UCX_TLS=ib
+export SLURM_PMIX_DIRECT_CONN_UCX=false
 
 OPA_HOST_PRIMARY_LOGIN_NODE='login04-ext.g100.cineca.it'
 OPA_HOST_SECONDARY_LOGIN_NODE='login05-ext.galileo.cineca.it'
