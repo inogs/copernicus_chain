@@ -58,7 +58,7 @@ if [[ $I_OPA_HOSTNAME = "meucci" ]]
    export I_MPI_FABRICS=shm:tcp
 fi
 
-opa_prex_or_die "tar -xf $restart_arc_dir/RST.${OPA_RESTART_RUNDATE}.tar -C $wrkdir/RESTARTS/"
+opa_prex_or_die "tar -xf $restart_arc_dir/RST.${OPA_RESTART_DATE}.tar -C $wrkdir/RESTARTS/"
 
 
 
