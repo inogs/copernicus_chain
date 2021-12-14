@@ -171,7 +171,20 @@ for file in `ls ${PROD_DIR}/${FILES_TO_SEND}` ; do
      day=${basefile:0:8}
     # -------------------------------------
     echo "DEBUG " ${OPA_BINDIR}/get_daily_product_in_DU.sh -d $day -t $_TYPE
+    if ! [ -f ${OPA_BINDIR}/get_daily_product_in_DU.sh ] ; then
+        echo "missing ${OPA_BINDIR}/get_daily_product_in_DU.sh"
+        exit 1
+    fi
     remote_name=`${OPA_BINDIR}/get_daily_product_in_DU.sh -d $day -t $_TYPE `
+
+    N_FILES_FOUND=`for j in $remote_name; do echo $j; done | wc -l `
+    if [[ $N_FILES_FOUND > 1 ]] ; then
+        echo "too much files in DU: $N_FILES_FOUND"
+        echo $remote_name
+        exit 1
+    fi
+
+
     decide_action $basefile $remote_name
     ACTION=$?
     # -------------------------------------
