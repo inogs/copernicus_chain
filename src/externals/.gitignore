@@ -2,6 +2,7 @@
 !builder_ogstm_bfm.sh
 !downloader_ogstm_bfm.sh
 !galileo.intel
+!marconi.intel
 !meucci.intel
 !.gitignore
 !README.md 
