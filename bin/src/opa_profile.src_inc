@@ -74,6 +74,8 @@ OPA_POSTPROCDIR=$OPA_HOSTDIR/postproc                           # Directory for 
 OPA_TMPDIR=$OPA_VARDIR/tmp					# Directory for:
 OPA_NAME='opa_chain'						# This is the name of the last dir in $I_OPA_HOME
 
+export PYTHONPATH
+
 OPA_LOGDIR=$I_OPA_HOME/log					# Directory for logs
 
 OPA_DEFAULT_WALL_CLOCK_LIMIT="$OPA_UNDEFINED"			# Default wall clock limit [[hh:]mm:]ss
