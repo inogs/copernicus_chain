@@ -13,7 +13,8 @@ for _v in U V W T; do
       previous_filename=${OPA_OPAOPER_F_INPUT_PFILES[i]}
         actual_filename=${OPA_OPAOPER_F_INPUT_RFILES[i]}
          local_filename=${OPA_OPAOPER_F_INPUT_LFILES[i]}
-      [[ ${previous_filename:29:1} != $_v ]] && continue  # to have a cycle on a single var
+      echo "DBG: previous filename=" $previous_filename
+      [[ ${previous_filename:31:1} != $_v ]] && continue  # to have a cycle on a single var
       try_1_filename=${OPA_INPDIR_ROOT}/forecast/${OPA_RECOVERY_RUNDATE}/CMCC_PHYS/$previous_filename
       try_2_filename=$LAST_EXISTING
       if [ -f $try_1_filename ] ; then
