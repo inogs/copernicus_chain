@@ -32,12 +32,12 @@ NODE=$( echo "$NODENAME"| cut -d: -f1 ) # prima parte del nome del nodo
 OPA_HOST_LOGIN_NODES="$OPA_HOST_PRIMARY_LOGIN_NODE $OPA_HOST_SECONDARY_LOGIN_NODE"
 
 OPA_CORES_PER_NODE=48
-OPA_DOMAIN=5nodes-skl					#Folder to take for domain (depends on number of used nodes)
+OPA_DOMAIN=3nodes-skl					#Folder to take for domain (depends on number of used nodes)
 
 OPA_DEFAULT_WALL_CLOCK_LIMIT=06:00:00			# Default wall clock limit [[hh:]mm:]ss
 OPA_DEFAULT_WALL_CLOCK_LIMIT_SER=04:00:00			# Default wall clock limit [[hh:]mm:]ss
 OPA_DEFAULT_WALL_CLOCK_LIMIT_PAR=03:30:00			# Default wall clock limit [[hh:]mm:]ss
-OPA_DEFAULT_TASKS=240					# Default tasks' number WARNING: 1 node is not enough
+OPA_DEFAULT_TASKS=144					# Default tasks' number WARNING: 1 node is not enough
 OPA_DEFAULT_QUEUE="skl_usr_prod"					# Default queue
 OPA_DEFAULT_QUEUE_PAR="skl_usr_prod"					# Default queue par
 #OPA_DEFAULT_QUEUE_SER="serial"					# Default queue ser
