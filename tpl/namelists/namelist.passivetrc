@@ -379,7 +379,7 @@
 
    dianm(25)="Chla"
    diaun(25)="mg Chl/m3"
-   diahf(25)=1
+   diahf(25)=0
    diaWR(25)=0
 
    dianm(26)="ffCO2"
