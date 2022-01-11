@@ -155,8 +155,7 @@ DAY=$( date --date="$OPA_RUNDATE" +%d )
 if [[ $DAY -gt 7 ]] && [[ $DAY -lt 15 ]] ; then
 ARCHIVE_DIR=$I_OPA_HOME/archive
 
-   ZIPPED_DIR=$OPA_POSTPROC/MONTHLY/ZIPPED
- UNZIPPED_DIR=$OPA_POSTPROC/MONTHLY/UNZIPPED
+ UNZIPPED_DIR=$OPA_POSTPROC/MONTHLY/DAILY_ARCHIVED
   MONTHLY_DIR=$OPA_POSTPROC/MONTHLY/AVE
  MONTHLY_PROD=$OPA_POSTPROC/MONTHLY/PRODUCTS
 
@@ -166,8 +165,7 @@ opa_mkdir "$UNZIPPED_DIR"
 opa_mkdir "$MONTHLY_DIR"
 opa_mkdir "$MONTHLY_PROD"
 
-opa_prex_or_die "python $OPA_BITSEA/validation/online/archive_monthly_extractor.py -a $OPA_ARCDIR_ROOT/analysis/ -o $ZIPPED_DIR "
-opa_prex_or_die "mpirun -np 20 python $OPA_POSTPROCDIR/archive/uncompress.py -i $ZIPPED_DIR -o $UNZIPPED_DIR -l *gz "
+opa_prex_or_die "python $OPA_BITSEA/validation/online/archive_monthly_extractor.py -a $OPA_ARCDIR_ROOT/analysis/ -o $UNZIPPED_DIR "
 opa_prex_or_die "mpirun -np 14 python $OPA_BITSEA/validation/online/monthly_averager.py -i $UNZIPPED_DIR -o $MONTHLY_DIR -m $MASKFILE"
 opa_prex_or_die "basename $( ls $MONTHLY_DIR/ave*N1p.nc ) |  cut -c 5-12 > timelist_monthly.txt "
 opa_prex_or_die "mpirun -np 1 python ${OPA_POSTPROCDIR}/prodotti/prodotti_copernicus.py -i $MONTHLY_DIR -o $MONTHLY_PROD -t timelist_monthly.txt -d an -m $MASKFILE --tr monthly -b $BULLETIN_DATE "
