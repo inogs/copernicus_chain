@@ -507,6 +507,7 @@ function sed_tpl {
 	-e "s%@@(S:OPA_DEBUG_MODE)%${opa_debug_mode}%g"					\
 	-e "s%@@(S:OPA_SIMULATE_TRANSFER)%${opa_simulate_transfer}%g"			\
 	-e "s%@@(S:OPA_RECOVERY_MODE)%${opa_recovery_mode}%g"				\
+        -e "s%@@(S:OPA_ACCOUNT)%${OPA_ACCOUNT}%g"                                       \
 	-e "s%@@(S:OPA_STEPS)%${opa_steps}%g"
 }
 
