@@ -15,6 +15,7 @@ I_OPA_MODULE="@@(I:OPA_MODULE)"					# Opa module name
 
 I_OPA_STAGE="@@(I:OPA_STAGE)"					# Stage (currently: prod|devel)
 
+OPA_ACCOUNT="@@(I:OPA_ACCOUNT)"	        			# Account for running
 I_OPA_BACKUP="@@(I:OPA_BACKUP)"					# Is backup? (true|false)
 I_OPA_EXTENSION="@@(I:OPA_EXTENSION)"				# suffix for directories
 I_OPA_VERSION_NUMBER="@@(I:OPA_VERSION_NUMBER)"			# Version number (currently: 0|1|2|3)

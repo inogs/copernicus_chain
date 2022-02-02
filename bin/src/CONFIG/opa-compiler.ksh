@@ -2,6 +2,7 @@
 
 sed	-e "s%@@(I:OPA_HOME)%${OPA_HOME}%g"			\
 	-e "s%@@(I:OPA_MODULE)%${OPA_MODULE}%g"			\
+	-e "s%@@(I:OPA_ACCOUNT)%${OPA_ACCOUNT}%g"		\
 	-e "s%@@(I:OPA_HOSTNAME)%${OPA_HOSTNAME}%g"		\
 	-e "s%@@(I:OPA_WORKDIR)%${OPA_WORKDIR}%g"		\
 	-e "s%@@(I:OPA_BACKUP)%${OPA_BACKUP}%g"			\
