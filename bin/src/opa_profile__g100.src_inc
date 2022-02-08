@@ -46,7 +46,7 @@ OPA_DEFAULT_QUEUE_PAR="g100_meteo_prod"                                  # Defau
 #OPA_DEFAULT_QUEUE_SER="serial"                                 # Default queue ser
 OPA_DEFAULT_QUEUE_SER="g100_meteo_ser"                                  # Default queue ser
 OPA_DEFAULT_QOS="qos_meteo"
-OPA_DEFAULT_MEM="115gb"
+OPA_DEFAULT_MEM="300gb"
 opa_batch_prex ". /cineca/prod/opt/environment/module/4.7.0/none/init/ksh"
 #opa_batch_prex "module list"
 #opa_batch_prex "module purge"
