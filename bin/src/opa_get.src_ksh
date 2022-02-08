@@ -560,6 +560,18 @@ done
 
 opa_print_missing_files
 opa_report "bio_transfer-tl-input_available" "$errors" "false"
+
+if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
+
+  DAY=$( date --date="$OPA_RUNDATE" +%d )
+  if [[ $DAY -gt 7 ]] && [[ $DAY -lt 15 ]] ; then
+    ncconfig=$OPA_ETCDIR/nc-config/.mvr.ncconfig
+    LOCALDIR=$OPA_WRKDIR/POSTPROC/AVE_FREQ_1/online_validation/MVR/ONLINE_TIMESERIES
+    opa_mkdir $LOCALDIR
+    opa_prex "ncftpget -f $ncconfig $LOCALDIR /upload/CLASS4/MED/product_quality_stats_MEDSEA_ANALYSISFORECAST_BGC_006_014*"
+  fi
+fi
+
 opa_exit "$errors"
 
 
