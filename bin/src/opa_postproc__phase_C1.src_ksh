@@ -175,9 +175,13 @@ INPDIR_SAT_V_DAILY=${OPA_INPDIR_ROOT}/analysis/VALIDATION/SAT
 INPDIR_FLOAT_V_WEEKLY=${OPA_INPDIR_ROOT}/analysis/VALIDATION/FLOAT/WEEKLY_CLIM 
  YYYYMM=$( date --date="$OPA_RUNDATE 1 month ago" +%Y%m )
  MVR_DIR=${ONLINE_VALIDATION_DIR}/MVR
- opa_mkdir "$MVR_DIR"
+ MVR_PRODUCTS=$ONLINE_VALIDATION_DIR/MVR/ONLINE_TIMESERIES
+
+
 
  opa_prex_or_die "python $OPA_BITSEA/validation/online/MVR_gen.py -i ${INPDIR_SAT_V_DAILY} -t ${INPDIR_FLOAT_V_WEEKLY} -o $MVR_DIR -m $YYYYMM "
+ opa_cp "$MVR_DIR/product_quality_stats*" "$MVR_PRODUCTS"
+
 
 fi
 fi # analysis
