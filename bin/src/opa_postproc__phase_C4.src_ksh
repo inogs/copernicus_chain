@@ -25,7 +25,12 @@ opa_prex "$OPA_SCRDIR/opa_archive.ksh --output"	|| errors=$(( $errors + 1 ))
 MEDEAF_MAPS=$OPA_WRKDIR/POSTPROC/AVE_FREQ_1/MAP_GEN/MEDEAF_MAPS
 mkdir -p $MEDEAF_MAPS
 cd $MEDEAF_MAPS
-opa_prex "python $OPA_BITSEA/validation/online/V7C_archive_info.py -d $OPA_RUNDATE --maps  > tarfiles"
+if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
+   opa_prex "python $OPA_BITSEA/validation/online/V8C_archive_info.py -d $OPA_RUNDATE --maps --analysis_already_run > tarfiles"
+else
+   opa_prex "python $OPA_BITSEA/validation/online/V8C_archive_info.py -d $OPA_RUNDATE --maps --forecast_already_run > tarfiles"
+fi
+
 for I in `cat tarfiles `; do
    tarfile=$OPA_ARCDIR_ROOT/$I
    opa_prex "tar -xf $tarfile"
