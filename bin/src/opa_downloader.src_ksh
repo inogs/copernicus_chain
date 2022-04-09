@@ -132,11 +132,11 @@ WEEKLY_DIR_24=${ONLINE_REPO}/SAT/CHL/MULTISENSOR/1Km/NRT/WEEKLY_1_24/
 
 opa_prex "cd $OPA_BITSEA/Sat"
 opa_prex "python sat_check.py -i $ORIGDIR -o $CHECK_BASEDIR -c $CLIM_FILE -m SAT1km_mesh -s $DIR_SUBMASK -w ${CHECK_BASEDIR}/STATISTICS "
-opa_prex " python interpolator.py -i $CHECKDIR -o $DAILY_DIR_24 -m Mesh24 -M $MASKFILE --inmesh SAT1km_mesh"
+opa_prex " python interpolator.py -i $CHECKDIR -o $DAILY_DIR_24 -m $MASKFILE --inmesh SAT1km_mesh"
 
 if [[ $WEEKDAY -eq $WEEKDAY_TO_AVE ]]; then
 opa_prex "python aveSat.py -i $CHECKDIR -o $WEEKLY_DIR1km -m SAT1km_mesh -t weekly_monday -d $WEEKLYDATES "
-opa_prex "python  interpolator.py -i $WEEKLY_DIR1km -o $WEEKLY_DIR_24 -m Mesh24 -M $MASKFILE --inmesh SAT1km_mesh " 
+opa_prex "python  interpolator.py -i $WEEKLY_DIR1km -o $WEEKLY_DIR_24 -m $MASKFILE --inmesh SAT1km_mesh "
 fi
 
 
@@ -174,11 +174,11 @@ WEEKLY_DIR_24=${ONLINE_REPO}/SAT/CHL/MULTISENSOR/1Km/DT/WEEKLY_1_24/
 
 
 opa_prex "python sat_check.py -i $ORIGDIR -o $CHECK_BASEDIR -c $CLIM_FILE -m SAT1km_mesh -s $DIR_SUBMASK -w ${CHECK_BASEDIR}/STATISTICS "
-opa_prex "python interpolator.py -i $CHECKDIR -o $DAILY_DIR_24 -m Mesh24 -M $MASKFILE --inmesh SAT1km_mesh "
+opa_prex "python interpolator.py -i $CHECKDIR -o $DAILY_DIR_24 -m $MASKFILE --inmesh SAT1km_mesh "
 
 if [[ $WEEKDAY -eq $WEEKDAY_TO_AVE ]]; then
 opa_prex "python aveSat.py -i $CHECKDIR -o $WEEKLY_DIR1km -m SAT1km_mesh -t weekly_monday -d $WEEKLYDATES "
-opa_prex "python interpolator.py -i $WEEKLY_DIR1km -o $WEEKLY_DIR_24 -m Mesh24 -M $MASKFILE --inmesh SAT1km_mesh "
+opa_prex "python interpolator.py -i $WEEKLY_DIR1km -o $WEEKLY_DIR_24 -m $MASKFILE --inmesh SAT1km_mesh "
 
 fi
 
@@ -197,7 +197,7 @@ opa_prex "python sat_check.py -i $ORIGDIR -o $CHECKDIR -c $CLIMFILE_KD490 -m $SA
 
 if [[ $WEEKDAY -eq $WEEKDAY_TO_AVE ]]; then
 opa_prex "python aveSat_kd.py -i $CHECKDIR -o $WEEKLY_1KMDIR -m $SATMESH -t weekly_monday"
-opa_prex "python interpolator.py -i $WEEKLY_1KMDIR -o $WEEKLY_24_DIR --inmesh $SATMESH -m Mesh24 -M $MASKFILE"
+opa_prex "python interpolator.py -i $WEEKLY_1KMDIR -o $WEEKLY_24_DIR --inmesh $SATMESH -m $MASKFILE"
 
 fi
 opa_exit "$errors"
