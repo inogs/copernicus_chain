@@ -181,6 +181,12 @@ for file in `ls ${PROD_DIR}/${FILES_TO_SEND}` ; do
     if [[ $N_FILES_FOUND > 1 ]] ; then
         echo "too much files in DU: $N_FILES_FOUND"
         echo $remote_name
+        mail -s "Error in DU - Duplication of files " $OPA_REPORT_ADDRESSES <<EOFCAT
+        Too much files in DU on same date: $N_FILES_FOUND files found.
+        Problem about $remote_name
+        $_TYPE dataset has not been sent
+        Please, remove manually files in DU, then relaunch opa_put_phase_2.ksh.
+EOFCAT
         exit 1
     fi
 
