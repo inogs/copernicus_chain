@@ -42,7 +42,9 @@ OPA_DEFAULT_QUEUE="skl_usr_prod"					# Default queue
 OPA_DEFAULT_QUEUE_PAR="skl_usr_prod"					# Default queue par
 #OPA_DEFAULT_QUEUE_SER="serial"					# Default queue ser
 OPA_DEFAULT_QUEUE_SER="bdw_all_serial"					# Default queue ser
-OPA_DEFAULT_QOS="bdw_qos_meteoogs"
+OPA_QOS_COMMENT="#"
+OPA_DEFAULT_QOS=""
+OPA_MEM_LIMIT_SER=18000
 OPA_DEFAULT_MEM="182000"
 opa_batch_prex ". /cineca/prod/opt/environment/module/3.2.10/none/init/ksh"
 #opa_batch_prex "module list"
