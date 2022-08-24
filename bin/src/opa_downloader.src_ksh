@@ -38,6 +38,16 @@ UPDATE_FILE=$DIR/DIFF_floats.txt
 INDEXER_CORIOLIS=$ONLINE_REPO/CORIOLIS/download/Med_floats.txt
 
 
+# if DIFF_floats.txt is too recent, it means that another node is running opa_downloader.ksh
+# Superposition can damage superfloat generation.
+ELAPSED_TIME=$(( $(date +%s) - $(date +%s -r $UPDATE_FILE) ))
+if [[ $ELAPSED_TIME -le 1500 ]] ; then
+   echo "Elapsed_time = $ELAPSED_TIME"
+   echo "$UPDATE_FILE too recent. Stopping"
+   ls -l $UPDATE_FILE
+   opa_exit 0
+fi
+
 opa_mkdir $LOCALDIR
 #rename old syntetic_profile file and old output file
 opa_prex "cp $INDEXER_CORIOLIS $DIR/Med_floats_OLD.txt"
