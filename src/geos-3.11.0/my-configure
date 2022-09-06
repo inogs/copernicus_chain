@@ -1,9 +1,9 @@
 module load cmake
 . $OPA_HOME/src/ENV/$OPA_HOSTNAME
-#./configure --prefix=$OPA_HOME/HOST/$OPA_HOSTNAME
-#make clean
-#make
-#make install
+./configure --prefix=$OPA_HOME/HOST/$OPA_HOSTNAME
+make clean
+make
+make install
 mv $OPA_HOME/HOST/$OPA_HOSTNAME/lib64/* $OPA_HOME/HOST/$OPA_HOSTNAME/lib
 mv $OPA_HOME/HOST/$OPA_HOSTNAME/lib64/cmake/* $OPA_HOME/HOST/$OPA_HOSTNAME/lib/cmake
 mv $OPA_HOME/HOST/$OPA_HOSTNAME/lib64/pkgconfig/* $OPA_HOME/HOST/$OPA_HOSTNAME/lib/pkgconfig
