@@ -2,7 +2,7 @@
 module load mkl/oneapi-2022--binary
 module load cmake
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:$OPA_HOME/HOST/$OPA_HOSTNAME/lib
-#./configure --prefix="$OPA_HOME/HOST/$OPA_HOSTNAME" CC=mpiicc FC=mpiifort CXX=mpiicpc F77="mpiifort" F90="mpiifort" --with-debugging=0 --with-blas-lapack-dir=${MKL_HOME} --with-fortran=1 --with-fortran-interfaces=1 --with-cmake-dir=${CMAKE_HOME} --download-scalapack  --download-mumps=yes --download-hypre --download-superlu
+./configure --prefix="$OPA_HOME/HOST/$OPA_HOSTNAME" CC=mpiicc FC=mpiifort CXX=mpiicpc F77="mpiifort" F90="mpiifort" --with-debugging=0 --with-blas-lapack-dir=${MKL_HOME} --with-fortran=1 --with-fortran-interfaces=1 --with-cmake-dir=${CMAKE_HOME} --download-scalapack  --download-mumps=yes --download-hypre --download-superlu
 #./configure --prefix=$OPA_HOME/HOST/$OPA_HOSTNAME CFLAGS="-fPIC" --enable-shared
 make PETSC_DIR=${PWD} PETSC_ARCH=arch-linux-c-opt all
 make PETSC_DIR=${PWD} PETSC_ARCH=arch-linux-c-opt install

@@ -1,0 +1,14 @@
+. $OPA_HOME/src/ENV/$OPA_HOSTNAME
+export CC=mpiicc
+export CFLAGS="-g -O2 -qopenmp"
+export CXXFLAGS="-g -O2 -qopenmp"
+export FCFLAGS="-g -qopenmp"
+export F90=mpiifort
+export F77=mpiifort
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:$OPA_HOME/HOST/$OPA_HOSTNAME/lib
+./configure --prefix="$OPA_HOME/HOST/$OPA_HOSTNAME" --enable-netcdf4 --with-pic LDFLAGS="$LDFLAGS -L$OPA_HOME/HOST/$OPA_HOSTNAME/lib -lhdf5_hl -lhdf5 -lsz -lz" CPPFLAGS="$CPPFLAGS -I$OPA_HOME/HOST/$OPA_HOSTNAME/include"
+ln -s /usr/include/libxml2/libxml ${PWD}/include
+make clean
+make
+make install
+

@@ -1,0 +1,6 @@
+#. $OPA_HOME/src/ENV/$OPA_HOSTNAME
+export CFLAGS="-O -fPIC"
+#export LDFLAGS="-L${OPA_HOME}/HOST/${OPA_HOSTNAME}/lib -lirc"
+./configure --prefix=$OPA_HOME/HOST/$OPA_HOSTNAME
+make
+make install
