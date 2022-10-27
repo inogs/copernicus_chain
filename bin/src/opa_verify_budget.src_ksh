@@ -1,0 +1,283 @@
+#!/bin/ksh
+# $Date: 2014-02-11 12:46:28 $    $Revision: 1.11 $
+# $Id: verify_budget.src,v 1.11 2014-02-11 12:46:28 metope Exp $
+
+#---> V E R I F I C A   S E   I L  B U D G E T  <---
+#---> E'  I N   E S A U R I M E N T O           <---
+#---> ----------------------------------------- <---
+#---> valore di ritorno:                        <---
+#--->   -1   Errore sui parametri di chiamata   <---
+#--->    0   tutto ok                           <---
+#---> ----------------------------------------- <---
+
+#---> D E F I N I Z I O N I   C O M U N I <---
+. @@(I:OPA_HOME)/bin/opa_profile.inc
+
+#---> P A R A M E T E R S <---
+
+#---> F U N C T I O N S <---
+
+print_usage() {
+  cat <<EOFCAT
+Usage: $( basename $0 ) [options]
+	-help|-h		stampa un breve help
+	-man|-m			visualizza la man page
+EOFCAT
+}
+
+# ---> M A I N <---
+while [[ ${#@} -ne 0 ]] ; do
+  case $1 in
+     ?(-)-help|?(-)-h)
+        print_usage
+        exit -- -1
+        ;;
+     ?(-)-man|?(-)-m)
+        prman
+        exit -- -1
+        ;;
+     ?(-)-dummy-argument)
+        # Ignorato; per baco LoadLeveler
+        ;;
+     *)
+	echo "OPTION $1 sconosciuta."
+        exit -- -1
+	;;
+  esac
+  shift 1
+done
+
+#---> P A R A M E T R I   E S P O R T A T I   A   p r o f i l e . i n c <---
+export RT_MODE='A'
+export RT_RUNDATE="$(date +%Y%m%d)"
+
+#---> M a i n
+#Start
+export USERNAME="a07ogs00"
+export TMPDIR="/g100_scratch/usera07ogs/a07ogs00"
+### px2boik1:
+for user in $USERNAME ; do
+  # ore_run:    Numero di ore richieste per ciascun run:
+  # min_run:    Numero minimo di run che devono essere possibili
+  # min_kbytes: Numero minimo di kbytes che devono essere liberi nella $HOME
+  # min_rquota: Minima rquota richiesta
+#  if [[ $user == a07smr01 ]] ; then
+    # Stima per px2boik1, fatta in base alla durata del run
+#    ore_run="$(( ( ( $INT2LMSECS + $LMSECS ) * 2 ) / 3600 ))"
+#    min_run=12
+#    min_kbytes=2000000
+#    min_rquota=
+#  else
+    # Stima per px2boik6, fatta per eccesso (almeno un'ora libera)
+#    ore_run=1
+#    min_run=1
+#    min_kbytes=100000
+#    min_rquota=100000
+#  fi
+
+  ### REPI
+#  saldofile=$TMPDIR/${PNICKNAME}.${PID}.repi_-ch_${user}
+#  prex="ssh ${user}@$PRIMARY_LOGIN_NODE_INTERNAL /cineca/bin/saldo -b -u ${user} 1>$saldofile 2>&1"
+#  if [[ $( grep -c "^${user}" $saldofile ) -eq 0 ]] ; then
+#    log "BUDGET non configurato." $LOGGEN
+#  else
+#    line="$( grep "^${user}" $saldofile )"
+#    ore_totale="$( echo $line | awk '{ print $4 }' | cut -d':' -f1 )"
+#    ore_consumate="$( echo $line | awk '{ print $5 }' | cut -d':' -f1 )"
+#    ore_rimaste="$(( $ore_totale - $ore_consumate ))"
+#    run_rimasti="$(( $ore_rimaste / $ore_run ))"
+ 
+#    cat <<EOFCAT
+#    Totale ore del budget:		$ore_totale
+#    Ore consumate:			$ore_consumate
+#    Ore rimaste:			$ore_rimaste
+#    Ore impiegate per ciascun run:	$ore_run
+#    Minimo numero di run richiesti:	$min_run
+#    Run rimasti:			$run_rimasti
+#EOFCAT
+  
+#    if [[ $run_rimasti -le $min_run ]] ; then
+#      log "WRN: BUDGET di <$user> QUASI ESAURITO" $LOGGEN 
+#      if [[ ( ! -f $LOGMOTD ) || ( $( grep -c "\[Budget__${user}\]" $LOGMOTD ) -eq 0 ) ]] ; then
+#        cat >>$LOGMOTD <<EOFCAT
+#        ========[Budget__${user}]=========
+#        A T T E N Z I O N E :
+#        Il budget associato allo username
+#           $user
+#        si sta esaurendo.
+#        ===================================
+#EOFCAT
+#      fi
+#    else
+#      echo "Budget ancora disponibile per $user (ancora<$ore_rimaste> ore)"
+#    fi
+#  fi
+#  prex "rm -f $saldofile"
+
+  ### SPAZIO DISCO
+#  dffile=$TMPDIR/df_-Pk_${user}
+#  opa_prex "df -Pk ~ 1>$dffile 2>&1"
+#   ssh ${user}@$PRIMARY_LOGIN_NODE_INTERNAL 'df -Pk ~' 1>$dffile 2>&1
+#  kbytes_liberi="$( tail -n 1 $dffile | awk '{ print $4 } ' )"
+#  min_kbytes=52428800
+#    cat <<EOFCAT
+#    Spazio disponibile nella home:	$kbytes_liberi
+#    Spazio richiesto:			$min_kbytes
+#EOFCAT
+#  if [[ $kbytes_liberi -lt min_kbytes ]] ; then
+#    log "WRN: SPAZIO DISCO di <$user> QUASI ESAURITO" $LOGGEN
+#    if [[ ( ! -f $LOGMOTD ) || ( $( grep -c "\[Spazio__${user}\]" $LOGMOTD ) -eq 0 ) ]] ; then
+#      cat >>$LOGMOTD <<EOFCAT
+#        ========[Spazio__${user}]=========
+#        A T T E N Z I O N E :
+#        Lo spazio disco nella home dello
+#        username
+#           $user
+#        si sta esaurendo.
+#        ===================================
+#EOFCAT
+#    fi
+#  else
+#    echo "Spazio disco ancora disponibile per $user"
+#  fi
+#  opa_prex "rm -f $dffile"
+
+  ### QUOTA DISCO
+  QUOTA_CMD="/cineca/bin/cindata"
+#   --------------------------------------------------|-------USER USAGE------|------TOTAL USAGE------
+#   USER      AREADESCR                          FRESH   SPACE     QTA    QTA%   SPACE     MAX    MAX%
+  rquotafile=$TMPDIR/rquota_${user}
+  saldofile=$TMPDIR/rsaldo_${user}
+  opa_prex "$QUOTA_CMD -c 1>${rquotafile} 2>&1"
+  cat ${rquotafile}
+#   if [[ $( grep -c '^Disk.*none$' $rquotafile ) -eq 1 ]] ; then
+    # nessuna quota!
+#     echo "Nessuna rquota per <$user>"
+#   else
+
+    while read line ; do
+    
+      myuser="$( echo $line | awk '{ print $1 }' )"
+      filesystem="$( echo $line | awk '{ print $2 }' )"
+      myspaceused="$( echo $line | awk '{ print $5 }' )"
+      myspacequota="$( echo $line | awk '{ print $6 }' )"
+      _myspaceusedperc="$( echo $line | awk '{ print $7 }' |sed "s/%//")"
+      if [[ $_myspaceusedperc == "--" ]]; then
+        _myspaceusedperc=0
+      fi
+      
+      totspaceused="$( echo $line | awk '{ print $8 }' )"
+      totspacequota="$( echo $line | awk '{ print $9 }' )"
+      _totspaceusedperc="$( echo $line | awk '{ print $10 }' |sed "s/%//")"
+      if [[ $_totspaceusedperc == "--" ]]; then
+        _totspaceusedperc=0
+      fi 
+      typeset -E myspaceusedperc=$_myspaceusedperc
+      typeset -E totspaceusedperc=$_totspaceusedperc
+
+
+#      if [[ $myuser == $USERNAME ]]; then
+         if [[ $myspaceusedperc -gt 90 ]] ; then
+          opa_log 1 "WRN QUOTA $filesystem QUASI ESAURITA" $LOGGEN
+#          if [[ ( ! -f $LOGMOTD ) || ( $( grep -c "\[quota__${user}\]" $LOGMOTD ) -eq 0 ) ]] ; then
+             cat <<EOFCAT
+             ========[quota__${user}]=========
+             A T T E N Z I O N E :
+             La quota disco nel filesystem:
+             - $filesystem
+             username:
+             - $user
+             si sta esaurendo ($myspaceusedperc %).
+             ===================================
+EOFCAT
+          echo "Quota UTENTE disco nel filesystem $filesystem --> ${myspaceusedperc}% "|/usr/bin/mailx -s "WARNING : FILESYSTEM $filesystem FULL!!!" $OPA_REPORT_ADDRESSES
+#          fi
+         fi
+
+#        echo $totspaceusedperc
+        if [[ $totspaceusedperc -gt 90 ]] ; then
+          opa_log 1 "WRN QUOTA $filesystem QUASI ESAURITA" $LOGGEN
+#          if [[ ( ! -f $LOGMOTD ) || ( $( grep -c "\[rquota__${user}\]" $LOGMOTD ) -eq 0 ) ]] ; then
+            cat <<EOFCAT
+            ========[rquota__${user}]=========
+            A T T E N Z I O N E :
+            La quota TOTALE disco nel filesystem:
+            - $filesystem
+            username:
+            - $user
+            si sta esaurendo ($totspaceusedperc %).
+            ===================================
+EOFCAT
+
+        
+#          fi
+          echo "Quota TOTALE disco nel filesystem $filesystem --> ${totspaceusedperc}% "|/usr/bin/mailx -s "WARNING : FILESYSTEM $filesystem FULL!!!" $OPA_REPORT_ADDRESSES
+        fi
+#      fi
+    done < ${rquotafile}
+#   fi
+
+  
+  SALDO_CMD="/cineca/bin/saldo"
+  #prex "ssh ${user}@$PRIMARY_LOGIN_NODE_INTERNAL '$SALDO_CMD -b -n' 1>${saldofile} 2>&1"
+  opa_prex "$SALDO_CMD -b | tail -n +5 1>${saldofile} 2>&1"
+  cat $saldofile
+  while read line ; do
+      myaccount="$( echo $line | awk '{ print $1 }' )"
+      start="$( echo $line | awk '{ print $2 }' )"
+      end="$( echo $line | awk '{ print $3 }' )"
+      total="$( echo $line | awk '{ print $4 }' )"
+      lconsumed="$( echo $line | awk '{ print $5 }' )"
+      totconsumed="$( echo $line | awk '{ print $6 }' )"
+      totconsumedperc="$( echo $line | awk '{ print $7 }' )"
+#      echo $totconsumedperc
+#      echo $end
+     
+#      if [[ $myaccount == $HOST_ACCOUNT ]]; then
+        if [[ $totconsumedperc -gt 90 ]] ; then
+          opa_log 1 "WRN ACCOUNT $myaccount QUASI ESAURITO ($totconsumedperc%)" $LOGGEN
+        #  if [[ ( ! -f $LOGMOTD ) || ( $( grep -c "\[saldo__${user}\]" $LOGMOTD ) -eq 0 ) ]] ; then
+            cat <<EOFCAT
+            ========[saldo__${user}]=========
+            A T T E N Z I O N E :
+            La quota budget dello user:
+            - $user
+            per account:
+            - $myaccount
+            si sta esaurendo ($totconsumedperc %).
+            scadenza: $end.
+           ===================================
+
+EOFCAT
+           echo "BUDGET dell' account $myaccount --> ${totconsumedperc}% "|/usr/bin/mailx -s "WARNING : BUDGET $myaccount ALMOST CONSUMED!!" $OPA_REPORT_ADDRESSES
+#          fi
+        fi
+        rundate=$(date +"%Y%m%d" --utc)
+        date_limit=$(date +"%Y%m%d" --utc --date="$end 30 days ago")
+        DIFF=$(( ($(date +%s -d $date_limit)-$(date +%s -d $rundate))/86400))
+        if [[ $DIFF -lt 30 ]] ; then
+          opa_log 1 "WRN ACCOUNT $myaccount QUASI SCADUTO ($end)" $LOGGEN
+         # if [[ ( ! -f $LOGMOTD ) || ( $( grep -c "\[scadenza__${user}\]" $LOGMOTD ) -eq 0 ) ]] ; then
+            cat <<EOFCAT
+            ========[scadenza__${user}]=========
+            A T T E N Z I O N E :
+            Il saldo budget dello user:
+            - $user
+            per account:
+            - $myaccount
+            sta per scadere ($end).
+           ===================================
+EOFCAT
+           echo "SCADENZA dell' account $myaccount --> ${end}"|/usr/bin/mailx -s "WARNING : $myaccount ALMOST ENDING!!" $OPA_REPORT_ADDRESSES
+          fi
+        #fi
+
+#      fi
+  done < ${saldofile}
+ 
+  
+  opa_prex "rm -f $rquotafile"
+  opa_prex "rm -f $saldofile"
+done
+
+exit 0
