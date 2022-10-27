@@ -6,8 +6,6 @@ SCRIPTS=	opa_archive.ksh					\
 		opa_get.ksh					\
                 opa_get_recovery.ksh				\
 		opa_input_files.inc				\
-		opa_link_analyses.ksh				\
-		opa_link_forecast.ksh				\
 		opa_input_stagein.ksh				\
 		opa_model.ksh					\
 		opa_model__phase_B1.ksh				\
