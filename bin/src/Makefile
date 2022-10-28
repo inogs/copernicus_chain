@@ -46,6 +46,7 @@ SCRIPTS=	opa_archive.ksh					\
 		opa_put_phase_2.ksh				\
                 opa_put_phase_2_monthly.ksh                     \
 		opa_report.ksh					\
+                opa_verify_budget.ksh                           \
 		opa_parse_reports.ksh				\
 		opa_parse_reports.py				\
 		opa_check_run.ksh				\
