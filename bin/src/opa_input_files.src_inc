@@ -47,6 +47,10 @@ set -A OPA_OPAOPER_F_INPUT_COMPRESS_MODES --	# compress mode for the OPAOPER_F f
 set -A OPA_OPAOPER_F_INPUT_DOWNLOAD_MODES --	# compress mode for the OPAOPER_F files as downloaded (protocol:config)
 set -A OPA_OPAOPER_F_INPUT_DOWNLOAD_MODES_EMERG --	# emergency download mode for the OPAOPER_F files as downloaded (protocol:config)
 set -A OPA_OPAOPER_F_INPUT_RDIRS --		# remote directories of all the OPAOPER_F files as downloaded
+set -A OPA_ATM_A_INPUT_RFILES --        # atmospheric forcings
+set -A OPA_ATM_F_INPUT_RFILES --
+
+
 OPA_OPAOPER_F_INPUT_FILES_INDICES=' '		# indices of the OPAOPER_F files
 typeset -i OPA_OPAOPER_F_INPUT_FILES_NUM=0	# num of the OPAOPER_F files
 
@@ -77,6 +81,7 @@ function opa_input_files__setup  {
           OPA_OPAOPER_A_DAY_OFFSET_START=$(( -2 - $OPA_ANALYSES_DAYS ))
           OPA_OPAOPER_A_DAY_OFFSET_END=-2
           OPA_OPAOPER_A_RDIR="/medsea_oce/nrt/op/out/mfs_eas6v8/o/"
+          OPA_ATM_RDIR="/atmforcing/ecmwf_0100/netcdf/analysis/"
           OPA_OPAOPER_A_PREFIX="mfs_eas6v8"
           # maybe last 3 can be removed
           OPA_OPAOPER_A_DAY_OFFSET_START__ACTUAL="$OPA_OPAOPER_A_DAY_OFFSET_START"
@@ -91,6 +96,7 @@ function opa_input_files__setup  {
       OPA_OPAOPER_S_DAY_OFFSET_START=-1
       OPA_OPAOPER_S_DAY_OFFSET_END=-1
       OPA_OPAOPER_S_PREFIX="mfs_eas6v8"
+      OPA_ATM_RDIR="/atmforcing/ecmwf_0100/netcdf/forecast/"
       OPA_OPAOPER_F_DAY_OFFSET_START=0
       OPA_OPAOPER_F_DAY_OFFSET_END=$(( $OPA_FORECAST_DAYS - 1 ))
       OPA_OPAOPER_S_DAY_OFFSET_START__ACTUAL="$OPA_OPAOPER_S_DAY_OFFSET_START"
@@ -108,12 +114,14 @@ function opa_input_files__setup  {
 function opa_set_input_files__opaoper_a {
   OPA_OPAOPER_A_INPUT_FILES_INDICES=' '
   _Iopa_set_input_files__opaoper_a_s_f 'a'
+  _Iopa_set_atmopsheric_input_files_a_s_f 'a'
 }
 
 function opa_set_input_files__opaoper_f {
   OPA_OPAOPER_F_INPUT_FILES_INDICES=' '
    _Iopa_set_input_files__opaoper_a_s_f 's'
    _Iopa_set_input_files__opaoper_a_s_f 'f'
+   _Iopa_set_atmopsheric_input_files_a_s_f 'f'
 }
 
 function _Iopa_set_input_files__opaoper_a_s_f {
@@ -195,7 +203,6 @@ function _Iopa_set_input_files__opaoper_a_s_f {
     # Apply the offset and get the expected file rundate
     _date_local=$( $OPA_BINDIR/date --date "$OPA_RUNDATE $_days_offset" +'%Y%m%d' )
     _date_remote=$( $OPA_BINDIR/date --date "$OPA_RUNDATE $_days_offset" +"$_date_format_remote" )
-    echo "@@@ [${_date_local}] " 1>&2
     # For each input date, three files are downloaded (for T, U and V variables)
     _prod_cycle=${OPA_RUNDATE}
     _prod_cycle_recovery=$( $OPA_BINDIR/date --date "$OPA_RUNDATE 1 days ago" +'%Y%m%d' )
@@ -233,7 +240,6 @@ function _Iopa_set_input_files__opaoper_a_s_f {
           OPA_OPAOPER_F_INPUT_FILES_NUM=$(( $OPA_OPAOPER_F_INPUT_FILES_NUM + 1 ))
           _opaoper_file_local_next="${_prefix_local}${_date_local_next}_$_v.nc"
           _ln_next="${_ln_next}${_opaoper_file_local}|${_opaoper_file_local_next} "
-          if [[ ${_v} == "T" ]] ;  then echo "@@@ [${0}] ::: [${_a_s_f}] $_opaoper_file_local" ; fi
           ;;
       esac
     done
@@ -242,6 +248,34 @@ function _Iopa_set_input_files__opaoper_a_s_f {
     fi
   done
 }
+
+function _Iopa_set_atmopsheric_input_files_a_s_f {
+typeset _a_s_f="$1"
+case  "$_a_s_f" in
+   a)
+      counter=0
+     _start="$OPA_OPAOPER_A_DAY_OFFSET_START"
+     _end="$OPA_OPAOPER_A_DAY_OFFSET_END"
+     for days_offset in $(opa_range $_start $_end ) ; do
+         date_local=$( $OPA_BINDIR/date --date "$OPA_RUNDATE $_days_offset days" +'%Y%m%d' )
+         prod_cycle=$($OPA_BINDIR/date  --date "$OPA_RUNDATE $(( $_days_offset days + 1 ))" +'%Y%m%d' )
+         file_remote="${date_local}-ECMWF---AM0100-MEDATL-b${prod_cycle}_an-fv11.00.nc"
+         OPA_ATM_A_INPUT_RFILES[counter]="${prod_cycle}/$file_remote" #20201020/20221019-ECMWF---AM0100-MEDATL-b20221020_an-fv11.00.nc
+         counter=$(( $counter + 1 ))
+         #LENGTH=${#ArrayName[@]}
+     done
+     ;;
+
+    s|f)
+
+       date_end_forecast=$($OPA_BINDIR/date --date "$OPA_RUNDATE $OPA_FORECAST_DAYS days" +'%Y%m%d' )
+       file_remote="${OPA_RUNDATE}_${date_end_forecast}-ECMWF---AM0100-MEDATL-b${OPA_RUNDATE}_fc00-fv11.00.nc"
+       OPA_ATM_F_INPUT_RFILES[0]="$OPA_RUNDATE/$file_remote"  #20221027/20221027_20221106-ECMWF---AM0100-MEDATL-b20221027_fc00-fv11.00.nc
+      ;;
+  esac
+
+}
+
 
 function opa_print_input_files__opaoper_a {
   _Iopa_print_input_files__opaoper_a_f 'a'
