@@ -136,36 +136,7 @@ opa_stage_in	"$wrkdir/BC/" \
   errors=$(( $errors + $? ))
 }
 
-opa_stage_in	"$wrkdir/KEXT/" \
-                  "$OPA_ETCDIR/static-data/MODEL/FORCINGS/KextF_yyyy0107-00:00:00.nc" \
-                  "$OPA_ETCDIR/static-data/MODEL/FORCINGS/KextF_yyyy0120-00:00:00.nc" \
-                  "$OPA_ETCDIR/static-data/MODEL/FORCINGS/KextF_yyyy0202-00:00:00.nc" \
-                  "$OPA_ETCDIR/static-data/MODEL/FORCINGS/KextF_yyyy0215-00:00:00.nc" \
-                  "$OPA_ETCDIR/static-data/MODEL/FORCINGS/KextF_yyyy0228-00:00:00.nc" \
-                  "$OPA_ETCDIR/static-data/MODEL/FORCINGS/KextF_yyyy0312-00:00:00.nc" \
-                  "$OPA_ETCDIR/static-data/MODEL/FORCINGS/KextF_yyyy0325-00:00:00.nc" \
-                  "$OPA_ETCDIR/static-data/MODEL/FORCINGS/KextF_yyyy0407-00:00:00.nc" \
-                  "$OPA_ETCDIR/static-data/MODEL/FORCINGS/KextF_yyyy0420-00:00:00.nc" \
-                  "$OPA_ETCDIR/static-data/MODEL/FORCINGS/KextF_yyyy0503-00:00:00.nc" \
-                  "$OPA_ETCDIR/static-data/MODEL/FORCINGS/KextF_yyyy0516-00:00:00.nc" \
-                  "$OPA_ETCDIR/static-data/MODEL/FORCINGS/KextF_yyyy0529-00:00:00.nc" \
-                  "$OPA_ETCDIR/static-data/MODEL/FORCINGS/KextF_yyyy0611-00:00:00.nc" \
-                  "$OPA_ETCDIR/static-data/MODEL/FORCINGS/KextF_yyyy0624-00:00:00.nc" \
-                  "$OPA_ETCDIR/static-data/MODEL/FORCINGS/KextF_yyyy0707-00:00:00.nc" \
-                  "$OPA_ETCDIR/static-data/MODEL/FORCINGS/KextF_yyyy0720-00:00:00.nc" \
-                  "$OPA_ETCDIR/static-data/MODEL/FORCINGS/KextF_yyyy0802-00:00:00.nc" \
-                  "$OPA_ETCDIR/static-data/MODEL/FORCINGS/KextF_yyyy0815-00:00:00.nc" \
-                  "$OPA_ETCDIR/static-data/MODEL/FORCINGS/KextF_yyyy0828-00:00:00.nc" \
-                  "$OPA_ETCDIR/static-data/MODEL/FORCINGS/KextF_yyyy0910-00:00:00.nc" \
-                  "$OPA_ETCDIR/static-data/MODEL/FORCINGS/KextF_yyyy0923-00:00:00.nc" \
-                  "$OPA_ETCDIR/static-data/MODEL/FORCINGS/KextF_yyyy1006-00:00:00.nc" \
-                  "$OPA_ETCDIR/static-data/MODEL/FORCINGS/KextF_yyyy1019-00:00:00.nc" \
-                  "$OPA_ETCDIR/static-data/MODEL/FORCINGS/KextF_yyyy1101-00:00:00.nc" \
-                  "$OPA_ETCDIR/static-data/MODEL/FORCINGS/KextF_yyyy1114-00:00:00.nc" \
-                  "$OPA_ETCDIR/static-data/MODEL/FORCINGS/KextF_yyyy1127-00:00:00.nc" \
-                  "$OPA_ETCDIR/static-data/MODEL/FORCINGS/KextF_yyyy1210-00:00:00.nc" \
-                  "$OPA_ETCDIR/static-data/MODEL/FORCINGS/KextF_yyyy1223-00:00:00.nc" || {
-  errors=$(( $errors + $? ))
+
 }
 
 for I in `ls $OPA_WRKDIR/CMCC_PHYS/* ` ; do
@@ -175,7 +146,6 @@ done
 
 
 DELTA_T_DIR="$wrkdir/DELTA_T"
-opa_mkdir $DELTA_T_DIR
 opa_stage_in "$DELTA_T_DIR" "$OPA_ETCDIR/static-data/MED24_141/meshmask.nc"
 
 case $I_OPA_HOSTNAME in
@@ -186,6 +156,13 @@ case $I_OPA_HOSTNAME in
          opa_prex_or_die "mpirun -np 18 python $OPA_BITSEA/preproc/delta_t_from_uvw.py -i $wrkdir/FORCINGS/ -o $DELTA_T_DIR -m  $DELTA_T_DIR/meshmask.nc "
      ;;
 esac
+
+if [[ $OPA_RUNTYPE == 'forecast' ]] ; then
+date_end_forecast=$($OPA_BINDIR/date --date "$OPA_RUNDATE $OPA_FORECAST_DAYS days" +'%Y%m%d' )
+INPUTFILE=$OPA_INPDIR/ECMWF/${OPA_RUNDATE}_${date_end_forecast}-ECMWF---AM0100-MEDATL-b${OPA_RUNDATE}_fc00-fv11.00.nc"
+OUTDIR=$OPA_INPDIR/ECMWF/
+opa_prex_or_die "mpirun -np 10 python $OPA_HOSTDIR/preproc/ATMOSPHERE/online/forecast_input_gen.py -i $INPUTFILE -o $OUTDIR -m $wrkdir/meshmask.nc"
+fi
 
 if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
 opa_prex_or_die "ln -fs $OPA_WRKDIR/DA/SATELLITE      -t $wrkdir" || errors=$(( $errors + 1 ))
@@ -226,8 +203,9 @@ opa_prex_or_die  "datelist BC/ATM_          >    AtmTimes" || errors=$(( $errors
 opa_prex_or_die  "datelist BC/CO2_          > carbonTimes" || errors=$(( $errors + 1 ))
 
 opa_prex_or_die  "datelist FORCINGS/U      > forcingsTimes" || errors=$(( $errors + 1 ))
-opa_prex_or_die  "datelist KEXT/KextF_     >     kextTimes" || errors=$(( $errors + 1 ))
-
+opa_prex_or_die  "datelist OPTICS/atm.     >  optatmTimes"
+opa_prex_or_die  "datelist OPTICS/climatm. >  optclimTimes"
+opa_prex_or_die  "datelist OPTICS/aero.    >  optAeroTimes"
 opa_prex_or_die  "datelistsat SATELLITE    > daTimes_sat "    || errors=$(( $errors + 1 ))
 
 
