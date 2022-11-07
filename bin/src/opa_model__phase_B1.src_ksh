@@ -101,9 +101,37 @@ opa_stage_in	"$wrkdir"						\
   errors=$(( $errors + $? ))
 }
 
-### generation of kexf.T.nc
-opa_prex "cd $wrkdir"
+### stagein of optical files
 
+
+opa_prex "cd $wrkdir"
+opa_stage_in    "$wrkdir/OPTICS"
+                  "$OPA_ETCDIR/static-data/MODEL/ATM/climatm.yyyy0115-00:00:00.nc" \
+                  "$OPA_ETCDIR/static-data/MODEL/ATM/climatm.yyyy0215-00:00:00.nc" \
+                  "$OPA_ETCDIR/static-data/MODEL/ATM/climatm.yyyy0315-00:00:00.nc" \
+                  "$OPA_ETCDIR/static-data/MODEL/ATM/climatm.yyyy0415-00:00:00.nc" \
+                  "$OPA_ETCDIR/static-data/MODEL/ATM/climatm.yyyy0515-00:00:00.nc" \
+                  "$OPA_ETCDIR/static-data/MODEL/ATM/climatm.yyyy0615-00:00:00.nc" \
+                  "$OPA_ETCDIR/static-data/MODEL/ATM/climatm.yyyy0715-00:00:00.nc" \
+                  "$OPA_ETCDIR/static-data/MODEL/ATM/climatm.yyyy0815-00:00:00.nc" \
+                  "$OPA_ETCDIR/static-data/MODEL/ATM/climatm.yyyy0915-00:00:00.nc" \
+                  "$OPA_ETCDIR/static-data/MODEL/ATM/climatm.yyyy1015-00:00:00.nc" \
+                  "$OPA_ETCDIR/static-data/MODEL/ATM/climatm.yyyy1115-00:00:00.nc" \
+                  "$OPA_ETCDIR/static-data/MODEL/ATM/climatm.yyyy1215-00:00:00.nc" \
+                  "$OPA_ETCDIR/static-data/MODEL/ATM/aero.yyyy0115-00:00:00.nc" \
+                  "$OPA_ETCDIR/static-data/MODEL/ATM/aero.yyyy0215-00:00:00.nc" \
+                  "$OPA_ETCDIR/static-data/MODEL/ATM/aero.yyyy0315-00:00:00.nc" \
+                  "$OPA_ETCDIR/static-data/MODEL/ATM/aero.yyyy0415-00:00:00.nc" \
+                  "$OPA_ETCDIR/static-data/MODEL/ATM/aero.yyyy0515-00:00:00.nc" \
+                  "$OPA_ETCDIR/static-data/MODEL/ATM/aero.yyyy0615-00:00:00.nc" \
+                  "$OPA_ETCDIR/static-data/MODEL/ATM/aero.yyyy0715-00:00:00.nc" \
+                  "$OPA_ETCDIR/static-data/MODEL/ATM/aero.yyyy0815-00:00:00.nc" \
+                  "$OPA_ETCDIR/static-data/MODEL/ATM/aero.yyyy0915-00:00:00.nc" \
+                  "$OPA_ETCDIR/static-data/MODEL/ATM/aero.yyyy1015-00:00:00.nc" \
+                  "$OPA_ETCDIR/static-data/MODEL/ATM/aero.yyyy1115-00:00:00.nc" \
+                  "$OPA_ETCDIR/static-data/MODEL/ATM/aero.yyyy1215-00:00:00.nc" || {
+  errors=$(( $errors + $? ))
+}
 
 
 
