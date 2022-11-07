@@ -89,7 +89,7 @@
 ! depth_factor    [m]    depth factor for aggregation method
 !-------------------------------------------------------------------------!
 &PelGlobal_parameters  
-    p_rR6m             =  5.0      
+    p_rR6m             =  10.0      
     KSINK_rPPY         =  150.0    
     AggregateSink      =  .FALSE.  
     depth_factor       =  2000.0   
