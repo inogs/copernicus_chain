@@ -74,6 +74,7 @@ function opa_input_files__setup  {
       OPA_OPAOPER_A_DATE_FORMAT='%Y%m%d'
       OPA_OPAOPER_S_DATE_FORMAT='%Y%m%d'
       OPA_OPAOPER_F_DATE_FORMAT='%Y%m%d'
+      OPA_ATM_RDIR="/atmforcing/ecmwf_0100/netcdf/"
       if [[ $OPA_RUNTYPE == 'analysis' ]]; then
       case "$OPA_WEEKDAY" in
         2)
@@ -81,7 +82,6 @@ function opa_input_files__setup  {
           OPA_OPAOPER_A_DAY_OFFSET_START=$(( -2 - $OPA_ANALYSES_DAYS ))
           OPA_OPAOPER_A_DAY_OFFSET_END=-2
           OPA_OPAOPER_A_RDIR="/medsea_oce/nrt/op/out/mfs_eas6v8/o/"
-          OPA_ATM_RDIR="/atmforcing/ecmwf_0100/netcdf/analysis/"
           OPA_OPAOPER_A_PREFIX="mfs_eas6v8"
           # maybe last 3 can be removed
           OPA_OPAOPER_A_DAY_OFFSET_START__ACTUAL="$OPA_OPAOPER_A_DAY_OFFSET_START"
@@ -96,7 +96,6 @@ function opa_input_files__setup  {
       OPA_OPAOPER_S_DAY_OFFSET_START=-1
       OPA_OPAOPER_S_DAY_OFFSET_END=-1
       OPA_OPAOPER_S_PREFIX="mfs_eas6v8"
-      OPA_ATM_RDIR="/atmforcing/ecmwf_0100/netcdf/forecast/"
       OPA_OPAOPER_F_DAY_OFFSET_START=0
       OPA_OPAOPER_F_DAY_OFFSET_END=$(( $OPA_FORECAST_DAYS - 1 ))
       OPA_OPAOPER_S_DAY_OFFSET_START__ACTUAL="$OPA_OPAOPER_S_DAY_OFFSET_START"
@@ -269,8 +268,11 @@ case  "$_a_s_f" in
     s|f)
 
        date_end_forecast=$($OPA_BINDIR/date --date "$OPA_RUNDATE $OPA_FORECAST_DAYS days" +'%Y%m%d' )
-       file_remote="${OPA_RUNDATE}_${date_end_forecast}-ECMWF---AM0100-MEDATL-b${OPA_RUNDATE}_fc00-fv11.00.nc"
-       OPA_ATM_F_INPUT_RFILES[0]="$OPA_RUNDATE/$file_remote"  #20221027/20221027_20221106-ECMWF---AM0100-MEDATL-b20221027_fc00-fv11.00.nc
+       date_analysis=$($OPA_BINDIR/date --date "$OPA_RUNDATE -1 days" +'%Y%m%d' )
+       fc_remotefile="${OPA_RUNDATE}_${date_end_forecast}-ECMWF---AM0100-MEDATL-b${OPA_RUNDATE}_fc00-fv11.00.nc"
+       an_remotefile="${date_analysis}-ECMWF---AM0100-MEDATL-b${OPA_RUNDATE}_an-fv11.00.nc"
+       OPA_ATM_F_INPUT_RFILES[0]="forecast/$OPA_RUNDATE/$fc_remotefile"  #forecast/20221107/20221107_20221117-ECMWF---AM0100-MEDATL-b20221107_fc00-fv11.00.nc
+       OPA_ATM_F_INPUT_RFILES[1]="analysis/$OPA_RUNDATE/$an_remotefile"  #analysis/20221107/20221106-ECMWF---AM0100-MEDATL-b20221107_an-fv11.00.nc
       ;;
   esac
 

@@ -524,8 +524,10 @@ a)
    echo "VEDIAMO L'ANALISI"
    ;;
 s|f)
-  _rfile=${OPA_ATM_F_INPUT_RFILES[0]}
-   opa_download ncftp:$_HTTPCONFIG_CMCC "$_lidir" "$OPA_ATM_RDIR/$_rfile" ; _ec=$?
+   for input_file_index in 0 1 ; do
+     _rfile=${OPA_ATM_F_INPUT_RFILES[input_file_index]}
+     opa_download ncftp:$_HTTPCONFIG_CMCC "$_lidir" "$OPA_ATM_RDIR/$_rfile" ; _ec=$?
+   done
    ;;
 esac
 }

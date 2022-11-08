@@ -186,14 +186,21 @@ esac
 
 if [[ $OPA_RUNTYPE == 'forecast' ]] ; then
 date_end_forecast=$($OPA_BINDIR/date --date "$OPA_RUNDATE $OPA_FORECAST_DAYS days" +'%Y%m%d' )
-INPUTFILE=$OPA_INPDIR/ECMWF/${OPA_RUNDATE}_${date_end_forecast}-ECMWF---AM0100-MEDATL-b${OPA_RUNDATE}_fc00-fv11.00.nc
-OUTDIR=$OPA_INPDIR/ECMWF/
-opa_prex_or_die "mpirun -np 10 python $OPA_HOSTDIR/preproc/ATMOSPHERE/online/forecast_input_gen.py -i $INPUTFILE -o $OUTDIR -m $wrkdir/meshmask.nc"
+ECMWF_DIR=$OPA_INPDIR/ECMWF/
+INPUTFILE=$ECMWF_DIR/${OPA_RUNDATE}_${date_end_forecast}-ECMWF---AM0100-MEDATL-b${OPA_RUNDATE}_fc00-fv11.00.nc
+
+opa_prex_or_die "mpirun -np 10 python $OPA_HOSTDIR/preproc/ATMOSPHERE/online/forecast_input_gen.py -i $INPUTFILE -o $ECMWF_DIR -m $wrkdir/meshmask.nc"
+opa_prex_or_die "python $OPA_HOSTDIR/preproc/ATMOSPHERE/online/analysis_input_gen.py -i $ECMWF_DIR -o $ECMWF_DIR -m $wrkdir/meshmask.nc"
+
 
 cd "$wrkdir/OPTICS"
-for I in `ls $OUTDIR/atm*nc`; do
+for I in `ls ${ECMWF_DIR}/atm*nc`; do
    opa_prex_or_die "ln -fs $I "
 done
+
+START_TIME=$( set_spec_data -date ${OPA_RUNDATE} -days "-1" -hours 0 )
+FIRST_TIME=$( set_spec_data -date ${OPA_RUNDATE} -days "-1" -hours 3 )
+opa_prex_or_die "ln -fs atm.${FIRST_TIME}.nc atm.${START_TIME}.nc"
 
 fi
 
