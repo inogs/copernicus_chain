@@ -105,7 +105,7 @@ opa_stage_in	"$wrkdir"						\
 
 
 opa_prex "cd $wrkdir"
-opa_stage_in    "$wrkdir/OPTICS"
+opa_stage_in    "$wrkdir/OPTICS"       \
                   "$OPA_ETCDIR/static-data/MODEL/ATM/climatm.yyyy0115-00:00:00.nc" \
                   "$OPA_ETCDIR/static-data/MODEL/ATM/climatm.yyyy0215-00:00:00.nc" \
                   "$OPA_ETCDIR/static-data/MODEL/ATM/climatm.yyyy0315-00:00:00.nc" \
@@ -189,6 +189,12 @@ date_end_forecast=$($OPA_BINDIR/date --date "$OPA_RUNDATE $OPA_FORECAST_DAYS day
 INPUTFILE=$OPA_INPDIR/ECMWF/${OPA_RUNDATE}_${date_end_forecast}-ECMWF---AM0100-MEDATL-b${OPA_RUNDATE}_fc00-fv11.00.nc
 OUTDIR=$OPA_INPDIR/ECMWF/
 opa_prex_or_die "mpirun -np 10 python $OPA_HOSTDIR/preproc/ATMOSPHERE/online/forecast_input_gen.py -i $INPUTFILE -o $OUTDIR -m $wrkdir/meshmask.nc"
+
+cd "$wrkdir/OPTICS"
+for I in `ls $OUTDIR/atm*nc`; do
+   opa_prex_or_die "ln -fs $I "
+done
+
 fi
 
 if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
@@ -233,7 +239,9 @@ opa_prex_or_die  "datelist FORCINGS/U      > forcingsTimes" || errors=$(( $error
 opa_prex_or_die  "datelist OPTICS/atm.     >  optatmTimes"
 opa_prex_or_die  "datelist OPTICS/climatm. >  optclimTimes"
 opa_prex_or_die  "datelist OPTICS/aero.    >  optAeroTimes"
-opa_prex_or_die  "datelistsat SATELLITE    > daTimes_sat "    || errors=$(( $errors + 1 ))
+
+
+
 
 
 opa_prex "rm -f Start_End_Times 1.aveTimes 2.aveTimes restartTimes"
@@ -289,6 +297,8 @@ fi
 
 
 if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
+
+  opa_prex_or_die  "datelistsat SATELLITE    > daTimes_sat "    || errors=$(( $errors + 1 ))
 
   export ONLINE_REPO=$I_OPA_HOME/inpdir/ONLINE
   DA_TIMES_SAT=$wrkdir/daTimes_sat
