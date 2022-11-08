@@ -165,7 +165,6 @@ opa_stage_in	"$wrkdir/BC/" \
 }
 
 
-}
 
 for I in `ls $OPA_WRKDIR/CMCC_PHYS/* ` ; do
     F=`basename $I`
@@ -187,7 +186,7 @@ esac
 
 if [[ $OPA_RUNTYPE == 'forecast' ]] ; then
 date_end_forecast=$($OPA_BINDIR/date --date "$OPA_RUNDATE $OPA_FORECAST_DAYS days" +'%Y%m%d' )
-INPUTFILE=$OPA_INPDIR/ECMWF/${OPA_RUNDATE}_${date_end_forecast}-ECMWF---AM0100-MEDATL-b${OPA_RUNDATE}_fc00-fv11.00.nc"
+INPUTFILE=$OPA_INPDIR/ECMWF/${OPA_RUNDATE}_${date_end_forecast}-ECMWF---AM0100-MEDATL-b${OPA_RUNDATE}_fc00-fv11.00.nc
 OUTDIR=$OPA_INPDIR/ECMWF/
 opa_prex_or_die "mpirun -np 10 python $OPA_HOSTDIR/preproc/ATMOSPHERE/online/forecast_input_gen.py -i $INPUTFILE -o $OUTDIR -m $wrkdir/meshmask.nc"
 fi
