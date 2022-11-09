@@ -33,7 +33,7 @@ case "$OPA_VERSION" in
     ;;
 esac
 
-OPA_PROD_VERSION_NUMBER=8C					# Production version
+OPA_PROD_VERSION_NUMBER=9C					# Production version
   
 OPA_TRANSFER_PRO="${RT_OPA_TRANSFER_PRO:-true}"			# enable transfer of pro data
 OPA_UPDATE_TDS_CATALOG="${RT_OPA_UPDATE_TDS_CATALOG:-true}"	# enable update of the thredds catalog
@@ -1016,7 +1016,6 @@ function _opa_get_default_run {
         ;;
     esac
   done
-  echo "DEBUG: _opa_rundate='$_opa_rundate', _opa_runtype='$_opa_runtype', _opa_weekday='$_opa_weekday'"
 
   if [[ $_opa_runtype == '' ]] ; then
       echo "ERR : runtype analysis or forecast must be defined"
