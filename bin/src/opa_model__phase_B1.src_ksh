@@ -202,6 +202,10 @@ START_TIME=$( set_spec_data -date ${OPA_RUNDATE} -days "-1" -hours 0 )
 FIRST_TIME=$( set_spec_data -date ${OPA_RUNDATE} -days "-1" -hours 3 )
 opa_prex_or_die "ln -fs atm.${FIRST_TIME}.nc atm.${START_TIME}.nc"
 
+END___TIME=$( set_spec_data -date ${OPA_RUNDATE} -days "10" -hours 3 )
+LAST__TIME=$( set_spec_data -date ${OPA_RUNDATE} -days "9" -hours 21 )
+opa_prex_or_die "ln -fs atm.${LAST__TIME}.nc atm.${END___TIME}.nc"
+
 fi
 
 if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
