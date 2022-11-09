@@ -31,9 +31,8 @@ set -A OPA_VAR_INPUT_FILE_INDICES__ACTUAL --	# Array containing input file indic
 set -A OPA_OPAOPER_A_INPUT_VARS --		# variable
 set -A OPA_OPAOPER_A_INPUT_LFILES --		# names of all the OPAOPER_A files as downloaded
 set -A OPA_OPAOPER_A_INPUT_RFILES --		# remote names of all the OPAOPER_A files as downloaded
-set -A OPA_OPAOPER_A_INPUT_COMPRESS_MODES --	# compress mode for the OPAOPER_A files as downloaded
+
 set -A OPA_OPAOPER_A_INPUT_DOWNLOAD_MODES --	# download mode for the OPAOPER_A files as downloaded (protocol:config)
-set -A OPA_OPAOPER_A_INPUT_DOWNLOAD_MODES_EMERG --	# emergency download mode for the OPAOPER_A files as downloaded (protocol:config)
 set -A OPA_OPAOPER_A_INPUT_RDIRS --		# remote directories of all the OPAOPER_A files as downloaded
 OPA_OPAOPER_A_INPUT_FILES_INDICES=' '		# indices of the OPAOPER_A files
 typeset -i OPA_OPAOPER_A_INPUT_FILES_NUM=0	# num of the OPAOPER_A files
@@ -43,9 +42,8 @@ set -A OPA_OPAOPER_F_INPUT_VARS --		# variable
 set -A OPA_OPAOPER_F_INPUT_LFILES --		# names of all the OPAOPER_F input files
 set -A OPA_OPAOPER_F_INPUT_RFILES --		# remote names of all the CMCC files as downloaded
 set -A OPA_OPAOPER_F_INPUT_PFILES --		# remote names of all the CMCC files as downloaded by previous run
-set -A OPA_OPAOPER_F_INPUT_COMPRESS_MODES --	# compress mode for the OPAOPER_F files as downloaded
 set -A OPA_OPAOPER_F_INPUT_DOWNLOAD_MODES --	# compress mode for the OPAOPER_F files as downloaded (protocol:config)
-set -A OPA_OPAOPER_F_INPUT_DOWNLOAD_MODES_EMERG --	# emergency download mode for the OPAOPER_F files as downloaded (protocol:config)
+
 set -A OPA_OPAOPER_F_INPUT_RDIRS --		# remote directories of all the OPAOPER_F files as downloaded
 set -A OPA_ATM_A_INPUT_RFILES --        # atmospheric forcings
 set -A OPA_ATM_F_INPUT_RFILES --
@@ -63,7 +61,6 @@ OPA_OPAOPER_F_RDIR=''				# remote directory for forecasts
 
 _FTPCONFIG_INGV="$I_OPA_HOME/etc/http-config/.ingv.ftpconfig"
 _HTTPCONFIG_INGV="$I_OPA_HOME/etc/http-config/.ingv.httpconfig"
-_HTTPCONFIG_INGV_EMERG="$I_OPA_HOME/etc/http-config/.ingv.httpconfig.emerg"
 _HTTPCONFIG_CMCC="$I_OPA_HOME/etc/http-config/.cmcc.httpconfig"
 _NCCONFIG_SAT="$I_OPA_HOME/etc/nc-config/.sat.ncconfig"
 
@@ -217,10 +214,8 @@ function _Iopa_set_input_files__opaoper_a_s_f {
           OPA_OPAOPER_A_INPUT_RDIRS[OPA_OPAOPER_A_INPUT_FILES_NUM]="$_rdir"
           OPA_OPAOPER_A_INPUT_RFILES[OPA_OPAOPER_A_INPUT_FILES_NUM]="$_opaoper_file_remote"
           OPA_OPAOPER_A_INPUT_LFILES[OPA_OPAOPER_A_INPUT_FILES_NUM]="$_opaoper_file_local"
-          OPA_OPAOPER_A_INPUT_COMPRESS_MODES[OPA_OPAOPER_A_INPUT_FILES_NUM]="gzip"
 
           OPA_OPAOPER_A_INPUT_DOWNLOAD_MODES[OPA_OPAOPER_A_INPUT_FILES_NUM]="http:$_HTTPCONFIG_CMCC"
-          OPA_OPAOPER_A_INPUT_DOWNLOAD_MODES_EMERG[OPA_OPAOPER_A_INPUT_FILES_NUM]="http:$_HTTPCONFIG_INGV_EMERG"
           OPA_OPAOPER_A_INPUT_VARS[OPA_OPAOPER_A_INPUT_FILES_NUM]="$_v"
           OPA_OPAOPER_A_INPUT_FILES_INDICES="${OPA_OPAOPER_A_INPUT_FILES_INDICES}${OPA_OPAOPER_A_INPUT_FILES_NUM} "
           OPA_OPAOPER_A_INPUT_FILES_NUM=$(( $OPA_OPAOPER_A_INPUT_FILES_NUM + 1 ))
@@ -230,9 +225,7 @@ function _Iopa_set_input_files__opaoper_a_s_f {
           OPA_OPAOPER_F_INPUT_RFILES[OPA_OPAOPER_F_INPUT_FILES_NUM]="$_opaoper_file_remote"
           OPA_OPAOPER_F_INPUT_LFILES[OPA_OPAOPER_F_INPUT_FILES_NUM]="$_opaoper_file_local"
           OPA_OPAOPER_F_INPUT_PFILES[OPA_OPAOPER_F_INPUT_FILES_NUM]="$_opaoper_file_recovery"
-          OPA_OPAOPER_F_INPUT_COMPRESS_MODES[OPA_OPAOPER_F_INPUT_FILES_NUM]="gzip"
           OPA_OPAOPER_F_INPUT_DOWNLOAD_MODES[OPA_OPAOPER_F_INPUT_FILES_NUM]="http:$_HTTPCONFIG_CMCC"
-          OPA_OPAOPER_F_INPUT_DOWNLOAD_MODES_EMERG[OPA_OPAOPER_F_INPUT_FILES_NUM]="http:$_HTTPCONFIG_INGV_EMERG"
           OPA_OPAOPER_F_INPUT_VARS[OPA_OPAOPER_F_INPUT_FILES_NUM]="$_v"
           OPA_OPAOPER_F_INPUT_FILES_INDICES="${OPA_OPAOPER_F_INPUT_FILES_INDICES}${OPA_OPAOPER_F_INPUT_FILES_NUM} "
           OPA_OPAOPER_F_INPUT_FILES_NUM=$(( $OPA_OPAOPER_F_INPUT_FILES_NUM + 1 ))

@@ -42,7 +42,6 @@ $(opa_set_default_run__print_options)
 					["$_DISABLE_DOWNLOAD"]
 	--recovery			actually => --disable-download
 					["$_RECOVERY"]
-        --emerg|-e                      emergency run: use the backup repository to download files
 
 EofCat
 }
@@ -50,7 +49,6 @@ EofCat
 opa_set_default_run_options=' '
 _ABORT_ON_ERRORS=true
 _DRY_RUN=false
-_EMERG=false
 _INPUT_TIMEOUT_ENABLED="$OPA_INPUT_TIMEOUT_ENABLED"
 _DELAY=5
 _MAX_TRIES=$OPA_INPUT_TIMEOUT_COUNT_MAX
@@ -108,9 +106,6 @@ while [[ ${#@} -ne 0 ]] ; do
       ;;
     --recovery)
       _RECOVERY=true
-      ;;
-    --emerg|-e)
-      _EMERG=true
       ;;
     *)
       echo "ERROR: wrong command line option <$arg>" 1>&2
@@ -350,12 +345,8 @@ EOFCAT
       for _input_files_index in $_input_files_indices ; do
         _input_lfiles[_input_files_index]="${OPA_OPAOPER_A_INPUT_LFILES[_input_files_index]}"
         _input_rfiles[_input_files_index]="${OPA_OPAOPER_A_INPUT_RFILES[_input_files_index]}"
-        _input_compress_modes[_input_files_index]="${OPA_OPAOPER_A_INPUT_COMPRESS_MODES[_input_files_index]}"
-        if $_EMERG ; then
-	  _input_download_modes[_input_files_index]="${OPA_OPAOPER_A_INPUT_DOWNLOAD_MODES_EMERG[_input_files_index]}"
-	else
-          _input_download_modes[_input_files_index]="${OPA_OPAOPER_A_INPUT_DOWNLOAD_MODES[_input_files_index]}"
-	fi
+        _input_download_modes[_input_files_index]="${OPA_OPAOPER_A_INPUT_DOWNLOAD_MODES[_input_files_index]}"
+
         _input_rdirs[_input_files_index]="${OPA_OPAOPER_A_INPUT_RDIRS[_input_files_index]}"
       done
       ;;
@@ -364,12 +355,8 @@ EOFCAT
       for _input_files_index in $_input_files_indices ; do
         _input_lfiles[_input_files_index]="${OPA_OPAOPER_F_INPUT_LFILES[_input_files_index]}"
         _input_rfiles[_input_files_index]="${OPA_OPAOPER_F_INPUT_RFILES[_input_files_index]}"
-        _input_compress_modes[_input_files_index]="${OPA_OPAOPER_F_INPUT_COMPRESS_MODES[_input_files_index]}"
-	if $_EMERG ; then
-          _input_download_modes[_input_files_index]="${OPA_OPAOPER_F_INPUT_DOWNLOAD_MODES_EMERG[_input_files_index]}"
-	else
-          _input_download_modes[_input_files_index]="${OPA_OPAOPER_F_INPUT_DOWNLOAD_MODES[_input_files_index]}"
-	fi
+        _input_download_modes[_input_files_index]="${OPA_OPAOPER_F_INPUT_DOWNLOAD_MODES[_input_files_index]}"
+
         _input_rdirs[_input_files_index]="${OPA_OPAOPER_F_INPUT_RDIRS[_input_files_index]}"
       done
       ;;
