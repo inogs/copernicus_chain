@@ -184,7 +184,13 @@ case $I_OPA_HOSTNAME in
      ;;
 esac
 
-if [[ $OPA_RUNTYPE == 'forecast' ]] ; then
+
+if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
+	opa_prex_or_die "mpirun -np 7 python $OPA_HOSTDIR/preproc/ATMOSPHERE/online/analysis_input_gen.py -i $ECMWF_DIR -o $ECMWF_DIR -m $wrkdir/meshmask.nc"
+	opa_prex_or_die "python $OPA_HOSTDIR/preproc/ATMOSPHERE/online/analysis_input_gen_singleframe.py  -i $ECMWF_DIR -o $ECMWF_DIR -m $wrkdir/meshmask.nc"
+
+else
+
 date_end_forecast=$($OPA_BINDIR/date --date "$OPA_RUNDATE $OPA_FORECAST_DAYS days" +'%Y%m%d' )
 ECMWF_DIR=$OPA_INPDIR/ECMWF/
 INPUTFILE=$ECMWF_DIR/${OPA_RUNDATE}_${date_end_forecast}-ECMWF---AM0100-MEDATL-b${OPA_RUNDATE}_fc00-fv11.00.nc
