@@ -167,7 +167,7 @@ function _Iopa_set_input_files__opaoper_a_s_f {
   esac
 
       
-  # Set the name of the OPAOPER_F input files
+  # Set the name of the input files
   typeset _opaoper_file_remote=''
   typeset _opaoper_file=''
   typeset _days_offset
@@ -180,7 +180,7 @@ function _Iopa_set_input_files__opaoper_a_s_f {
   typeset    _date_local_next
   typeset    _opaoper_file_local_next
   typeset    _ln_next
-  echo "###> $_a_s_f :: $_start $_end"
+
   for _i in $(opa_range $_start $_end ) ; do
     # $_i is an offset (in number of days, with sign) to be added to the $OPA_RUNDATE
     # in order to have the expected date of the input files.
@@ -224,7 +224,6 @@ function _Iopa_set_input_files__opaoper_a_s_f {
           OPA_OPAOPER_A_INPUT_VARS[OPA_OPAOPER_A_INPUT_FILES_NUM]="$_v"
           OPA_OPAOPER_A_INPUT_FILES_INDICES="${OPA_OPAOPER_A_INPUT_FILES_INDICES}${OPA_OPAOPER_A_INPUT_FILES_NUM} "
           OPA_OPAOPER_A_INPUT_FILES_NUM=$(( $OPA_OPAOPER_A_INPUT_FILES_NUM + 1 ))
-          if [[ ${_v} == "T" ]] ;  then echo "@@@ [${0}] ::: [${_a_s_f}] $_opaoper_file_local" ; fi
           ;;
         s|f)
           OPA_OPAOPER_F_INPUT_RDIRS[OPA_OPAOPER_F_INPUT_FILES_NUM]="$OPA_OPAOPER_F_RDIR/$OPA_RUNDATE"
@@ -256,13 +255,15 @@ case  "$_a_s_f" in
      _start="$OPA_OPAOPER_A_DAY_OFFSET_START"
      _end="$OPA_OPAOPER_A_DAY_OFFSET_END"
      for days_offset in $(opa_range $_start $_end ) ; do
-         date_local=$( $OPA_BINDIR/date --date "$OPA_RUNDATE $_days_offset days" +'%Y%m%d' )
-         prod_cycle=$($OPA_BINDIR/date  --date "$OPA_RUNDATE $(( $_days_offset days + 1 ))" +'%Y%m%d' )
-         file_remote="${date_local}-ECMWF---AM0100-MEDATL-b${prod_cycle}_an-fv11.00.nc"
-         OPA_ATM_A_INPUT_RFILES[counter]="${prod_cycle}/$file_remote" #20201020/20221019-ECMWF---AM0100-MEDATL-b20221020_an-fv11.00.nc
+         date_local=$( $OPA_BINDIR/date --date "$OPA_RUNDATE $days_offset days" +'%Y%m%d' )
+         prod_cycle=$($OPA_BINDIR/date  --date "$OPA_RUNDATE $(( $days_offset + 1 )) days" +'%Y%m%d' )
+         an_remotefile="${date_local}-ECMWF---AM0100-MEDATL-b${prod_cycle}_an-fv11.00.nc"
+         OPA_ATM_A_INPUT_RFILES[counter]="analysis/${prod_cycle}/$an_remotefile" #20201020/20221019-ECMWF---AM0100-MEDATL-b20221020_an-fv11.00.nc
          counter=$(( $counter + 1 ))
-         #LENGTH=${#ArrayName[@]}
      done
+     # last atm file, _an00 with an only frame at 00
+     file_remote="${prod_cycle}-ECMWF---AM0100-MEDATL-b${prod_cycle}_an00-fv11.00.nc"
+     OPA_ATM_A_INPUT_RFILES[counter]="analysis/${prod_cycle}/$file_remote"
      ;;
 
     s|f)
@@ -301,10 +302,12 @@ function _Iopa_print_input_files__opaoper_a_f {
     a)
       _name="OPAOPER analyses"
       _list="${OPA_OPAOPER_A_INPUT_LFILES[*]}"
+      _list_atm="${OPA_ATM_A_INPUT_RFILES[*]}"
       ;;
     f)
       _name="OPAOPER forecast"
       _list="${OPA_OPAOPER_F_INPUT_LFILES[*]}"
+      _list_atm="${OPA_ATM_F_INPUT_RFILES[*]}"
       ;;
   esac
   echo "$_name"
@@ -314,6 +317,13 @@ function _Iopa_print_input_files__opaoper_a_f {
     printf "%4d) %s\n" "$_c" "$_file" | grep T
     _c=$(( $_c + 1 ))
   done
+
+  _c=0
+  for _file in $_list_atm; do
+    printf "%4d) %s\n" "$_c" "$_file"
+    _c=$(( $_c + 1 ))
+  done
+
 }
 
 

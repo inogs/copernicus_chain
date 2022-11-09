@@ -521,7 +521,10 @@ typeset _lidir="$OPA_INPDIR/ECMWF"
 
 case "$_a_f_d" in
 a)
-   echo "VEDIAMO L'ANALISI"
+   for input_file_index in $(opa_range 0 8) ; do
+       _rfile=${OPA_ATM_A_INPUT_RFILES[input_file_index]}
+       opa_download ncftp:$_HTTPCONFIG_CMCC "$_lidir" "$OPA_ATM_RDIR/$_rfile" ; _ec=$?
+   done
    ;;
 s|f)
    for input_file_index in 0 1 ; do
@@ -550,9 +553,11 @@ errors=0
 #    * ) opa_die 10 "Unsupporte runtype: $OPA_RUNTYPE"
 #esac
 
-
-opa_get_atmospheric_files 'f' || errors=$(( $errors + 1 ))
-
+case $OPA_RUNTYPE in
+    'analysis' ) opa_get_atmospheric_files 'a' || errors=$(( $errors + 1 )) ;;
+    'forecast' ) opa_get_atmospheric_files 'f' || errors=$(( $errors + 1 )) ;;
+    * ) opa_die 10 "Unsupporte runtype: $OPA_RUNTYPE"
+esac
 
 
 while true ; do
