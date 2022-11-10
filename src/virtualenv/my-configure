@@ -52,5 +52,6 @@ pip install basemap-data
 pip install basemap-data-hires
 pip install basemap
 pip install latexcodec
+pip install pandas
 #installare Pillow per concludere la configurazione di venv1
 
