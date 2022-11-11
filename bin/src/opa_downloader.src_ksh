@@ -192,7 +192,11 @@ if [[ $WEEKDAY -eq $WEEKDAY_TO_AVE ]]; then
 opa_prex "python aveSat.py -i $CHECKDIR -o $WEEKLY_DIR1km -m SAT1km_mesh -t weekly_monday -d $WEEKLYDATES "
 opa_prex "python interpolator.py -i $WEEKLY_DIR1km -o $WEEKLY_DIR_24 -m $MASKFILE --inmesh SAT1km_mesh -v CHL"
 
-
+WEEKLYDATES=${ONLINE_REPO}/SAT/CHL/DT/WEEKLY_4_AVEDATES
+WEEKLY_DIR1km=${ONLINE_REPO}/SAT/CHL/DT/WEEKLY_4_1km/
+WEEKLY_DIR_24=${ONLINE_REPO}/SAT/CHL/DT/WEEKLY_4_24/
+opa_prex "python aveSat.py -i $DAILY_DIR_24 -o $WEEKLY_DIR1km -m Mesh24 -t weekly_thursday -d $WEEKLYDATES "
+opa_prex "python interpolator.py -i $WEEKLY_DIR1km -o $WEEKLY_DIR_24 -m $MASKFILE --inmesh SAT1km_mesh -v CHL"
 fi
 
 ################   6. Update of KD490 DT derived datasets  ############################
