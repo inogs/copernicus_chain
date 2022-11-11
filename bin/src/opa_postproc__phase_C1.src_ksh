@@ -81,6 +81,10 @@ esac
 
 
 opa_prex "cd $OPA_POSTPROC"
+
+opa_prex_or_die "mpirun -np 11 python $OPA_POSTPROCDIR/kd.py -i $MODELDIR/AVE_FREQ_3 -m $MASKFILE -o $MODELDIR/AVE_FREQ_1 -l ave*.nc"
+
+
 if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
 
    opa_analyses_dates  $OPA_RUNDATE  > timelist.a
