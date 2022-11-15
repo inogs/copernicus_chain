@@ -31,7 +31,7 @@ if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
    cd $OPA_RUNLOGDIR
           JOB_MODEL=opa.${I_OPA_HOSTNAME}.${RT_OPA_RUNID}.jcf_slurm.multiple.model
    JOB_MODEL_PYTHON=opa.${I_OPA_HOSTNAME}.${RT_OPA_RUNID}.jcf_slurm.multiple.model_python
-   SBATCH_LINE_ORIG="SBATCH -N5 -n 240 --mem=115gb"
+   SBATCH_LINE_ORIG="SBATCH -N5 -n ${OPA_DEFAULT_TASKS} --mem=${OPA_DEFAULT_MEM}"
    SBATCH_LINE__NEW="SBATCH -N1 -n 1 --mem=15gb"
 
    sed -e "s/$SBATCH_LINE_ORIG/$SBATCH_LINE__NEW/g" \
