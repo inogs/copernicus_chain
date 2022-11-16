@@ -27,6 +27,7 @@ opa_prex "@@(I:OPA_HOME)/bin/opa_put_phase_2.ksh -y BIOL 1>> $_logfile 2>&1"    
 opa_prex "@@(I:OPA_HOME)/bin/opa_put_phase_2.ksh -y CARB 1>> $_logfile 2>&1"            || errors=$(( $errors + 1 ))
 opa_prex "@@(I:OPA_HOME)/bin/opa_put_phase_2.ksh -y PFTC 1>> $_logfile 2>&1"            || errors=$(( $errors + 1 ))
 opa_prex "@@(I:OPA_HOME)/bin/opa_put_phase_2.ksh -y CO2F 1>> $_logfile 2>&1"            || errors=$(( $errors + 1 ))
+opa_prex "@@(I:OPA_HOME)/bin/opa_put_phase_2.ksh -y EXCO 1>> $_logfile 2>&1"            || errors=$(( $errors + 1 ))
 
 
 if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
@@ -45,6 +46,7 @@ if [[ $DAY -gt 7 ]] && [[ $DAY -lt 15 ]] ; then
 	opa_prex "@@(I:OPA_HOME)/bin/opa_put_phase_2_monthly.ksh -y CARB 1>> $_logfile 2>&1"            || errors=$(( $errors + 1 ))
 	opa_prex "@@(I:OPA_HOME)/bin/opa_put_phase_2_monthly.ksh -y PFTC 1>> $_logfile 2>&1"            || errors=$(( $errors + 1 ))
 	opa_prex "@@(I:OPA_HOME)/bin/opa_put_phase_2_monthly.ksh -y CO2F 1>> $_logfile 2>&1"            || errors=$(( $errors + 1 ))
+    opa_prex "@@(I:OPA_HOME)/bin/opa_put_phase_2_monthly.ksh -y EXCO 1>> $_logfile 2>&1"            || errors=$(( $errors + 1 ))
 
     if [ $errors -eq 0 ] ;then
 
@@ -60,7 +62,7 @@ if [[ $DAY -gt 7 ]] && [[ $DAY -lt 15 ]] ; then
     opa_prex "@@(I:OPA_HOME)/bin/opa_remove_DU_prod.ksh -y $YEAR_TO_REMOVE -m $MONTH_TO_REMOVE -t CARB 1>> $_logfile 2>&1"  || errors=$(( $errors + 1 ))
     opa_prex "@@(I:OPA_HOME)/bin/opa_remove_DU_prod.ksh -y $YEAR_TO_REMOVE -m $MONTH_TO_REMOVE -t PFTC 1>> $_logfile 2>&1"  || errors=$(( $errors + 1 ))
     opa_prex "@@(I:OPA_HOME)/bin/opa_remove_DU_prod.ksh -y $YEAR_TO_REMOVE -m $MONTH_TO_REMOVE -t CO2F 1>> $_logfile 2>&1"  || errors=$(( $errors + 1 ))
-
+    opa_prex "@@(I:OPA_HOME)/bin/opa_remove_DU_prod.ksh -y $YEAR_TO_REMOVE -m $MONTH_TO_REMOVE -t EXCO 1>> $_logfile 2>&1"  || errors=$(( $errors + 1 ))
     fi
 
     opa_prex "@@(I:OPA_HOME)/bin/opa_put_phase_2_monthly.ksh -y MVR 1>> $_logfile 2>&1"             || errors=$(( $errors + 1 ))
