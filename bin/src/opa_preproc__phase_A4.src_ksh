@@ -56,6 +56,7 @@ for opa_month in $mon_start $mon_end ; do
    opa_prex_or_die "python $OPA_BITSEA/PreprocDA/netcdf4_uncompress.py -i $da_3d_var_dir/EOF/CHLFloat/compressed/${eof_file} -o  $da_3d_var_dir/EOF/CHLFloat/${eof_file} "
 
    opa_prex_or_die "gzip -dc $OPA_ETCDIR/static-data/DA/3D_VAR/EOF/N3n/${eof_file}.gz  > $da_3d_var_dir/EOF/N3n/${eof_file}"
+   opa_prex_or_die "gzip -dc $OPA_ETCDIR/static-data/DA/3D_VAR/EOF/O2o/${eof_file}.gz  > $da_3d_var_dir/EOF/O2o/${eof_file}"
 
    ### Stage-in of Crosscor  file:
    crosscor_file="crosscorrs.${opa_month}.nc"
@@ -80,7 +81,8 @@ opa_prex_or_die "gzip -dc $OPA_ETCDIR/static-data/DA/3D_VAR/${rad_corr_file}.gz 
 ### Stage-in of vardescriptor files for Float_misfit_gen.sh :
 opa_stage_in "$da_wrkdir" \
  "$OPA_ETCDIR/static-data/DA/MISFIT/VarDescriptor_P_l.xml" \
- "$OPA_ETCDIR/static-data/DA/MISFIT/VarDescriptor_N3n.xml" || {
+ "$OPA_ETCDIR/static-data/DA/MISFIT/VarDescriptor_N3n.xml" \
+ "$OPA_ETCDIR/static-data/DA/MISFIT/VarDescriptor_O2o.xml"  || {
  opa_die 1 "stage-in of Vardescriptors failed"
  }
 
