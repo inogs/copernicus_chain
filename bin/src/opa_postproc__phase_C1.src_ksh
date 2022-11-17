@@ -49,7 +49,8 @@ fi
 
 opa_stage_in "$OPA_POSTPROC"  \
          "$OPA_ETCDIR/static-data/POSTPROC/VarDescriptor_1.xml" \
-         "$OPA_ETCDIR/static-data/POSTPROC/VarDescriptor_2.xml" || {
+         "$OPA_ETCDIR/static-data/POSTPROC/VarDescriptor_2.xml" \
+         "$OPA_ETCDIR/static-data/POSTPROC/optics.varlist"   || {
   opa_die 1 "stage-in of POSTPROC failed"
 }
 
@@ -120,20 +121,22 @@ opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/archive/netcdf4_compress.py -i $
 
 if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
      opa_mkdir "$ZIPPED_DIR/AVE_FREQ_2"
+     opa_mkdir "$ZIPPED_DIR/AVE_FREQ_3"
+     opa_mkdir "$ZIPPED_DIR/AVE_FREQ_3/tar"
      opa_mkdir "$ZIPPED_DIR/DA/"
      opa_mkdir "$ZIPPED_DIR/DA/DATIMES"
      opa_mkdir "$ZIPPED_DIR/DA/tar"
 
 
      # DA_SECTION ###########
-	 opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/archive/netcdf4_compress.py -i $MODELDIR/DA__FREQ_1  -o $ZIPPED_DIR/DA -l RST_after*1[23]:00:00*.nc"
-	 opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/archive/netcdf4_compress.py -i $MODELDIR/DA__FREQ_1  -o $ZIPPED_DIR/DA -l RSTbefore*1[23]:00:00*.nc -c 60"
+	 opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/archive/netcdf4_strong_compress.py -i $MODELDIR/DA__FREQ_1  -o $ZIPPED_DIR/DA -l RST_after*1[23]:00:00*.nc"
+	 opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/archive/netcdf4_strong_compress.py -i $MODELDIR/DA__FREQ_1  -o $ZIPPED_DIR/DA -l RSTbefore*1[23]:00:00*.nc -c 60"
 	 opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/archive/compress.py         -i $MODELDIR/DA__FREQ_1  -o $ZIPPED_DIR/DA -l [2cl]*nc " # *corr.nc, limcorr.nc, chl*nc"
 	 opa_prex_or_die "cp $MODELDIR/DA__FREQ_1/*dat      $ZIPPED_DIR/DA"
 	 opa_prex_or_die "cp $MODELDIR/DA__FREQ_1/OceanVar* $ZIPPED_DIR/DA"
 	 opa_prex_or_die "cp $OPA_WRKDIR/DA/*check.txt      $ZIPPED_DIR/DA"
 
-     LEN_EXCLUDED=$( ls $OPA_WRKDIR/DA/*nc | wc -l )
+     LEN_EXCLUDED=$( ls $OPA_WRKDIR/DA/*nc 2>/dev/null | wc -l )
      if [[ $LEN_EXCLUDED > 0 ]] ; then
          opa_prex_or_die "cp $OPA_WRKDIR/DA/*nc             $ZIPPED_DIR/DA"
      else
@@ -153,6 +156,8 @@ if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
 
      opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/var_aggregator.py -l ave*N1p.nc -i $MODELDIR/AVE_FREQ_2  -d $OPA_POSTPROC/VarDescriptor_2.xml  -t $MODELDIR/AVE_FREQ_2  -c $CHLSUP_DIR -m $MASKFILE"
      opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/archive/netcdf4_compress.py -i $MODELDIR/AVE_FREQ_2   -o $ZIPPED_DIR/AVE_FREQ_2 -l ave.*.nc"
+     opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/archive/netcdf4_compress.py -i $MODELDIR/AVE_FREQ_3 -o $ZIPPED_DIR/AVE_FREQ_3 -l *nc"
+     opa_prex_or_die "mpirun python $OPA_POSTPROCDIR/archive/pack.py -i $ZIPPED_DIR/AVE_FREQ_3 -o $ZIPPED_DIR/AVE_FREQ_3/tar -v $OPA_POSTPROC/optics.varlist"
 
 # monthly products
 
