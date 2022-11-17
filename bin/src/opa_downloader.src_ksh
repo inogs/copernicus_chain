@@ -84,7 +84,7 @@ for I in `ls *nc ` ; do
    WMO_DIR=${I:2:7}
    CORIOLIS_DIR=$ONLINE_REPO/CORIOLIS/${WMO_DIR}/
    opa_mkdir $CORIOLIS_DIR
-   opa_prex "mv $I $CORIOLIS_DIR"
+   opa_mv "$I $CORIOLIS_DIR"
 done
 
 
@@ -125,7 +125,7 @@ opa_prex "python superfloat_ph.py       -o $DATASET -u $UPDATE_FILE"
 
 opa_prex "python dump_index.py -i $DATASET -o $DATASET/Float_Index.txt -t superfloat"
 
-opa_prex "mv $DIAG_DIR/Blacklist_wmo.csv $OPA_LOGDIR/daily/Blacklist_wmo.$(date +\%Y\%m\%d-\%H:\%M:\%S).txt"
+opa_mv "$DIAG_DIR/Blacklist_wmo.csv $OPA_LOGDIR/daily/Blacklist_wmo.$(date +\%Y\%m\%d-\%H:\%M:\%S).txt"
 
 ################   4. Update of SAT NRT derived datasets  ############################
 

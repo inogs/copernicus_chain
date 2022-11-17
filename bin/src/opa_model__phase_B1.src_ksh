@@ -168,7 +168,7 @@ opa_stage_in	"$wrkdir/BC/" \
 
 for I in `ls $OPA_WRKDIR/CMCC_PHYS/* ` ; do
     F=`basename $I`
-    opa_prex_or_die "ln -fs $I $wrkdir/FORCINGS/$F" || errors=$(( $errors + 1 ))
+    opa_ln_or_die "$I $wrkdir/FORCINGS/$F" 
 done
 
 
@@ -191,7 +191,7 @@ if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
 
 	cd "$wrkdir/OPTICS"
 	for I in `ls ${ECMWF_DIR}/atm*nc`; do
-	   opa_prex_or_die "ln -fs $I "
+	   opa_ln_or_die "$I "
 	done
 else
 

@@ -475,7 +475,63 @@ function opa_cp {
   printf "PrEx $(opa_date) < cp %s [%s]\n" "$*" "$_status"
   return $_er
 }
-    
+
+
+function opa_mv {
+#mv che da'status KO se il mv non viene eseguito
+  typeset _arguments
+  typeset -i _er
+  typeset _status
+  _arguments=$@
+
+  mv $_arguments
+  _er=$?
+  if [[ $_er -eq 0 ]] ; then
+      _status="Ok"
+  else
+     _status="KO"
+  fi
+
+  printf "PrEx $(opa_date) < mv %s [%s]\n" "$*" "$_status"
+  return $_er
+}
+
+function opa_mv_or_die {
+  opa_mv $@
+  _er=$?
+  if [[ $_er -ne 0 ]] ; then
+    opa_die "$_er"  " mv failed. Stop."
+  fi
+}
+
+function opa_ln {
+#ln che da'status KO se il mv non viene eseguito
+  typeset _arguments
+  typeset -i _er
+  typeset _status
+  _arguments=$@
+
+#with an only bad argument it should fail
+  ln -fs $_arguments
+  _er=$?
+  if [[ $_er -eq 0 ]] ; then
+      _status="Ok"
+  else
+     _status="KO"
+  fi
+
+  printf "PrEx $(opa_date) < ln -fs %s [%s]\n" "$*" "$_status"
+  return $_er
+}
+
+function opa_ln_or_die {
+  opa_ln $@
+  _er=$?
+  if [[ $_er -ne 0 ]] ; then
+    opa_die "$_er" " ln -fs failed. Stop"
+  fi
+}
+
 function opa_set_run {
   # Arguments:
   # - OPA_RUNTYPE : 'analysis' or 'forecast', mandatory

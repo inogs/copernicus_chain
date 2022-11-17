@@ -469,12 +469,12 @@ EOFCAT
           opa_log 1 "file [${_compressed_rfile}] : check failed!"
           _file_found=false
         fi
-        opa_prex "mv    $_lidir_download/$_compressed_rfile $_lidir"
+        opa_mv "    $_lidir_download/$_compressed_rfile $_lidir"
         # opa_cp -p $_lidir/$_compressed_rfile $_lwdir                      # cp orig in wrkdir/analysis/2/OPAOPER_A
         # opa_cp -p $_lidir/$_compressed_rfile $_lidir/$_decompressed_lfile # cp orig in inpdir/analysis/20200218/OPAOPER_A/20200209_T.nc
         # opa_cp -p $_lidir/$_decompressed_lfile $_lwdir                    # cp inpdir/analysis/20200218/OPAOPER_A/20200209_T.nc wrkdir/analysis/2/OPAOPER_A
 
-        opa_prex_or_die "ln -fs $_lidir/$_compressed_rfile $_lwdir/$_decompressed_lfile "
+        opa_ln_or_die "$_lidir/$_compressed_rfile $_lwdir/$_decompressed_lfile "
 
       fi
 
