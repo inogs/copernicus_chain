@@ -125,7 +125,11 @@ opa_prex "python superfloat_ph.py       -o $DATASET -u $UPDATE_FILE"
 
 opa_prex "python dump_index.py -i $DATASET -o $DATASET/Float_Index.txt -t superfloat"
 
-opa_mv "$DIAG_DIR/Blacklist_wmo.csv $OPA_LOGDIR/daily/Blacklist_wmo.$(date +\%Y\%m\%d-\%H:\%M:\%S).txt"
+if [ -f $DIAG_DIR/Blacklist_wmo.csv ] ; then
+    opa_mv "$DIAG_DIR/Blacklist_wmo.csv $OPA_LOGDIR/daily/Blacklist_wmo.$(date +\%Y\%m\%d-\%H:\%M:\%S).txt"
+else
+  echo "No Blacklist_wmo.csv generated"
+fi
 
 ################   4. Update of SAT NRT derived datasets  ############################
 
@@ -195,8 +199,7 @@ opa_prex "python interpolator.py -i $WEEKLY_DIR1km -o $WEEKLY_DIR_24 -m $MASKFIL
 WEEKLYDATES=${ONLINE_REPO}/SAT/CHL/DT/WEEKLY_4_AVEDATES
 WEEKLY_DIR1km=${ONLINE_REPO}/SAT/CHL/DT/WEEKLY_4_1km/
 WEEKLY_DIR_24=${ONLINE_REPO}/SAT/CHL/DT/WEEKLY_4_24/
-opa_prex "python aveSat.py -i $DAILY_DIR_24 -o $WEEKLY_DIR1km -m Mesh24 -t weekly_thursday -d $WEEKLYDATES "
-opa_prex "python interpolator.py -i $WEEKLY_DIR1km -o $WEEKLY_DIR_24 -m $MASKFILE --inmesh SAT1km_mesh -v CHL"
+opa_prex "python aveSat.py -i $DAILY_DIR_24 -o $WEEKLY_DIR_24 -m Mesh24 -t weekly_thursday -d $WEEKLYDATES "
 fi
 
 ################   6. Update of KD490 DT derived datasets  ############################
