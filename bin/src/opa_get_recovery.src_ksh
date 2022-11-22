@@ -6,6 +6,27 @@
 opa_prex "opa_set_run"
 
 if [[ $OPA_RUNTYPE == 'forecast' ]] ; then
+
+# ATMOSPHERIC SECTION 
+
+RECOVERY_DIR=${OPA_INPDIR_ROOT}/forecast/${OPA_RECOVERY_RUNDATE}/ECMWF
+cd $OPA_INPDIR/ECMWF
+for I in `ls $RECOVERY_DIR/atm*nc `; do
+   opa_ln_or_die "$I"
+done
+
+ OFFSET_REQUIRED=$(( $OPA_FORECAST_DAYS - 1 ))
+ OFFSET_AVAILABLE=$(( $OPA_FORECAST_DAYS - 2 ))
+ date_end_fc_req=$($OPA_BINDIR/date --date "$OPA_RUNDATE $OFFSET_REQUIRED days" +'%Y%m%d' )
+ date_end_fc_av=$($OPA_BINDIR/date --date "$OPA_RUNDATE $OFFSET_AVAILABLE days" +'%Y%m%d' )
+
+for HR in 03 09 15 21; do
+   opa_ln_or_die "$RECOVERY_DIR/atm.${date_end_fc_av}-${HR}:00:00.nc atm.${date_end_fc_req}-${HR}:00:00.nc"
+done
+
+
+# CMCC SECTION
+
    opa_set_input_files__opaoper_f
 
 for _v in U V W T; do
@@ -14,7 +35,9 @@ for _v in U V W T; do
         actual_filename=${OPA_OPAOPER_F_INPUT_RFILES[i]}
          local_filename=${OPA_OPAOPER_F_INPUT_LFILES[i]}
       echo "DBG: previous filename=" $previous_filename
-      [[ ${previous_filename:31:1} != $_v ]] && continue  # to have a cycle on a single var
+      fname=$previous_filename
+      var=${fname:${#fname}-4:1}
+      [[ ${var} != $_v ]] && continue  # to have a cycle on a single var
       try_1_filename=${OPA_INPDIR_ROOT}/forecast/${OPA_RECOVERY_RUNDATE}/CMCC_PHYS/$previous_filename
       try_2_filename=$LAST_EXISTING
       if [ -f $try_1_filename ] ; then
