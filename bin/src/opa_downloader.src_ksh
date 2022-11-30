@@ -10,6 +10,7 @@ case $I_OPA_HOSTNAME in
       opa_prex "module load intelmpi/oneapi-2021--binary"
       ONLINE_REPO=/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/ONLINE_V9C/
         CLIM_FILE=/gss/gss_work/DRES_OGS_BiGe/Observations/CLIMATOLOGY/SAT/CCI_1km/SatClimatology.nc
+   CLIMFILE_KD490=/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/STATIC/SAT/KD490/KD490_Climatology_1km.nc
       DIR_SUBMASK=/gss/gss_work/DRES_OGS_BiGe/Observations/CLIMATOLOGY/SAT/CCI_1km/SUBMASKsat
       SYNCRONIZE_INPDIR=1      
       ;;
@@ -155,6 +156,13 @@ opa_prex "python aveSat.py -i $CHECKDIR -o $WEEKLY_DIR1km -m SAT1km_mesh -t week
 opa_prex "python  interpolator.py -i $WEEKLY_DIR1km -o $WEEKLY_DIR_24 -m $MASKFILE --inmesh SAT1km_mesh -v CHL"
 fi
 
+ORIGDIR=${ONLINE_REPO}/SAT/KD490/NRT/DAILY/ORIG/
+CHECKDIR=${ONLINE_REPO}/SAT/KD490/NRT/DAILY/CHECKED
+CHECK_BASEDIR=${ONLINE_REPO}/SAT/KD490/NRT/DAILY/
+DAILY_DIR_24=${ONLINE_REPO}/SAT/KD490/NRT/DAILY/CHECKED_24
+opa_prex "python KD490/sat_check.py -i $ORIGDIR -o $CHECKDIR -c $CLIMFILE_KD490 -m SAT1km_mesh"
+opa_prex " python interpolator.py -i $CHECKDIR -o $DAILY_DIR_24 -m $MASKFILE --inmesh SAT1km_mesh -v KD490"
+
 
 ################   5. Update of inpdir/ONLINE from gss  ############################
 
@@ -208,7 +216,6 @@ fi
 
 ORIGDIR=${ONLINE_REPO}/SAT/KD490/DT/DAILY/ORIG/
 CHECKDIR=${ONLINE_REPO}/SAT/KD490/DT/DAILY/CHECKED/
-CLIMFILE_KD490=/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/STATIC/SAT/KD490/KD490_Climatology_1km.nc
 SATMESH=SAT1km_mesh
 WEEKLY_1KMDIR=${ONLINE_REPO}/SAT/KD490/DT/WEEKLY_1_1km/
 WEEKLY_24_DIR=${ONLINE_REPO}/SAT/KD490/DT/WEEKLY_1_24/
