@@ -12,7 +12,8 @@ case $I_OPA_HOSTNAME in
         CLIM_FILE=/gss/gss_work/DRES_OGS_BiGe/Observations/CLIMATOLOGY/SAT/CCI_1km/SatClimatology.nc
    CLIMFILE_KD490=/gss/gss_work/DRES_OGS_BiGe/Observations/TIME_RAW_DATA/STATIC/SAT/KD490/KD490_Climatology_1km.nc
       DIR_SUBMASK=/gss/gss_work/DRES_OGS_BiGe/Observations/CLIMATOLOGY/SAT/CCI_1km/SUBMASKsat
-      SYNCRONIZE_INPDIR=1      
+      SYNCRONIZE_INPDIR=1
+      UPDATE_FLOAT=1
       ;;
     *)
       opa_prex "module load python"
@@ -24,13 +25,20 @@ opa_prex "source $OPA_VENV_1/bin/activate"
 opa_prex "cd $OPA_BITSEA"
 export PYTHONPATH=$OPA_BITSEA:${PYTHONPATH}
 
-################   1. Update of coriolis dataset  ###########################################
-
 
 DATE=`date +%Y%m%d`
 WEEKDAY=`date +%w`
 WEEKDAY_TO_AVE=0 # Sunday
 opa_mkdir $OPA_LOGDIR/daily
+
+################   1. Update of sat  datasets  ##################################
+cd $OPA_BITSEA
+opa_prex "python downloader/downloader.py -l $OPA_LOGDIR/daily/$DATE.log -a $OPA_NOTIFY_ADDRESSES -d ${ONLINE_REPO} -v 3"
+
+################   2. Update of coriolis dataset  ###########################################
+
+if [ $UPDATE_FLOAT -eq 1 ] ; then
+
 
 #FLOAT DOWNLOADER
 DIR=$ONLINE_REPO/CORIOLIS/download
@@ -89,9 +97,8 @@ for I in `ls *nc ` ; do
 done
 
 
-################   2. Update of sat  datasets  ##################################
-cd $OPA_BITSEA
-opa_prex "python downloader/downloader.py -l $OPA_LOGDIR/daily/$DATE.log -a $OPA_NOTIFY_ADDRESSES -d ${ONLINE_REPO} -v 3"
+
+
 
 ################   3. Update of Float Indexes and superfloat  ############################
 
@@ -132,7 +139,10 @@ else
   echo "No Blacklist_wmo.csv generated"
 fi
 
-################   4. Update of SAT NRT derived datasets  ############################
+fi # UPDATE_FLOAT
+
+
+################   4. Update of SAT NRT derived datasets, CHL and KD490  ############################
 
 MASKFILE=${OPA_ETCDIR}/static-data/MED24_125/meshmask.nc
 
@@ -176,8 +186,8 @@ if [ $SYNCRONIZE_INPDIR -eq 1 ] ; then
 
 	"
 	     for DIR in $GSS_DIRS ; do
-	         opa_mkdir "$I_OPA_HOME/inpdir/ONLINE/$DIR"
-                 opa_prex "rsync -rv --exclude=OLD ${ONLINE_REPO}/${DIR} $I_OPA_HOME/inpdir/ONLINE/${DIR}"
+	         opa_mkdir "${OPA_INPDIR_ROOT}/ONLINE/$DIR"
+             opa_prex "rsync -rv --exclude=OLD ${ONLINE_REPO}/${DIR} ${OPA_INPDIR_ROOT}/ONLINE/${DIR}"
 	      done
 fi
 
