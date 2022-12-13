@@ -79,17 +79,17 @@ product=MEDSEA_ANALYSISFORECAST_BGC_006_014
 PushingEntity="MED-OGS-TRIESTE-IT"
 PROD_DIR=${OPA_WRKDIR}/POSTPROC/MONTHLY/PRODUCTS
 
-if [[ "$_TYPE" == "BIOL" ]]; then
+if [[ "$TYPE" == "BIOL" ]]; then
   type="bio"
-elif [[ "$_TYPE" == "CARB" ]]; then
+elif [[ "$TYPE" == "CARB" ]]; then
   type="car"
-elif [[ "$_TYPE" == "NUTR" ]]; then
+elif [[ "$TYPE" == "NUTR" ]]; then
   type="nut"
-elif [[ "$_TYPE" == "PFTC" ]]; then
+elif [[ "$TYPE" == "PFTC" ]]; then
   type="pft"
-elif [[ "$_TYPE" == "CO2F" ]]; then
+elif [[ "$TYPE" == "CO2F" ]]; then
   type="co2"
-elif [[ "$_TYPE" == "EXCO" ]]; then
+elif [[ "$TYPE" == "EXCO" ]]; then
   type="optics"
 else
   opa_log 0 "ERR: wrong type in opa_put (must be NUTR,PFTC,CARB,BIOL or CO2F)"
