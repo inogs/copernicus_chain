@@ -65,6 +65,8 @@ opa_stage_in "$OPA_POSTPROC"  \
 
      opa_prex_or_die "mpirun -np 17 python $OPA_POSTPROCDIR/var_aggregator.py -l ave*N1p.nc -i $MODELDIR/AVE_FREQ_1  -d $OPA_POSTPROC/VarDescriptor_1.xml  -t $MODELDIR/AVE_FREQ_1  -c $CHLSUP_DIR -m $MASKFILE"
 
+     opa_prex_or_die "mpirun -np 11 python $OPA_POSTPROCDIR/kd.py -i $MODELDIR/AVE_FREQ_3 -m $MASKFILE -o $MODELDIR/AVE_FREQ_1 -l ave*.nc"
+
      OUTDIR=$OPA_WRKDIR/POSTPROC/AVE_FREQ_1
        TMPS=$OPA_WRKDIR/POSTPROC/TMPS
      opa_mkdir "$OUTDIR"
@@ -81,9 +83,8 @@ esac
 
 
 
-opa_prex "cd $OPA_POSTPROC"
 
-opa_prex_or_die "mpirun -np 11 python $OPA_POSTPROCDIR/kd.py -i $MODELDIR/AVE_FREQ_3 -m $MASKFILE -o $MODELDIR/AVE_FREQ_1 -l ave*.nc"
+
 
 
 if [[ $OPA_RUNTYPE == 'analysis' ]] ; then
