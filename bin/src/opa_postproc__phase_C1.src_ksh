@@ -180,7 +180,7 @@ opa_prex_or_die "mpirun -np 14 python $OPA_BITSEA/validation/online/monthly_aver
 opa_prex_or_die "basename $( ls $MONTHLY_DIR/ave*N1p.nc ) |  cut -c 5-12 > timelist_monthly.txt "
 opa_prex_or_die "mpirun -np 1 python ${OPA_POSTPROCDIR}/prodotti/prodotti_copernicus.py -i $MONTHLY_DIR -o $MONTHLY_PROD -t timelist_monthly.txt -d an -m $MASKFILE --tr monthly -b $BULLETIN_DATE "
 
-INPDIR_SAT_V_DAILY=${OPA_INPDIR_ROOT}/analysis/VALIDATION/SAT
+INPDIR_SAT_V_DAILY=${OPA_INPDIR_ROOT}/analysis/VALIDATION/SAT/CHL/NRT
 INPDIR_FLOAT_V_WEEKLY=${OPA_INPDIR_ROOT}/analysis/VALIDATION/FLOAT/WEEKLY_CLIM 
  YYYYMM=$( date --date="$OPA_RUNDATE 1 month ago" +%Y%m )
  MVR_DIR=${ONLINE_VALIDATION_DIR}/MVR
