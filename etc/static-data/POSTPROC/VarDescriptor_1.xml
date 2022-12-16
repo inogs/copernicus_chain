@@ -16,6 +16,8 @@
 <var name="pH" ></var>
 <var name="pCO2" ></var>
 <var name="kd490" ></var>
+<var name="vosaline" ></var>
+<var name="votemper" ></var>
 </native>
 
 <aggregate>
