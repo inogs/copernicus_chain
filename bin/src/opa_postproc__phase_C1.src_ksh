@@ -220,7 +220,7 @@ opa_prex "rename 0-fs8.png 0.png *.png"
 
 
 opa_prex "echo $OPA_RUNDATE > ${MAPS_DIR}/MAP_COMPRESSED/last"
-opa_prex "cp $OPA_BITSEA/postproc/Plotlist_bio.xml ${MAPS_DIR}"
+opa_prex "cp $OPA_BITSEA/postproc/Plotlist.xml ${MAPS_DIR}"
 
 opa_prex "cd $MAPS_DIR/MAP_COMPRESSED"
 opa_prex "tar -cf $OPA_POSTPROC/AVE_FREQ_1/maps.tar * "
